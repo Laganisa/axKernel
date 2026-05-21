@@ -1,62 +1,58 @@
 # 검증 필요
 # aarch64 OS 커널 빌드 설정
 
-# 크로스 컴파일러
-CC = aarch64-linux-gnu-gcc
-AS = aarch64-linux-gnu-as
-LD = aarch64-linux-gnu-ld
+CC      = aarch64-linux-gnu-gcc
+LD      = aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 
-# 컴파일 플래그
-# -Iinclude 를 추가해서 헤더 파일을 편하게 찾기
-CFLAGS = -mcpu=cortex-a72 -ffreestanding -nostdlib -nostdinc -O0 -g -Iinclude
-ASFLAGS = -mcpu=cortex-a72
-LDFLAGS = -T linker.ld
+# 리포지토리 경로 정의
+LIB_DIR   = ../myLib
+SHELL_DIR = ../myShell
 
-# 대상
+CFLAGS  = -mcpu=cortex-a72 -ffreestanding -nostdlib -nostdinc -O0 -g -Iinclude
+LDFLAGS = -T linker.ld --gc-sections
+
 BUILD_DIR = build
-KERNEL_IMG = $(BUILD_DIR)/kernel8.img
-ELF_FILE = $(BUILD_DIR)/kernel8.elf
+KERNEL    = $(BUILD_DIR)/kernel8
 
-# 소스 파일 탐색 (자동)
-# src 폴더의 모든 .c 파일과 boot 폴더의 모든 .S 파일을 찾음
-C_SOURCES = $(wildcard src/*.c)
-S_SOURCES = $(wildcard boot/*.S)
+# 소스 및 오브젝트 자동 수집
+SRCS = $(wildcard src/*.c) $(wildcard boot/*.S) $(wildcard init/*.S)
+OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(filter src/%.c, $(SRCS))) \
+       $(patsubst boot/%.S, $(BUILD_DIR)/%.o, $(filter boot/%.S, $(SRCS))) \
+       $(patsubst init/%.S, $(BUILD_DIR)/%.o, $(filter init/%.S, $(SRCS)))
 
-# 오브젝트 파일 목록 생성 (build/파일명.o 형식)
-# src/main.c -> build/main.o 로 변환됨
-OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(C_SOURCES))
-OBJS += $(patsubst boot/%.S, $(BUILD_DIR)/%.o, $(S_SOURCES))
+.PHONY: all clean user_modules
 
-# 기본 타겟
-.PHONY: all clean rebuild
+all: user_modules $(KERNEL).img
 
-all: $(BUILD_DIR) $(KERNEL_IMG)
+# 1. 외부 유저 공간 빌드 및 바이너리 땡겨오기
+user_modules:
+	@mkdir -p init
+	@$(MAKE) -C $(LIB_DIR) --no-print-directory
+	@$(MAKE) -C $(SHELL_DIR) --no-print-directory
+	@cp -f $(SHELL_DIR)/SHELL.BIN init/ 2>/dev/null || touch init/SHELL.BIN
 
-# build 폴더 생성
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+	@mkdir -p $@
 
-# C 파일 컴파일 규칙
-$(BUILD_DIR)/%.o: src/%.c
+# 2. 컴파일 규칙 (패턴 매칭 하나로 통일)
+$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# ASM 파일 컴파일 규칙
-$(BUILD_DIR)/%.o: boot/%.S
+$(BUILD_DIR)/%.o: boot/%.S | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# 링킹
-$(ELF_FILE): $(OBJS)
-	$(LD) $(LDFLAGS) --gc-sections -o $(ELF_FILE) $(OBJS)
+$(BUILD_DIR)/%.o: init/%.S init/SHELL.BIN | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# 이미지 변환
-$(KERNEL_IMG): $(ELF_FILE)
-	$(OBJCOPY) $(ELF_FILE) -O binary $(KERNEL_IMG)
-	@echo "---------------------------------------"
-	@echo "  Kernel image built: $(KERNEL_IMG)"
-	@echo "---------------------------------------"
+# 3. 링킹 및 이미지 추출
+$(KERNEL).elf: $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+
+$(KERNEL).img: $(KERNEL).elf
+	$(OBJCOPY) $< -O binary $@
 
 clean:
-	rm -rf $(BUILD_DIR)/
-
-rebuild: clean all
+	rm -rf $(BUILD_DIR) init/SHELL.BIN
+	@$(MAKE) -C $(LIB_DIR) clean --no-print-directory 2>/dev/null || true
+	@$(MAKE) -C $(SHELL_DIR) clean --no-print-directory 2>/dev/null || true

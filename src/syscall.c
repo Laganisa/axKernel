@@ -1,8 +1,10 @@
 #include "../include/types.h"
 #include "../include/io.h"
+#include "../include/exce.h"
 #include "../include/syscall.h"
 #include "../include/pm.h"
 
+// 여기도 수정해야함
 extern pcb_t *current_proc;
 extern pcb_t **get_current_proc_addr(void);
 
@@ -19,7 +21,7 @@ void handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t
         {
             for (uint64_t i = 0; i < arg3; i++)
             {
-                putc(((char *)arg2)[i]);
+                putchar(((int8_t *)arg2)[i]);
             }
         }
         break;
@@ -30,14 +32,22 @@ void handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t
 
     case SYS_EXIT:
         // arg1: exit code
-        if (pm_object.lownum <= 1)
         {
             pcb_t **current_proc_ptr = (pcb_t **)get_current_proc_addr();
             pcb_t *current = *current_proc_ptr;
+            pcb_t *next;
+
             pm_awake(&pm_object, 1, current);
-            pcb_t *next = pm_run(&pm_object);
+            next = pm_run(&pm_object);
             current_proc = next;
-            new_context(next->sp);
+
+            if (next != 0)
+            {
+                new_context(next->sp);
+            }
+
+            while (1)
+                ;
         }
         break;
 

@@ -12,7 +12,7 @@ extern void _proc(uint64_t *reg_val); // proc와 연결
     프로세스 생성
     pid 생성을 오름차순으로
 */
-pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
+pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 {
     // id 로직
 
@@ -57,16 +57,21 @@ pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
     uint64_t *reg_val = (uint64_t *)(real_addr + (INITIAL_PROC_SIZE << 10) - 256);
     obj->PMv1_mem[pid].reg = (INITIAL_PROC_SIZE << 10) - 256; // 레지스터 위치
 
-    obj->PMv1_mem[pid].pc = (uint64_t)task;
+    obj->PMv1_mem[pid].pc = entry;
     obj->PMv1_mem[pid].sp = (uint64_t)reg_val;
 
     for (int i = 0; i < 31; i++)
         reg_val[i] = 0;              // x0~x30 초기화
     reg_val[31] = (uint64_t)reg_val; // SP 초기값
-    reg_val[32] = (uint64_t)task;    // PC (ELR_EL1)
+    reg_val[32] = entry;             // PC (ELR_EL1)
     reg_val[33] = 0x3C5;             // SPSR_EL1
 
     return &obj->PMv1_mem[pid];
+}
+
+pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
+{
+    return creat_proc_entry(obj, (uint64_t)task, parid);
 }
 
 /* 주소를 주면 변환해서 내주는 코드

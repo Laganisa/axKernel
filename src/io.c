@@ -1,5 +1,8 @@
 #include "../include/types.h"
 #include "../include/defs.h"
+#include "../include/exce.h"
+#include "../include/fm.h"
+#include "../include/pm.h"
 #include "../include/sect.h"
 
 // UART 초기화
@@ -153,6 +156,25 @@ void shell_run(int8_t *cmd)
     if (strcmp(cmd, "clear") == 0)
     {
         clear();
+    }
+    else if (cmd[0] == 'r' && cmd[1] == 'u' && cmd[2] == 'n' && cmd[3] == ' ')
+    {
+        pcb_t *proc = fm_exec_file(fm_record, &pm_object, &cmd[4], 0);
+
+        if (proc == 0)
+        {
+            puts("run failed");
+        }
+        else
+        {
+            pm_awake(&pm_object, 0, proc);
+            puts("run queued");
+
+            if (current_proc == 0)
+            {
+                current_proc = proc;
+            }
+        }
     }
 
     puts("\n"); // 개행

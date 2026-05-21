@@ -24,6 +24,8 @@ typedef struct pcb_t
     uint64_t pc; // 프로그램 카운터
 } __attribute__((aligned(8))) pcb_t;
 
+typedef struct FMv2_record FMv2_record;
+
 typedef struct PMv1_object
 {
     uint64_t *base; // 바닥 주소
@@ -52,6 +54,7 @@ typedef struct PMv1_object
 // init 만들기
 
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid);
+pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid);
 uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);

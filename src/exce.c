@@ -33,63 +33,21 @@ void curr_el_sp0_serror()
 void curr_el_spx_sync()
 {
     uint64_t esr;
+    uint64_t syscall_num;
+    uint64_t arg1;
+    uint64_t arg2;
+    uint64_t arg3;
     asm volatile("mrs %0, esr_el1" : "=r"(esr));
 
     uint32_t ec = (esr >> 26) & 0x3F; // Exception Class
-    uint32_t imm = esr & 0xFFFF;      // Immediate value (svc #N)
 
     if (ec == 0x15) // SVC instruction
     {
-        // x8 레지스터에서 시스템 콜 번호를 읽어옴
-        uint64_t syscall_num;
         asm volatile("mov %0, x8" : "=r"(syscall_num));
-
-        if (syscall_num == 93) // EXIT 시스템 콜
-        {
-            // puts("[Kernel] Task requested EXIT (via x8=93)\n");
-
-            if (pm_object.lownum <= 1)
-            {
-                // 현재 프로세스를 종료 리스트로 보냄
-                pcb_t **current_proc_ptr = (pcb_t **)get_current_proc_addr();
-                pcb_t *current = *current_proc_ptr;
-
-                /*
-                puts("\n[EXIT] Current PCB Addr: ");
-                put_hex((uint64_t)current); // PCB 구조체 자체의 주소
-                puts(" | ID before: ");
-                put_hex(current->id);
-                */
-
-                // pm_awake(&pm_object, 1, *(pcb_t **)get_current_proc_addr());
-                pm_awake(&pm_object, 1, current);
-
-                // 세로운 프로세스 찾고 넘기기
-                pcb_t *next = pm_run(&pm_object);
-                current_proc = next;
-
-                /*
-                puts("\n[EXIT] Next PCB Addr: ");
-                put_hex((uint64_t)next); // 다음 실행될 놈의 주소
-                puts(" | Next ID: ");
-                put_hex(next->id);
-
-                puts("\n[EXIT] Check Current ID after awake: ");
-                put_hex(current->id);
-                */
-
-                new_context(next->sp);
-            }
-            else
-            {
-                // 넘길 프로세스가 부족하면
-                // pid = 0 로 넘기기
-            }
-        }
-        else if (imm == 1) // 테스트용으로 쓴 svc #1
-        {
-            puts("[Kernel] Tick!\n");
-        }
+        asm volatile("mov %0, x0" : "=r"(arg1));
+        asm volatile("mov %0, x1" : "=r"(arg2));
+        asm volatile("mov %0, x2" : "=r"(arg3));
+        handle_syscall(syscall_num, arg1, arg2, arg3);
     }
 }
 

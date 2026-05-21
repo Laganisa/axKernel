@@ -1,6 +1,7 @@
 #include "../include/defs.h"
 #include "../include/fm.h"
 #include "../include/io.h"
+#include "../include/mm.h"
 
 // init 함수
 
@@ -68,6 +69,47 @@ void fm_init(uint64_t *addr)
     fm_record->last_addr = 0;
 }
 
+static void fm_memcpy(uint8_t *dst, uint8_t *src, uint32_t size)
+{
+    for (uint32_t i = 0; i < size; i++)
+    {
+        dst[i] = src[i];
+    }
+}
+
+static void fm_normalize_path(const int8_t *src, int8_t dst[27])
+{
+    uint8_t i = 0;
+
+    while (i < 26 && src[i] != '\0')
+    {
+        dst[i] = src[i];
+        i++;
+    }
+
+    while (i < 26)
+    {
+        dst[i++] = 0x20;
+    }
+
+    dst[26] = '\0';
+}
+
+static uint32_t fm_slot_index(fcb_t *file)
+{
+    if (file->depth == 0)
+    {
+        return (uint32_t)file->ppdir_addr;
+    }
+
+    if (file->depth == 1)
+    {
+        return 16U + ((uint32_t)file->ppdir_addr * 16U) + (uint32_t)file->pdir_addr;
+    }
+
+    return 16U + 256U + ((uint32_t)file->ppdir_addr * 256U) + ((uint32_t)file->pdir_addr * 16U) + (uint32_t)file->me_addr;
+}
+
 // size는 B 단위로 받음
 // 최대 1MB (1048576 바이트)
 // 디렉토리당 최대 2MB (2097152 바이트)
@@ -75,8 +117,13 @@ void fm_init(uint64_t *addr)
 /*
     뭐 적기
 */
-fcb_t *fm_creat(FMv2_record *reco, int8_t name[8], uint8_t path[27], uint32_t size, uint8_t ok_dir)
+fcb_t *fm_create(FMv2_record *reco, int8_t path[27], uint32_t size, uint8_t ok_dir)
 {
+    puts("entering fm_creat\n");
+    int8_t normalized_path[27];
+    fm_normalize_path(path, normalized_path);
+    path = normalized_path;
+
     // 확인: 1MB 초과 파일 거부
     if (size > MAX_FILE_SIZE)
     {
@@ -94,7 +141,7 @@ fcb_t *fm_creat(FMv2_record *reco, int8_t name[8], uint8_t path[27], uint32_t si
 
     for (int i = 0; i < 8; i++)
     {
-        if (name[i] == 0x2E && i > 0x4) // '.' 이면서 뒤에 있으면
+        if (path[i] == 0x2E && i > 0x4) // '.' 이면서 뒤에 있으면
         {
             break; // or 리턴 만들수 없는 파일
         }
@@ -105,20 +152,25 @@ fcb_t *fm_creat(FMv2_record *reco, int8_t name[8], uint8_t path[27], uint32_t si
     uint8_t new_depth = 0;
     uint8_t auth; // 권한
 
-    if (fm_check(reco, 0, path) == FALSE)
-    {
-        return 0; // 경로가 유효하지 않음
-    }
+    puts("checking path\n");
+
+    puts("checking path\n");
 
     // 경로가 유효하다
     // 3. 경로 판별 및 할당 로직
     if (path[8] == 0x20) // [Case 1] 루트 직속 (Depth 0)
     {
-        if (reco->last_addr >= 16)
-            return 0; // 공간 부족
-        if (fm_check(reco, 0, path) == FALSE)
-            return 0; // 중복 확인
+        puts("checking path\n");
 
+        if (reco->last_addr >= 16)
+        {
+            return 0; // 공간 부족
+        }
+        if (fm_check(reco, 1, path) == FALSE)
+        {
+            puts("checking path mul\n");
+            return 0; // 중복 확인
+        }
         uint8_t current_id = reco->last_addr;
         new_file = &(reco->FMv2_mem[current_id][16][16]);
 
@@ -132,6 +184,7 @@ fcb_t *fm_creat(FMv2_record *reco, int8_t name[8], uint8_t path[27], uint32_t si
     }
     else if (path[8] != 0x20 && path[17] == 0x20)
     {
+        puts("checking path\n");
         // 부모 디렉토리 인덱스 추출
         uint8_t pos_dir1 = token(&path[9]);
         fcb_t *parent_dir = &(reco->FMv2_mem[pos_dir1][16][16]);
@@ -165,10 +218,11 @@ fcb_t *fm_creat(FMv2_record *reco, int8_t name[8], uint8_t path[27], uint32_t si
     // 4. 새 파일/디렉토리 메타데이터 주입
     for (int i = 0; i < MAX_FILE_NAME; i++)
     {
-        new_file->alias[i] = name[i];
+        new_file->alias[i] = path[i];
     }
 
     new_file->is_dir = ok_dir;
+    new_file->is_alloc = 1;
     new_file->depth = new_depth;
     new_file->lens = size >> 10; // KB 단위
     new_file->last_addr = 0;     // 새 디렉토리라면 자식 주소 0으로 초기화
@@ -180,14 +234,146 @@ fcb_t *fm_creat(FMv2_record *reco, int8_t name[8], uint8_t path[27], uint32_t si
     new_file->pdir_addr = mid_addr;
     new_file->me_addr = bot_addr;
 
+    puts("checking path\n");
+
     reco->all_num += 1;
 
     return new_file; // 포인터 반환
 }
 
+fcb_t *fm_find(FMv2_record *reco, int8_t path[27])
+{
+    int8_t normalized_path[27];
+    uint16_t target_token;
+
+    fm_normalize_path(path, normalized_path);
+    path = normalized_path;
+
+    if (path[8] == 0x20)
+    {
+        target_token = token(&path[0]);
+        for (int i = 0; i < 16; i++)
+        {
+            if (reco->mapping[i][16][16] == target_token)
+            {
+                return &(reco->FMv2_mem[i][16][16]);
+            }
+        }
+    }
+    else if (path[8] != 0x20 && path[17] == 0x20)
+    {
+        uint8_t pos_dir1 = token(&path[0]);
+        target_token = token(&path[9]);
+
+        for (int i = 0; i < 16; i++)
+        {
+            if (reco->mapping[pos_dir1][i][16] == target_token)
+            {
+                return &(reco->FMv2_mem[pos_dir1][i][16]);
+            }
+        }
+    }
+    else if (path[17] != 0x20)
+    {
+        uint8_t pos_dir1 = token(&path[0]);
+        uint8_t pos_dir2 = token(&path[9]);
+        target_token = token(&path[18]);
+
+        for (int i = 0; i < 16; i++)
+        {
+            if (reco->mapping[pos_dir1][pos_dir2][i] == target_token)
+            {
+                return &(reco->FMv2_mem[pos_dir1][pos_dir2][i]);
+            }
+        }
+    }
+
+    return 0;
+}
+
+void *fm_data_addr(FMv2_record *reco, fcb_t *file)
+{
+    uint64_t base = (uint64_t)reco->base;
+    uint64_t slot = (uint64_t)fm_slot_index(file);
+    return (void *)(base + (slot * MAX_FILE_SIZE));
+}
+
+uint32_t fm_write(FMv2_record *reco, int8_t path[27], void *buf, uint32_t size, uint32_t offset)
+{
+    puts("b");
+    fcb_t *file = fm_find(reco, path);
+    uint32_t file_size;
+
+    if (file == 0 || file->is_dir)
+    {
+        return 0;
+    }
+
+    file_size = (uint32_t)file->lens << 10;
+    if (offset >= file_size)
+    {
+        return 0;
+    }
+
+    if (size > (file_size - offset))
+    {
+        size = file_size - offset;
+    }
+
+    fm_memcpy((uint8_t *)fm_data_addr(reco, file) + offset, (uint8_t *)buf, size);
+    return size;
+}
+
+pcb_t *fm_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
+{
+    fcb_t *file = fm_find(reco, path);
+    fm_exec_hdr_t *hdr;
+
+    if (file == 0 || file->is_dir)
+    {
+        return 0;
+    }
+
+    hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
+    if (hdr->magic != FM_EXEC_MAGIC)
+    {
+        return 0;
+    }
+
+    if (hdr->mode == FM_EXEC_MODE_DIRECT)
+    {
+        return creat_proc_entry(obj, hdr->entry, parid);
+    }
+
+    if (hdr->mode == FM_EXEC_MODE_IMAGE)
+    {
+        pcb_t *proc = creat_proc_entry(obj, 0, parid);
+        uint64_t real_addr;
+        uint64_t entry_addr;
+        uint64_t *reg_val;
+
+        if (proc == 0)
+        {
+            return 0;
+        }
+
+        real_addr = mm_find(&mm_stack, proc->mm_addr, 0);
+        fm_memcpy((uint8_t *)real_addr, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size);
+
+        entry_addr = real_addr + hdr->entry;
+        proc->pc = entry_addr;
+        reg_val = (uint64_t *)proc->sp;
+        reg_val[32] = entry_addr;
+        return proc;
+    }
+
+    return 0;
+}
+
 // 파일 삭제
 // 주어진 경로의 파일을 삭제
 // 파일이 디렉토리인 경우 자식 파일이 없을 때만 삭제 가능
+// ! 수정하기
 fcb_t *fm_delete(FMv2_record *reco, int8_t path[27])
 {
     // 경로 유효성 검사
@@ -259,7 +445,7 @@ fcb_t *fm_delete(FMv2_record *reco, int8_t path[27])
     // 디렉토리인 경우 자식 파일이 있는지 확인
     if (target_file->is_dir && target_file->last_addr > 0)
     {
-        return 2; // 디렉토리에 파일이 있음 (삭제 불가)
+        return 0; // 디렉토리에 파일이 있음 (삭제 불가)
     }
 
     // 파일/디렉토리 삭제
@@ -320,7 +506,7 @@ void fm_list(FMv2_record *reco, int8_t path[27])
                 {
                     if (current_file->alias[j] != 0x00 && current_file->alias[j] != 0x20)
                     {
-                        puts(current_file->alias[j]); // %c 대신 문자 출력 함수 사용
+                        putchar(current_file->alias[j]); // %c 대신 문자 출력 함수 사용
                     }
                 }
 
@@ -367,7 +553,7 @@ void fm_list(FMv2_record *reco, int8_t path[27])
                 {
                     if (current_file->alias[j] != 0x00 && current_file->alias[j] != 0x20)
                     {
-                        puts(current_file->alias[j]); // %c 대신 문자 출력 함수 사용
+                        putchar(current_file->alias[j]); // %c 대신 문자 출력 함수 사용
                     }
                 }
 
@@ -415,7 +601,7 @@ void fm_list(FMv2_record *reco, int8_t path[27])
                 {
                     if (current_file->alias[j] != 0x00 && current_file->alias[j] != 0x20)
                     {
-                        puts(current_file->alias[j]); // %c 대신 문자 출력 함수 사용
+                        putchar(current_file->alias[j]); // %c 대신 문자 출력 함수 사용
                     }
                 }
 
@@ -530,6 +716,38 @@ void fm_execute(FMv2_record *reco)
 */
 bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
 {
+    puts("entering fm_check\n");
+
+    // 경로길이가 짧으면 늘려주는 함수
+    // 얼마나 짧은지 확인
+    // 확인 후 구분자 및 널 문자를 넣어줌
+    uint8_t i = 0;
+
+    // 문자열 끝 찾기
+    while (i < 26 && path[i] != '\0')
+    {
+        i++;
+    }
+
+    // 끝까지 공백 채우기
+    while (i < 26)
+    {
+        path[i++] = 0x20;
+    }
+
+    // 마지막 널 문자
+    path[26] = '\0';
+    // while 문으로 길이를 확인
+    for (int i = 0; i < 27; i++)
+    {
+        // 다음 문자가 널 문자면
+        if (path[i] == "\0")
+        {
+            // 늘려주고
+            break;
+        }
+    }
+
     // 경로 유호성 검사
     if (cmd == 0)
     {
@@ -538,10 +756,12 @@ bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
         // 1. 구문자 및 널 문자 고정 위치 검사
         if (path[8] != '/' || path[17] != '/' || path[26] != '\0')
         {
+            puts("spe\n");
             return FALSE;
         }
         if (path[22] != '.')
         {
+            puts("rty\n");
             return FALSE; // 파일명 영역의 '.' 위치 고정
         }
         // 2. 이중 루프로 각 마디(8글자씩) 검사
@@ -572,6 +792,7 @@ bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
                     if (space_started)
                     {
                         is_ok = FALSE;
+                        puts("q\n");
                         break;
                     }
                     // ! 특수 문자 로직 넣는 자리
@@ -580,9 +801,11 @@ bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
             }
             if (!is_ok)
             {
+                puts("w\n");
                 break;
             }
         }
+        puts("e\n");
         return is_ok;
     }
     // 디랙토리에 중복 있는지 검사
