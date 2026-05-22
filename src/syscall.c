@@ -46,6 +46,7 @@ void handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t
                 new_context(next->sp);
             }
 
+            // 대기 함수 이거 나중에 바꿔야지
             while (1)
                 ;
         }
