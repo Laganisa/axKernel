@@ -31,6 +31,7 @@
 
 #define ALIGN_16(addr) (((addr) + 15) & ~15)
 
+#pragma region KERNEL
 // 커널의 메모리 정하기
 #define KERNEL_TEXT_START 0x40000000
 #define KERNEL_TEXT KERNEL_TEXT_START
@@ -61,13 +62,19 @@
 #define KERNEL_BSS_START KERNEL_DATA_END
 #define KERNEL_BSS_END KERNEL_BSS_START
 
-#define KERNEL_HEAP_START KERNEL_BSS_END
-#define KERNEL_STACK_START
+#define KERNEL_STACK_START KERNEL_BSS_END
+#define KERNEL_STACK_END KERNEL_STACK_START + 0x10000 // 64KB 스택
 
-#define USER_PROC_START KERNEL_STACK_START
-#define USER_PROC_END
+#pragma endregion
+
+#pragma region USER
+
+#define USER_PROC_START KERNEL_STACK_END
+#define USER_PROC_END USER_PROC_START + 0x10000000 // 256MB 프로세스 공간
 
 #define USER_FILE_START USER_PROC_END
-#define USRT_FILE_END
+#define USER_FILE_END USER_FILE_START + 0x88755000 // 2184MB 파일 공간
+
+#pragma endregion
 
 #endif

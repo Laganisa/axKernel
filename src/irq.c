@@ -148,7 +148,7 @@ void init_gic()
 void init_irq()
 {
 
-    // 1. 벡터 테이블 등록 (CPU에게 어디로 점프할지 알려줌)
+    // 벡터 테이블 등록
     init_vectors();
 
     // VBAR 확인
@@ -158,19 +158,19 @@ void init_irq()
     // put_hex(vbar);
     // puts("\n");
 
-    // 2. GIC 초기화 (하드웨어 인터럽트 관리자 설정)
+    // GIC 초기화
     init_gic();
 
-    // 3. 타이머 설정 (주기적으로 인터럽트를 발생시킴)
+    // 타이머 설정
     init_timer();
 
     // CPU의 인터럽트를 허용
     asm volatile("msr daifclr, #2");
     // puts("[IRQ] DAIF IRQ unmasked\n");
 
-    // 소프트웨어에서 강제로 인터럽트 발생 (타이머 대신)
+    // 소프트웨어에서 강제로 인터럽트 발생
     // puts("[TEST] Forcing software interrupt...\n");
-    asm volatile("msr daifset, #2"); // 잠시 IRQ 마스크
+    // asm volatile("msr daifset, #2"); // 잠시 IRQ 마스크
 
     // SGI (Software Generated Interrupt) 발생
     *(volatile uint32_t *)(GIC_DIST_BASE + 0xF00) = 0x8000 | 0; // GICD_SGIR

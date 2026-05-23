@@ -172,7 +172,7 @@ curr_el_spx_irq:
     ldp x0, x1, [sp, #0]
 
     // add sp, sp, #272
-    add sp, sp, #256
+    add sp, sp, #272
     eret
 
 new_context:

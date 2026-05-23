@@ -11,12 +11,11 @@ _proc:
     // 2. SP (reg_val[31]) to SP_EL0
     // 프로세스가 사용할 전용 스택 포인터
     ldr x1, [x0, #(31 * 8)]
-    msr sp_el0, x1
+    mov sp, x1
 
-    // 3. SPSR_EL1 (Processor State) 설정
-    // 프로세스가 어떤 모드에서 실행되는지
-    // 0x5 : 커널모드
-    mov x1, #0x005
+    // 3. SPSR_EL1 (Processor State) 복원
+    // reg_val[33]에 저장된 모드 값을 사용한다.
+    ldr x1, [x0, #(33 * 8)]
     msr spsr_el1, x1
 
     // 4. 일반 목적 레지스터 복원 (x1 ~ x30)
@@ -37,8 +36,6 @@ _proc:
     ldp x29, x30, [x0, #(29 * 8)]
 
     ldr x0, [x0]
-    
-    msr daifclr, #2
 
     // CPU가 ELR_EL1에 적힌 주소로 이동
     eret

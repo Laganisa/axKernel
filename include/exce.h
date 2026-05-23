@@ -25,5 +25,6 @@ void lower_el_aarch32_serror(void);
 
 extern pcb_t *current_proc;
 extern pcb_t **get_current_proc_addr(void);
+void new_context(uint64_t sp);
 
 #endif

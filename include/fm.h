@@ -1,5 +1,6 @@
 #include "../include/defs.h"
 #include "../include/types.h"
+#include "../include/pm.h"
 #include "../include/sect.h"
 
 #ifndef __FM_H__
@@ -61,13 +62,29 @@ typedef struct FMv2_record
     int8_t First[MAX_FCB_dir + 1][MAX_FCB_file + 1][MAX_FCB_file + 1];
 } FMv2_record;
 
+typedef struct fm_exec_hdr_t
+{
+    uint64_t magic;
+    uint64_t mode;
+    uint64_t entry;
+    uint64_t image_size;
+} fm_exec_hdr_t;
+
+#define FM_EXEC_MAGIC 0x4D594F535441534BULL
+#define FM_EXEC_MODE_DIRECT 0ULL
+#define FM_EXEC_MODE_IMAGE 1ULL
+
 #define fm_record ((FMv2_record *)FM_ADDR_START)
 
 void fm_init(uint64_t *addr);
 bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27]);
-fcb_t *fm_create(FMv2_record *reco, int8_t path[27], int8_t name[8], uint64_t size, bool ok_dir);
+fcb_t *fm_create(FMv2_record *reco, int8_t path[27], uint32_t size, uint8_t ok_dir);
 fcb_t *fm_delete(FMv2_record *reco, int8_t path[27]);
+fcb_t *fm_find(FMv2_record *reco, int8_t path[27]);
+void *fm_data_addr(FMv2_record *reco, fcb_t *file);
+uint32_t fm_write(FMv2_record *reco, int8_t path[27], void *buf, uint32_t size, uint32_t offset);
 void fm_list(FMv2_record *reco, int8_t path[27]);
+pcb_t *fm_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid);
 void fm_execute(FMv2_record *reco);
 
 /*
