@@ -157,7 +157,7 @@ void main(void)
     // MM 메타데이터는 MM_ADDR_START에 두고, 실제 프로세스 메모리는 사용자 영역에서 시작한다.
     mm_init(&mm_stack, USER_PROC_START);
     // pm_init(&pm_object, PM_ADDR_START);
-    fm_init(USER_FILE_START);
+    fm_init((uint64_t *)USER_FILE_START);
     // 인터럽트/타이머 초기화
 
     FMv2_record *reco = (FMv2_record *)FM_ADDR_START;
@@ -220,7 +220,7 @@ void main(void)
 
     puts("\n---------------------------\n");
     put_hex(sizeof(PMv1_object));
-    puts("myOS kernel\n");                 // 부팅 메시지
+    puts("axOS kernel\n");                 // 부팅 메시지
     puts("'help' : list commands\n");      // 사용 가능한 명령어 확인
     puts("'end'  : exit\n");               // 시스템 나가기
     puts("Welcome! Have a great time.\n"); // 환영 메시지

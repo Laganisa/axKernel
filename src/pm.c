@@ -170,7 +170,7 @@ pcb_t *pm_run(PMv1_object *obj)
         puts("\nNext Proc ID: ");
         put_hex(data);
         puts("\nNext Proc ADDR: ");
-        put_hex(&current_proc);
+        put_hex((uint64_t)current_proc);
 
         if (data >= PMV1_MAX_PROC)
             return &obj->PMv1_mem[0];

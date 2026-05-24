@@ -741,7 +741,7 @@ bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
     for (int i = 0; i < 27; i++)
     {
         // 다음 문자가 널 문자면
-        if (path[i] == "\0")
+        if (path[i] == '\0')
         {
             // 늘려주고
             break;

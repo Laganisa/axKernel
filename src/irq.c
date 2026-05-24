@@ -40,7 +40,7 @@ uint64_t irq_handler_main(pcb_t *proc, uint64_t current_sp)
         asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
 
         pcb_t *next = pm_run(&pm_object);
-        if (next == PROC_SIGNAL)
+        if (next == (pcb_t *)PROC_SIGNAL)
         {
             pm_awake(&pm_object, 0, proc); // 현재 proc를 넣고
             mm_free(&mm_stack, &mm_substack, proc->mm_addr);
