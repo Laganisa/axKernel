@@ -3,8 +3,8 @@ LD      = aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 
 # 리포지토리 경로 정의
-LIB_DIR   = ../myLib
-SHELL_DIR = ../myShell
+LIB_DIR   = usr/axLib
+SHELL_DIR = usr/axShell
 
 CFLAGS  = -mcpu=cortex-a72 -ffreestanding -nostdlib -nostdinc -O0 -g -Iinclude
 LDFLAGS = -T linker.ld --gc-sections
