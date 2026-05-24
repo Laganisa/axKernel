@@ -21,6 +21,11 @@ extern void _proc(uint64_t *reg_val);
 extern void vector_table(void);
 // extern void irq_handler_main(void);
 
+// 쉘 코드
+
+extern uint8_t _shell_binary_start[];
+extern uint8_t _shell_binary_size[];
+
 volatile uint8_t resched_flag = 0;
 int current_task_id = 0; // 반드시 함수 밖(Global)에 있어야 함
 
@@ -57,6 +62,7 @@ void INIT(void)
 {
     asm volatile("msr daifclr, #2");
 
+    /*
     while (1)
     {
         int8_t cmd[64];
@@ -81,6 +87,7 @@ void INIT(void)
     }
 
     puts("Goodbye, see you next time."); // 종료 메시지
+    */
 }
 
 /*
@@ -218,10 +225,12 @@ void main(void)
     puts("'end'  : exit\n");               // 시스템 나가기
     puts("Welcome! Have a great time.\n"); // 환영 메시지
 
-    pcb_t *proc0 = creat_proc(&pm_object, &INIT, 0);
+    uint64_t shell_addr = (uint64_t)_shell_binary_start;
+    pcb_t *proc0 = creat_proc(&pm_object, &shell_addr, 0);
     pcb_t *proc1 = fm_exec_file(reco, &pm_object, task_a_path, 0);
     pcb_t *proc2 = fm_exec_file(reco, &pm_object, task_b_path, 0);
 
+    /*
     if (proc0 == 0 || proc1 == 0 || proc2 == 0)
     {
         puts("proc create failed\n");
@@ -234,10 +243,10 @@ void main(void)
         while (1)
             ;
     }
-
+    */
     current_proc = proc1;
 
-    put_hex(proc0->id);
+    // put_hex(proc0->id);
     put_hex(proc1->id);
     put_hex(proc2->id);
 

@@ -1,0 +1,6 @@
+[submodule "usr/axLib"]
+	path = usr/axLib
+	url = https://github.com/Laganisa/axLib.git
+[submodule "usr/axShell"]
+	path = usr/axShell
+	url = https://github.com/Laganisa/axShell.git

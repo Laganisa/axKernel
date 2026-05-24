@@ -1,6 +1,3 @@
-# 검증 필요
-# aarch64 OS 커널 빌드 설정
-
 CC      = aarch64-linux-gnu-gcc
 LD      = aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
@@ -23,7 +20,9 @@ OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(filter src/%.c, $(SRCS))) \
 
 .PHONY: all clean user_modules
 
-all: user_modules $(KERNEL).img
+# kernel8.img를 만들기 전에 user_modules가 '무조건' 먼저 완료되도록 보장
+all: user_modules
+	@$(MAKE) $(KERNEL).img --no-print-directory
 
 # 1. 외부 유저 공간 빌드 및 바이너리 땡겨오기
 user_modules:
@@ -35,14 +34,14 @@ user_modules:
 $(BUILD_DIR):
 	@mkdir -p $@
 
-# 2. 컴파일 규칙 (패턴 매칭 하나로 통일)
+# 2. 컴파일 규칙 (init/%.S 에서 init/SHELL.BIN 의존성 제거)
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: boot/%.S | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/%.o: init/%.S init/SHELL.BIN | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: init/%.S | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # 3. 링킹 및 이미지 추출
@@ -51,6 +50,10 @@ $(KERNEL).elf: $(OBJS)
 
 $(KERNEL).img: $(KERNEL).elf
 	$(OBJCOPY) $< -O binary $@
+	@echo "---------------------------------------"
+	@echo "axKernel Build"
+	@echo "---------------------------------------"
+
 
 clean:
 	rm -rf $(BUILD_DIR) init/SHELL.BIN
