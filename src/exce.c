@@ -32,6 +32,7 @@ void curr_el_sp0_serror()
 // EL1, SPx 예외 정상 작동중
 void curr_el_spx_sync()
 {
+    puts("curr_el");
     uint64_t esr;
     uint64_t syscall_num;
     uint64_t arg1;

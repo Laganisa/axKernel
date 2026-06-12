@@ -4,7 +4,7 @@
 #define __DM_H__
 
 // 드라이버 구조체
-typedef struct
+typedef struct Driver
 {
     char *name;              // 드라이버 이름
     int (*init)(void);       // 초기화 함수 포인터
