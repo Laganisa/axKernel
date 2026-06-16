@@ -70,7 +70,7 @@ typedef struct fm_exec_hdr_t
     uint64_t image_size;
 } fm_exec_hdr_t;
 
-#define FM_EXEC_MAGIC 0x4D594F535441534BULL
+#define FM_EXEC_MAGIC 0x415853504144453BULL // "AXSPADE;"라는 매직넘버
 #define FM_EXEC_MODE_DIRECT 0ULL
 #define FM_EXEC_MODE_IMAGE 1ULL
 
@@ -87,6 +87,8 @@ void fm_list(FMv2_record *reco, int8_t path[27]);
 pcb_t *fm_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid);
 void fm_execute(FMv2_record *reco);
 
+// 축약 함수
+// pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point);
 /*
 fcb_t *fm_delete(FMv2_record *reco, uint8_t path[26]);
 fcb_t *fm_find_path(FMv2_record *reco, uint8_t path[26]);

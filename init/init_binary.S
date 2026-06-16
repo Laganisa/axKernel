@@ -1,5 +1,4 @@
-// axOS_kernel/init/init_binary.S
-.section .rodata
+.section .rodata.shell, "a"
 .global _shell_binary_start
 .global _shell_binary_size
 

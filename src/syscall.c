@@ -4,13 +4,17 @@
 #include "../include/syscall.h"
 #include "../include/pm.h"
 
+#include "debug.h"
+
 // 여기도 수정해야함
 extern pcb_t *current_proc;
 extern pcb_t **get_current_proc_addr(void);
+extern void _proc(uint64_t *reg_val);
 
 // Simple syscall handler
-void handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
+uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
+
     switch (syscall_num)
     {
     case SYS_WRITE:
@@ -24,15 +28,16 @@ void handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t
                 putchar(((int8_t *)arg2)[i]);
             }
         }
-        break;
+        return arg3;
 
     case SYS_READ:
         // TODO: implement read
-        break;
+        return 0;
 
-    case SYS_EXIT:
+    case SYS_EXIT: // 나중에 시스템 콜 sys_exit로 바꾸기
         // arg1: exit code
         {
+
             pcb_t **current_proc_ptr = (pcb_t **)get_current_proc_addr();
             pcb_t *current = *current_proc_ptr;
             pcb_t *next;
@@ -43,7 +48,8 @@ void handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t
 
             if (next != 0)
             {
-                new_context(next->sp);
+                // 바꾸기
+                _proc((uint64_t *)next->sp);
             }
 
             // 대기 함수 이거 나중에 바꿔야지
@@ -56,6 +62,8 @@ void handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t
         puts("[Kernel] Unknown syscall: ");
         put_hex(syscall_num);
         puts("\n");
-        break;
+        return -1ULL;
     }
+
+    return 0;
 }

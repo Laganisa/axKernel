@@ -23,6 +23,9 @@ void lower_el_aarch32_irq(void);
 void lower_el_aarch32_fiq(void);
 void lower_el_aarch32_serror(void);
 
+// Data abort handler helper called from exception asm
+void handle_data_abort(uint64_t far, uint64_t elr, uint64_t esr);
+
 extern pcb_t *current_proc;
 extern pcb_t **get_current_proc_addr(void);
 void new_context(uint64_t sp);

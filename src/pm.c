@@ -6,6 +6,8 @@
 #include "../include/mm.h"
 #include "../include/pm.h"
 
+#include "debug.h"
+
 extern void _proc(uint64_t *reg_val); // proc와 연결
 
 /*
@@ -15,7 +17,6 @@ extern void _proc(uint64_t *reg_val); // proc와 연결
 pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 {
     // id 로직
-
     uint64_t target_chunk;
     uint64_t leading_zeros;
 
@@ -54,6 +55,7 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
     // 할당 후 주소를 줌
     // 자신의 주소를 알아내고
     uint64_t real_addr = mm_find(&mm_stack, obj->PMv1_mem[pid].mm_addr, 0);
+
     uint64_t *reg_val = (uint64_t *)(real_addr + (INITIAL_PROC_SIZE << 10) - 256);
     obj->PMv1_mem[pid].reg = (INITIAL_PROC_SIZE << 10) - 256; // 레지스터 위치
 
@@ -64,7 +66,18 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
         reg_val[i] = 0;              // x0~x30 초기화
     reg_val[31] = (uint64_t)reg_val; // SP 초기값
     reg_val[32] = entry;             // PC (ELR_EL1)
-    reg_val[33] = 0x3C5;             // SPSR_EL1
+
+    // SPSR_EL1: set appropriate return mode
+    // If entry==0 this is an IMAGE/user process (return to EL0), otherwise keep EL1 mode for kernel tasks
+    // 인셉션 레벨 분기
+    if (entry == 0)
+    {
+        reg_val[33] = 0x0; // return to EL0 (AArch64 lower EL)
+    }
+    else
+    {
+        reg_val[33] = 0x3C5; // EL1h for kernel-level tasks
+    }
 
     return &obj->PMv1_mem[pid];
 }
@@ -143,9 +156,6 @@ pcb_t *pm_run(PMv1_object *obj)
     {
         data = pm_high(obj, 1, 0);
 
-        puts("\nNext Proc ID: ");
-        put_hex(data);
-
         // 안전 체크
         if (data >= PMV1_MAX_PROC)
             return &obj->PMv1_mem[0];
@@ -165,12 +175,6 @@ pcb_t *pm_run(PMv1_object *obj)
     else if (obj->lownum != 0)
     {
         data = pm_low(obj, 1, 0);
-
-        // 다음 프로세스 확인
-        puts("\nNext Proc ID: ");
-        put_hex(data);
-        puts("\nNext Proc ADDR: ");
-        put_hex((uint64_t)current_proc);
 
         if (data >= PMV1_MAX_PROC)
             return &obj->PMv1_mem[0];
@@ -226,32 +230,21 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     {
         pm_low(&pm_object, 0, proc->id);
     }
-    // pm_run에서 삭제
     else
     {
-        puts("make zombie");
-        // 일단 비트를 수정하기
-        proc->proc_info = cmd;  // cmd 값에 따라 달라짐
-        proc->b_id = proc->id;  // 전 id를 id로 변경
-        proc->id = PROC_SIGNAL; // 시그널값으로 변경
+        // 프로세스를 종료 상태로 표시
+        proc->proc_info = cmd;
+        proc->b_id = proc->id; // 종료 시 원래 pid를 기록
+        // id는 유지해서 식별을 보존
 
         uint8_t *ptr = (uint8_t *)proc;
-        /*
-        puts("\n Raw PCB memory: ");
-        for (int i = 0; i < 16; i++)
-        {
-            put_hex(ptr[i]); // PCB 앞부분 16바이트를 1바이트씩 다 찍어봐
-        }
-        */
+
         // ! 프로세스가 차지한 공간을 가비지 컬랙터에게 줌
 
-        if (cmd == 1)
+        // 종료 상태인 프로세스는 스케줄러 대기 큐에 다시 넣지 않는다
+        if (cmd == 2)
         {
-            pm_low(&pm_object, 0, proc->id);
-        }
-        else if (cmd == 2)
-        {
-            //
+            // 추가 삭제/해제 로직이 필요하면 여기에 구현
         }
     }
 }

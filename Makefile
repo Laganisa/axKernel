@@ -2,7 +2,6 @@ CC      = aarch64-linux-gnu-gcc
 LD      = aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 
-# 리포지토리 경로 정의
 LIB_DIR   = usr/axLib
 SHELL_DIR = usr/axShell
 
@@ -20,21 +19,24 @@ OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(filter src/%.c, $(SRCS))) \
 
 .PHONY: all clean user_modules
 
-# kernel8.img를 만들기 전에 user_modules가 '무조건' 먼저 완료되도록 보장
-all: user_modules
-	@$(MAKE) $(KERNEL).img --no-print-directory
+# 빌드 순서 보장
+all: user_modules $(KERNEL).img
 
-# 1. 외부 유저 공간 빌드 및 바이너리 땡겨오기
+# 유저 공간 모듈 빌드
 user_modules:
-	@mkdir -p init
+	@echo "Building User Modules..."
+	@$(MAKE) -C $(LIB_DIR) clean --no-print-directory
 	@$(MAKE) -C $(LIB_DIR) --no-print-directory
+	@$(MAKE) -C $(SHELL_DIR) clean --no-print-directory
 	@$(MAKE) -C $(SHELL_DIR) --no-print-directory
-	@cp -f $(SHELL_DIR)/SHELL.BIN init/ 2>/dev/null || touch init/SHELL.BIN
+	@mkdir -p init
+	@cp -f $(SHELL_DIR)/SHELL.BIN init/
 
+# 빌드 디렉토리 생성
 $(BUILD_DIR):
 	@mkdir -p $@
 
-# 2. 컴파일 규칙 (init/%.S 에서 init/SHELL.BIN 의존성 제거)
+# 컴파일 규칙 (의존성 포함)
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -44,18 +46,21 @@ $(BUILD_DIR)/%.o: boot/%.S | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: init/%.S | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# 3. 링킹 및 이미지 추출
+# 링킹 및 이미지 추출
 $(KERNEL).elf: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
 
 $(KERNEL).img: $(KERNEL).elf
 	$(OBJCOPY) $< -O binary $@
 	@echo "---------------------------------------"
-	@echo "axKernel Build"
+	@echo "axKernel Build Success"
 	@echo "---------------------------------------"
-
 
 clean:
 	rm -rf $(BUILD_DIR) init/SHELL.BIN
+	find . -name "*.o" -type f -delete
+	find . -name "*.elf" -type f -delete
+	find . -name "*.bin" -type f -delete
+	find . -name "*.img" -type f -delete
 	@$(MAKE) -C $(LIB_DIR) clean --no-print-directory 2>/dev/null || true
 	@$(MAKE) -C $(SHELL_DIR) clean --no-print-directory 2>/dev/null || true

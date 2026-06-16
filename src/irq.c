@@ -8,6 +8,8 @@
 #include "../include/irq.h"
 // #include "../src/syscall.h"
 
+#include "debug.h"
+
 extern void vector_table(void);
 
 // extern volatile uint8_t resched_flag;
@@ -21,16 +23,9 @@ pcb_t **get_current_proc_addr()
 
 uint64_t irq_handler_main(pcb_t *proc, uint64_t current_sp)
 {
-    puts("\nirq_handler_main\n");
 
-    uint64_t elr, esr;
-    asm volatile("mrs %0, elr_el1" : "=r"(elr));
-    asm volatile("mrs %0, esr_el1" : "=r"(esr));
-
-    puts("IRQ. ELR: ");
-    put_hex(elr);
-    puts("ESR: ");
-    put_hex(esr);
+    // reg_elr_el1();
+    // reg_esr_el1();
 
     uint32_t iar = *(volatile uint32_t *)(GIC_CPU_BASE + 0x0C);
     uint32_t irq_nr = iar & 0x3FF;
@@ -67,8 +62,7 @@ uint64_t irq_handler_main(pcb_t *proc, uint64_t current_sp)
 // 이거 왜 있음?
 void handle_timer_tick()
 {
-    puts("!\n");
-
+    log("!\n");
     // 여기서 나중에 스케줄러를 호출해서 current_pcb_addr를 task_B로 바꾸자
 }
 
@@ -84,8 +78,7 @@ void init_vectors()
     asm volatile("mrs %0, vbar_el1" : "=r"(check));
 }
 
-// 바꾸기
-
+// 디버그 바꾸기
 void init_timer()
 {
     uint32_t freq;
@@ -109,7 +102,7 @@ void init_gic()
     *(volatile uint32_t *)(GIC_DIST_BASE + 0x080) = 0x00000000;
 
     // 모든 PPI 인터럽트의 우선순위 설정
-    // 각 인터럽트당 1 바이트 (4비트 유효)
+    // 각 인터럽트당 1 바이트
     for (int i = 16; i < 32; i++)
     {
         *(volatile uint8_t *)((uintptr_t)GIC_DIST_BASE + 0x400 + i) = 0x80;
@@ -133,7 +126,7 @@ void init_gic()
     // 4. distributor enable
     *(volatile uint32_t *)(GIC_DIST_BASE + 0x000) = 1;
 
-    // 5. CPU interface enable (한 번만!)
+    // 5. CPU interface enable
     *(volatile uint32_t *)(GIC_CPU_BASE + 0x000) = 1;
     asm volatile("dsb sy");
     asm volatile("isb");
@@ -152,11 +145,7 @@ void init_irq()
     init_vectors();
 
     // VBAR 확인
-    uint64_t vbar;
-    asm volatile("mrs %0, vbar_el1" : "=r"(vbar));
-    // puts("[IRQ] VBAR_EL1: ");
-    // put_hex(vbar);
-    // puts("\n");
+    // reg_vbar();
 
     // GIC 초기화
     init_gic();

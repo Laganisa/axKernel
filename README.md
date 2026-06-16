@@ -1,10 +1,12 @@
 # axOS
 
-실험용 toyKERNEL
+공부 및 실험용 toyKERNEL
 
 ## 소개
 
 종류 : 마이크로커널
+목적 기기 : QEMU 가상머신
+목적 아키텍처 : AArch64 기반의 CPU
 
 ## 실행법
 

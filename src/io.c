@@ -12,6 +12,8 @@ void uart_init(void)
     // 아무것도 안 해도 됨
 }
 
+#pragma region string
+
 void putchar(int8_t c)
 {
     // UART_FR 5번 비트: TXFF (보낼 데이터 칸이 꽉 찼는지 확인)
@@ -78,18 +80,6 @@ void gets(int8_t *s, int32_t max_len)
     s[i] = '\0';
 }
 
-// PCB-related 전역 변수
-// ! 이거 왜 있음??????
-void *current_pcb_addr = 0;
-
-// 클리어
-void clear()
-{
-    // \033[2J : 화면 전체 삭제
-    // \033[H  : 커서를 홈(0,0)으로 이동
-    puts("\033[2J\033[H");
-}
-
 // 부호 없는 64비트를 십진수로
 void put_uint(uint64_t n)
 {
@@ -109,17 +99,6 @@ void put_uint(uint64_t n)
     puts(&buf[i + 1]);
 }
 
-// 문자 비교 함수
-int32_t strcmp(const int8_t *s1, const int8_t *s2)
-{
-    while (*s1 && (*s1 == *s2))
-    {
-        s1++;
-        s2++;
-    }
-    return *(uint8_t *)s1 - *(uint8_t *)s2;
-}
-
 // 16진수 출력 함수
 void put_hex(uint64_t d)
 {
@@ -132,12 +111,74 @@ void put_hex(uint64_t d)
     puts("\n");
 }
 
+// 문자 비교 함수
+int32_t strcmp(const int8_t *s1, const int8_t *s2)
+{
+    while (*s1 && (*s1 == *s2))
+    {
+        s1++;
+        s2++;
+    }
+    return *(uint8_t *)s1 - *(uint8_t *)s2;
+}
+
+// 제거 가능한 입력
+void remo_get(int8_t *s, int32_t max_len)
+{
+    int32_t i = 0;
+    while (i < max_len - 1)
+    {
+        int8_t c = getchar();
+
+        // 1. 엔터: 입력 완료 시점
+        if (c == '\r' || c == '\n')
+        {
+            putchar('\n');
+            break;
+        }
+
+        // 2. 백스페이스(0x08) 및 DEL(0x7F): 제거(Remove) 로직
+        else if (c == '\b' || c == 0x7F)
+        {
+            if (i > 0) // 프롬프트 가드 (방화벽 역할)
+            {
+                i--;           // 인덱스 뒤로
+                s[i] = '\0';   // 버퍼에서 제거
+                puts("\b \b"); // 화면에서 한 글자 지우기
+            }
+        }
+
+        // 3. 일반 문자: 버퍼 추가 및 에코(Echo)
+        else if (c >= 32 && c < 127)
+        {
+            s[i++] = c; // 버퍼에 저장
+            putchar(c); // 화면에 출력
+        }
+    }
+    s[i] = '\0'; // 최종 문자열 마무리
+}
+
+#pragma endregion
+
+// PCB-related 전역 변수
+// ! 이거 왜 있음 ??????
+void *current_pcb_addr = 0;
+
+// 클리어
+void clear()
+{
+    // \033[2J : 화면 전체 삭제
+    // \033[H  : 커서를 홈(0,0)으로 이동
+    puts("\033[2J\033[H");
+}
+
 // 어떤 함수가 있는지 알려주는 함수
 void knowcmd(void)
 {
 }
 
 // 쉘 실행 코드
+// shell로 옮기기
 void shell_run(int8_t *cmd)
 {
     // 예시: 개행 문자 제거
@@ -178,40 +219,4 @@ void shell_run(int8_t *cmd)
     }
 
     puts("\n"); // 개행
-}
-
-// 제거 가능한 입력
-void remo_get(int8_t *s, int32_t max_len)
-{
-    int32_t i = 0;
-    while (i < max_len - 1)
-    {
-        int8_t c = getchar();
-
-        // 1. 엔터: 입력 완료 시점
-        if (c == '\r' || c == '\n')
-        {
-            putchar('\n');
-            break;
-        }
-
-        // 2. 백스페이스(0x08) 및 DEL(0x7F): 제거(Remove) 로직
-        else if (c == '\b' || c == 0x7F)
-        {
-            if (i > 0) // 프롬프트 가드 (방화벽 역할)
-            {
-                i--;           // 인덱스 뒤로
-                s[i] = '\0';   // 버퍼에서 제거
-                puts("\b \b"); // 화면에서 한 글자 지우기
-            }
-        }
-
-        // 3. 일반 문자: 버퍼 추가 및 에코(Echo)
-        else if (c >= 32 && c < 127)
-        {
-            s[i++] = c; // 버퍼에 저장
-            putchar(c); // 화면에 출력
-        }
-    }
-    s[i] = '\0'; // 최종 문자열 마무리
 }
