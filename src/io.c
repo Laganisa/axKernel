@@ -1,9 +1,9 @@
-#include "../include/types.h"
-#include "../include/defs.h"
+// #include "../include/types.h"
+// #include "../include/defs.h"
 #include "../include/exce.h"
 #include "../include/fm.h"
-#include "../include/pm.h"
-#include "../include/sect.h"
+// #include "../include/pm.h"
+// #include "../include/sect.h"
 
 // UART 초기화
 void uart_init(void)
@@ -109,6 +109,15 @@ void put_hex(uint64_t d)
         putchar(hex[(d >> i) & 0xF]);
     }
     puts("\n");
+}
+
+void uart_flush(void)
+{
+    // UART_FR 레지스터 4번 비트(RX FIFO empty)가 0(데이터 있음)인 동안 계속 읽음
+    while (!(*UART0_FR & (1 << 4)))
+    {
+        (void)*UART0_DR; // 데이터 읽어서 버림
+    }
 }
 
 // 문자 비교 함수

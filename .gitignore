@@ -12,7 +12,7 @@ build/
 *.bin
 *.map
 
-# IDE/에디터 개인 설정
+# 에디터 개인 설정
 .vscode/
 .idea/
 *.swp

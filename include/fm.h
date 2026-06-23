@@ -1,5 +1,5 @@
-#include "../include/defs.h"
-#include "../include/types.h"
+// #include "../include/defs.h"
+// #include "../include/types.h"
 #include "../include/pm.h"
 #include "../include/sect.h"
 
@@ -87,8 +87,6 @@ void fm_list(FMv2_record *reco, int8_t path[27]);
 pcb_t *fm_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid);
 void fm_execute(FMv2_record *reco);
 
-// 축약 함수
-// pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point);
 /*
 fcb_t *fm_delete(FMv2_record *reco, uint8_t path[26]);
 fcb_t *fm_find_path(FMv2_record *reco, uint8_t path[26]);

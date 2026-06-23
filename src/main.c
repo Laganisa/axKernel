@@ -31,73 +31,7 @@ int current_task_id = 0; // 반드시 함수 밖(Global)에 있어야 함
 
 #include "meta.h"
 #include "debug.h"
-
-void task_B1()
-{
-
-    asm volatile("msr daifclr, #2");
-
-    while (1)
-    {
-        puts("B");
-        for (volatile int i = 0; i < 1000000; i++)
-            ;
-    }
-}
-
-/*
-    pid 0 : 루트 프로세스
-    pid 1 의 부모
-*/
-void ROOT(void)
-{
-    // 루트 프로세스
-}
-
-/*
-    pid 1 :init 프로세스
-    데몬들의 부모이자 모든 프로세스의 부모
-*/
-void INIT(void)
-{
-    asm volatile("msr daifclr, #2");
-}
-
-void task_A()
-{
-    asm volatile("msr daifclr, #2");
-
-    while (1)
-    {
-        puts("A");
-        for (volatile int i = 0; i < 1000000; i++)
-            ;
-    }
-}
-
-void task_B()
-{
-    // puts("[TASK CHECK]");
-    // put_hex(current_proc->id);
-
-    asm volatile("msr daifclr, #2");
-    int i = 10;
-    while (i > 0)
-    {
-        puts("B");
-        i--;
-    }
-
-    asm volatile(
-        "mov x8, #1\n"
-        "svc #0\n" ::: "x8" // x8 레지스터를 사용한다고 컴파일러에게 알림
-    );
-
-    while (1)
-    {
-        puts("Error: Task B should be dead!\n");
-    }
-}
+#include "in_proc.h"
 
 // 커널 함수
 void main(void)
@@ -128,20 +62,15 @@ void main(void)
 #pragma endregion
 
     // 파일로 실행해보기
-
-    pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_A, 0);
-
-    pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_B, 0);
-
-    pcb_t *proc3 = proc_turn(reco, "TC.BIN", _shell_binary_start, 1);
-
-    // full_stop();
+    pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_inf_A, 0);
+    pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_stop_B, 0);
+    pcb_t *shell = proc_turn(reco, "SHEL.BIN", _shell_binary_start, 1);
 
 #pragma region proc_change
 
     // 깨우기
     pm_awake(&pm_object, 0, proc2);
-    pm_awake(&pm_object, 0, proc3);
+    pm_awake(&pm_object, 0, shell);
 
     init_irq();
 

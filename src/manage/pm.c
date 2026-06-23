@@ -1,10 +1,10 @@
-#include "../include/types.h"
-#include "../include/defs.h"
+// #include "../include/types.h"
+// #include "../include/defs.h"
 #include "../include/io.h"
 #include "../include/exce.h"
 
 #include "../include/mm.h"
-#include "../include/pm.h"
+// #include "../include/pm.h"
 
 #include "debug.h"
 
@@ -41,7 +41,7 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
         obj->proc_comocc |= (1 << (3 - obj->occ_num));
     }
 
-    pid = 63 - pid;
+    pid = 64 - pid;
 
     obj->PMv1_mem[pid].id = pid;      // 프로세스의 id를 할당된 pid로 변경
     obj->PMv1_mem[pid].b_id = pid;    // 죽을때 쓸 id를 저장
@@ -56,8 +56,8 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
     // 자신의 주소를 알아내고
     uint64_t real_addr = mm_find(&mm_stack, obj->PMv1_mem[pid].mm_addr, 0);
 
-    uint64_t *reg_val = (uint64_t *)(real_addr + (INITIAL_PROC_SIZE << 10) - 256);
-    obj->PMv1_mem[pid].reg = (INITIAL_PROC_SIZE << 10) - 256; // 레지스터 위치
+    uint64_t *reg_val = (uint64_t *)(real_addr + (INITIAL_PROC_SIZE << 10) - 272);
+    obj->PMv1_mem[pid].reg = (INITIAL_PROC_SIZE << 10) - 272; // 레지스터 위치
 
     obj->PMv1_mem[pid].pc = entry;
     obj->PMv1_mem[pid].sp = (uint64_t)reg_val;
@@ -69,7 +69,7 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 
     // SPSR_EL1: set appropriate return mode
     // If entry==0 this is an IMAGE/user process (return to EL0), otherwise keep EL1 mode for kernel tasks
-    // 인셉션 레벨 분기
+    // 인셉션 레벨 분기`
     if (entry == 0)
     {
         reg_val[33] = 0x0; // return to EL0 (AArch64 lower EL)
@@ -90,8 +90,6 @@ pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
 /* 주소를 주면 변환해서 내주는 코드
     주소 -> 실제 주소
     pid
-    type = 0 : low q로직
-    type = 1 : high q로직
     cmd = 0 : 넣기
     cmd = 1 : 빼기
 */
@@ -158,17 +156,22 @@ pcb_t *pm_run(PMv1_object *obj)
 
         // 안전 체크
         if (data >= PMV1_MAX_PROC)
-            return &obj->PMv1_mem[0];
+            return &obj->PMv1_mem[INIT_PROC_SECT];
 
         if (data == 0)
-            return &obj->PMv1_mem[0];
+            return &obj->PMv1_mem[INIT_PROC_SECT];
 
-        if (data == PROC_SIGNAL)
+        // 프로세스 좀비
+        if (data == PROC_ZOMB)
         {
-            // ! signal 처리
-            return &obj->PMv1_mem[0];
+            // ! 좀비 처리
+            // ! 그냥 init에 붙여두고 정리하면 될듯
+            return &obj->PMv1_mem[INIT_PROC_SECT];
         }
-
+        // 프로세스 대기
+        if (data == PROC_DORM)
+        {
+        }
         return &obj->PMv1_mem[data];
     }
 
@@ -177,14 +180,14 @@ pcb_t *pm_run(PMv1_object *obj)
         data = pm_low(obj, 1, 0);
 
         if (data >= PMV1_MAX_PROC)
-            return &obj->PMv1_mem[0];
+            return &obj->PMv1_mem[INIT_PROC_SECT];
 
         if (data == 0)
-            return &obj->PMv1_mem[0];
+            return &obj->PMv1_mem[INIT_PROC_SECT];
 
         return &obj->PMv1_mem[data];
     }
-    return &obj->PMv1_mem[0];
+    return &obj->PMv1_mem[INIT_PROC_SECT];
 }
 
 /*
@@ -233,7 +236,7 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     else
     {
         // 프로세스를 종료 상태로 표시
-        proc->proc_info = cmd;
+        proc->state = PROC_ZOMB;
         proc->b_id = proc->id; // 종료 시 원래 pid를 기록
         // id는 유지해서 식별을 보존
 

@@ -58,7 +58,8 @@ el2_entry:
 // EL1 KERNEL ENTRY
 el1_entry:
     // 스택 설정
-    ldr x0, =0x40080000
+    // = stack_top으로 바꾸기
+    ldr x0, =0x4000D7B0
     mov sp, x0
 
     msr DAIFClr, #0xf

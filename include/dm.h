@@ -13,6 +13,8 @@ typedef struct Driver
     void (*handler)(void);   // 인터럽트 발생 시 처리 로직
 } Driver;
 
+#pragma region not_imp
+
 /*
 int8_t dm_init(void);
 int8_t dm_register_device(Driver *device);
@@ -29,5 +31,7 @@ int8_t dm_set_device_config(char *device_name, void *config);
 int8_t dm_get_device_status(char *device_name, void *status);
 void dm_sync(void);
 */
+
+#pragma endregion
 
 #endif

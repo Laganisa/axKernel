@@ -1,62 +1,46 @@
-#include "../include/defs.h"
-#include "../include/types.h"
 #include "../include/io.h"
 #include "../include/exce.h"
-#include "../include/pm.h"
+
 #include "../include/mm.h"
 
 #include "../include/irq.h"
-// #include "../src/syscall.h"
 
 #include "debug.h"
-
+#include "meta.h"
 extern void vector_table(void);
 
 // extern volatile uint8_t resched_flag;
 
 pcb_t *current_proc = 0;
 
-pcb_t **get_current_proc_addr()
+pcb_t *get_current_proc_addr()
 {
-    return &current_proc;
+    return current_proc;
 }
 
 uint64_t irq_handler_main(pcb_t *proc, uint64_t current_sp)
 {
-
-    // reg_elr_el1();
-    // reg_esr_el1();
+    enter("irq_handler_main");
 
     uint32_t iar = *(volatile uint32_t *)(GIC_CPU_BASE + 0x0C);
     uint32_t irq_nr = iar & 0x3FF;
+    pcb_t *next = NULL;
 
     if (irq_nr == 30)
     {
-        asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
 
-        pcb_t *next = pm_run(&pm_object);
-        if (next == (pcb_t *)PROC_SIGNAL)
-        {
-            pm_awake(&pm_object, 0, proc); // 현재 proc를 넣고
-            mm_free(&mm_stack, &mm_substack, proc->mm_addr);
-            current_proc = pm_run(&pm_object); // 다른걸 꺼내자
-        }
-        else
-        {
-            pm_awake(&pm_object, 0, proc);
-            current_proc = next;
-        }
+        next = schedule_proc(proc, current_sp);
     }
 
     *(volatile uint32_t *)(GIC_CPU_BASE + 0x10) = iar;
 
-    // 다시 확인
-    if (current_proc == NULL)
+    if (next)
     {
-        return current_sp;
+        return next->sp; // "예약된 스위치"
     }
 
-    return current_proc->sp;
+    current_sp = current_proc->sp;
+    return current_sp;
 }
 
 // 이거 왜 있음?
@@ -88,9 +72,7 @@ void init_timer()
     asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000)); // 0.1초
     asm volatile("msr cntp_ctl_el0, %0" : : "r"(1));          // Enable=1, IMASK=0
 
-    // puts("[IRQ] Timer initialized (CNTP, freq=");
-    // put_hex(freq);
-    // puts(")\n");
+    // dump("cntp_ctl_el0", freq);
 }
 
 void init_gic()

@@ -1,8 +1,11 @@
 #include "../include/meta.h"
+#include "mm.h"
+
+extern pcb_t *current_proc;
 
 /*
     축약 함수
-
+    ! 나중에 바꾸기
 */
 pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod)
 {
@@ -53,11 +56,8 @@ pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod
             uint32_t alloc_size = (uint32_t)(((total + 1023) / 1024) * 1024);
 
             fcb_t *created = fm_create(reco, name, alloc_size, 0);
-
             uint32_t w1 = fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
-
             uint32_t w2 = fm_write(reco, name, shell_payload, (uint32_t)shell_payload_size, sizeof(fm_exec_hdr_t));
-
             pcb_t *p = fm_exec_file(reco, &pm_object, name, 0);
 
             return p;
@@ -69,4 +69,27 @@ pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod
     fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
 
     return fm_exec_file(reco, &pm_object, name, 0);
+}
+
+pcb_t *schedule_proc(pcb_t *proc, uint64_t current_sp)
+{
+    enter("schedule_proc");
+
+    // 타이머 밸류 재설정
+    asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
+
+    pcb_t *next = pm_run(&pm_object);
+    if (next == (pcb_t *)PROC_SIGNAL)
+    {
+        pm_awake(&pm_object, 0, proc); // 현재 proc를 넣고
+        mm_free(&mm_stack, &mm_substack, proc->mm_addr);
+        current_proc = pm_run(&pm_object); // 다른걸 꺼내자
+    }
+    else
+    {
+        pm_awake(&pm_object, 0, proc);
+        current_proc = next;
+    }
+
+    return next;
 }

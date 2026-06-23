@@ -21,6 +21,10 @@
 #define PROC_SIGNAL 0xFF       // low q를 확인할 차례라는 시그널
 #define PMV1_MAX_PROC 0xFF     // 프로세스 최대 수
 #define MAX_PTP_MSGBOX 0x10    // 프로세스간 메시지 통신 개수 제한, 이유 : 이러면 딱 1KB
+#define PROC_DORM 0x1          // 프로세스 휴면 상태
+#define PROC_STOP 0x2          // 프로세스 휴면 상태
+#define PROC_ZOMB 0x3          // 프로세스 휴면 상태
+#define INIT_PROC_SECT 1       // 큐에서 아무 것도 없을때 꺼내는 값을 정하는거
 
 #pragma endregion
 

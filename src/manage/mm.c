@@ -1,5 +1,4 @@
-#include "../include/types.h"
-#include "../include/defs.h"
+// #include "../include/types.h"
 #include "../include/io.h"
 #include "../include/mm.h"
 #include "../include/asm.h"
