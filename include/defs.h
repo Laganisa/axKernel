@@ -1,6 +1,10 @@
 #ifndef __DEFS_H__
 #define __DEFS_H__
 
+// 인터럽트 관련
+#define enable_irq() asm volatile("msr daifclr, #2")
+#define disable_irq() asm volatile("msr daifset, #2")
+
 // 산수 관련
 
 #define abs(x) ((x) < 0 ? -(x) : (x))

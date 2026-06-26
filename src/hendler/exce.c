@@ -1,7 +1,7 @@
-#include "../include/io.h"
-#include "../include/irq.h"
-#include "../include/exce.h"
-#include "../include/syscall.h"
+#include "io.h"
+#include "irq.h"
+#include "exce.h"
+#include "syscall.h"
 
 #include "debug.h"
 

@@ -1,5 +1,6 @@
 #include "in_proc.h"
 #include "io.h"
+#include "asm.h"
 
 /*
     pid 0 : 루트 프로세스
@@ -16,7 +17,7 @@ void ROOT(void)
 */
 void INIT(void)
 {
-    asm volatile("msr daifclr, #2");
+    enable_irq();
 }
 
 /*
@@ -26,9 +27,7 @@ void temp_posi(void)
 {
     puts("\ntemp position\n");
 
-    asm volatile(
-        "mov x8, #1\n"
-        "svc #0\n" ::: "x8");
+    proc_exit();
 
     while (1)
     {
@@ -40,8 +39,7 @@ void temp_posi(void)
 
 void task_void()
 {
-
-    asm volatile("msr daifclr, #2");
+    enable_irq();
 
     while (1)
     {
@@ -54,7 +52,7 @@ void task_void()
 void task_inf_A()
 {
 
-    asm volatile("msr daifclr, #2");
+    enable_irq();
 
     while (1)
     {
@@ -66,8 +64,7 @@ void task_inf_A()
 
 void task_inf_B()
 {
-
-    asm volatile("msr daifclr, #2");
+    enable_irq();
 
     while (1)
     {
@@ -77,21 +74,40 @@ void task_inf_B()
     }
 }
 
+void task_wfi()
+{
+    enable_irq();
+
+    while (1)
+    {
+        asm volatile("wfi");
+    }
+}
+
+void task_hang(void)
+{
+    enable_irq();
+
+    while (1)
+    {
+        for (volatile int i = 0; i < 1000000; i++)
+            ;
+    }
+}
+
 void task_stop_B()
 {
-
-    asm volatile("msr daifclr, #2");
+    enable_irq();
 
     int i = 10;
+
     while (i > 0)
     {
         puts("B");
         i--;
     }
 
-    asm volatile(
-        "mov x8, #1\n"
-        "svc #0\n" ::: "x8");
+    proc_exit();
 
     while (1)
     {

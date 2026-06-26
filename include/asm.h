@@ -1,4 +1,4 @@
-#include "../include/types.h"
+#include "types.h"
 #include "fm.h"
 
 #ifndef __ASM_H__
@@ -45,6 +45,14 @@ static inline uint32_t clz(uint64_t val)
         : "=r"(res)
         : "r"(val));
     return res;
+}
+
+// 프로세스 종료 함수 시스템 콜 보냄
+static inline void proc_exit(void)
+{
+    asm volatile(
+        "mov x8, #1\n"
+        "svc #0\n" ::: "x8");
 }
 
 #pragma region not_asm

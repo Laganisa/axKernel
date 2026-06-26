@@ -1,4 +1,4 @@
-#include "../include/meta.h"
+#include "meta.h"
 #include "mm.h"
 
 extern pcb_t *current_proc;

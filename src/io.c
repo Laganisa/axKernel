@@ -1,9 +1,9 @@
-// #include "../include/types.h"
-// #include "../include/defs.h"
-#include "../include/exce.h"
-#include "../include/fm.h"
-// #include "../include/pm.h"
-// #include "../include/sect.h"
+// #include "types.h"
+// #include "defs.h"
+#include "exce.h"
+#include "fm.h"
+// #include "pm.h"
+// #include "sect.h"
 
 // UART 초기화
 void uart_init(void)
@@ -181,6 +181,7 @@ void clear()
     puts("\033[2J\033[H");
 }
 
+/*
 // 어떤 함수가 있는지 알려주는 함수
 void knowcmd(void)
 {
@@ -188,6 +189,7 @@ void knowcmd(void)
 
 // 쉘 실행 코드
 // shell로 옮기기
+
 void shell_run(int8_t *cmd)
 {
     // 예시: 개행 문자 제거
@@ -229,3 +231,4 @@ void shell_run(int8_t *cmd)
 
     puts("\n"); // 개행
 }
+*/

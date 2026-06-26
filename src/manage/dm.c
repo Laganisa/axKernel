@@ -1,4 +1,4 @@
-#include "../include/dm.h"
+#include "dm.h"
 
 /*
 int8_t dm_init(void) {}

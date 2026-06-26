@@ -1,20 +1,20 @@
 #pragma region include_Header
 
 // 타입 헤더
-#include "../include/types.h"
+#include "types.h"
 
 // 분리 파일
-#include "../include/asm.h"  // 어셈블리 함수가 있는 헤더
-#include "../include/defs.h" // 정의 헤더
-#include "../include/sect.h" // 메모리 매핑 헤더
+#include "asm.h"  // 어셈블리 함수가 있는 헤더
+#include "defs.h" // 정의 헤더
+#include "sect.h" // 메모리 매핑 헤더
 
-#include "../include/io.h"   // 입출력 헤더
-#include "../include/irq.h"  // 인터럽트 헤더 추가
-#include "../include/exce.h" // Exception handlers
+#include "io.h"   // 입출력 헤더
+#include "irq.h"  // 인터럽트 헤더 추가
+#include "exce.h" // Exception handlers
 
-#include "../include/mm.h" // 메모리 관리자가 있는 헤더
-#include "../include/pm.h" // 프로세스 관리자 헤더
-#include "../include/fm.h" // 파일 관리자 헤더
+#include "mm.h" // 메모리 관리자가 있는 헤더
+#include "pm.h" // 프로세스 관리자 헤더
+#include "fm.h" // 파일 관리자 헤더
 
 extern void _proc(uint64_t *reg_val);
 extern void vector_table(void);
@@ -54,23 +54,20 @@ void main(void)
 // 이거 쉘으로 넘기기
 #pragma region booting msg
 
-    puts("axOS kernel\n");                 // 부팅 메시지
-    puts("'help' : list commands\n");      // 사용 가능한 명령어 확인
-    puts("'end'  : exit\n");               // 시스템 나가기
-    puts("Welcome! Have a great time.\n"); // 환영 메시지
+    puts("Booting AxKernel\n");
 
 #pragma endregion
 
     // 파일로 실행해보기
-    pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_inf_A, 0);
-    pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_stop_B, 0);
-    pcb_t *shell = proc_turn(reco, "SHEL.BIN", _shell_binary_start, 1);
+    pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_hang, 0);
+    pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_hang, 0);
+    pcb_t *shell_p = proc_turn(reco, "SHEL.BIN", _shell_binary_start, 1);
 
 #pragma region proc_change
 
     // 깨우기
     pm_awake(&pm_object, 0, proc2);
-    pm_awake(&pm_object, 0, shell);
+    pm_awake(&pm_object, 0, shell_p);
 
     init_irq();
 

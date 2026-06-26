@@ -54,13 +54,17 @@ lower_el_aarch64_sync:
     b not_syscall
 
 lower_el_aarch64_sync_p2:
-    str x0, [sp, #248]
 
-    ldp x0, x1, [sp, #0]
-    ldp x2, x3, [sp, #16]
-    ldp x4, x5, [sp, #32]
-    ldp x6, x7, [sp, #48]
-    ldp x8, x9, [sp, #64]
+    // 1. 유저의 x0 백업본(스택 #248)은 그대로 두고, 
+    //    시스템 콜 리턴값(x0)을 스택의 #0 위치(x0 복원 위치)에 넣습니다.
+    str x0, [sp, #0]
+    
+    // 2. 모든 범용 레지스터 복구
+    ldp x0,  x1,  [sp, #0]
+    ldp x2,  x3,  [sp, #16]
+    ldp x4,  x5,  [sp, #32]
+    ldp x6,  x7,  [sp, #48]
+    ldp x8,  x9,  [sp, #64]
     ldp x10, x11, [sp, #80]
     ldp x12, x13, [sp, #96]
     ldp x14, x15, [sp, #112]
@@ -71,21 +75,21 @@ lower_el_aarch64_sync_p2:
     ldp x24, x25, [sp, #192]
     ldp x26, x27, [sp, #208]
     ldp x28, x29, [sp, #224]
-    ldr x30, [sp, #240]
+    ldr x30,      [sp, #240]
 
-    ldr x0, [sp, #248]
+    // 3. PC와 SPSR 복원
     ldp x1, x2, [sp, #256]
-
     msr elr_el1, x1
     msr spsr_el1, x2
 
-    add sp, sp, #272
-    eret
+    // 4. 스택 정리 및 복귀
+    add sp,sp, #272
     
+    eret
+
 lower_el_aarch64_irq:
-
+    // 1. 스택 공간 확보 및 컨텍스트 저장
     sub sp, sp, #272
-
     stp x0,  x1,  [sp, #0]
     stp x2,  x3,  [sp, #16]
     stp x4,  x5,  [sp, #32]
@@ -103,19 +107,39 @@ lower_el_aarch64_irq:
     stp x28, x29, [sp, #224]
     str x30,      [sp, #240]
 
+    // PC(ELR_EL1)와 SPSR_EL1도 스택에 저장 (복귀를 위해 필수)
     mrs x0, elr_el1
     mrs x1, spsr_el1
     stp x0, x1, [sp, #256]
 
-    mov x22, sp                  
-    bl get_current_proc_addr
-    mov x20, x0                   
-    cbz x20, no_current_proc      
+    // 2. IRQ 처리 루틴 호출 (여기서 bl irq_handler_main 등을 수행)
+    // mov x0, sp 
+    // bl irq_handler_main
 
-    ldr x23, [x20, #80]         
-    
+    // 3. 복구 시퀀스 (저장한 역순으로 로드)
+    ldp x0, x1, [sp, #256]
+    msr elr_el1, x0
+    msr spsr_el1, x1
 
-    add x0, x22, #256            
+    ldp x0,  x1,  [sp, #0]
+    ldp x2,  x3,  [sp, #16]
+    ldp x4,  x5,  [sp, #32]
+    ldp x6,  x7,  [sp, #48]
+    ldp x8,  x9,  [sp, #64]
+    ldp x10, x11, [sp, #80]
+    ldp x12, x13, [sp, #96]
+    ldp x14, x15, [sp, #112]
+    ldp x16, x17, [sp, #128]
+    ldp x18, x19, [sp, #144]
+    ldp x20, x21, [sp, #160]
+    ldp x22, x23, [sp, #176]
+    ldp x24, x25, [sp, #192]
+    ldp x26, x27, [sp, #208]
+    ldp x28, x29, [sp, #224]
+    ldr x30,      [sp, #240]
+
+    add sp, sp, #272
+    eret        
 
 loop_copy:
     ldp x1, x2, [x22], #16
@@ -182,6 +206,7 @@ no_current_proc:
 
 is_syscall:
     bl handle_syscall
+    bl check_sync
     b lower_el_aarch64_sync_p2
 
 not_syscall:

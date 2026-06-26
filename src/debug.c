@@ -2,11 +2,11 @@
 #include "io.h"
 #include "pm.h"
 
-#define Toggle FALSE
+#define toggle FALSE
 
 void dump(const char *name, uint64_t val)
 {
-    if (Toggle)
+    if (toggle)
     {
         puts("[Debug] ");
         puts(name);
@@ -27,7 +27,7 @@ void full_stop(void)
 
 void enter(const char *name)
 {
-    if (Toggle)
+    if (toggle)
     {
         puts("\n");
         puts("[Enter] ");
@@ -38,7 +38,7 @@ void enter(const char *name)
 
 void exit(const char *name)
 {
-    if (Toggle)
+    if (toggle)
     {
         puts("\n");
         puts("[Exit] ");
@@ -49,7 +49,7 @@ void exit(const char *name)
 
 void log(const char *name)
 {
-    if (Toggle)
+    if (toggle)
     {
         puts("[Debug] ");
         puts(name);
@@ -81,7 +81,7 @@ void flow(const char type)
 
 void reg_x8(void)
 {
-    if (Toggle)
+    if (toggle)
     {
         uint64_t val;
 
@@ -95,7 +95,7 @@ void reg_x8(void)
 
 void reg_elr_el1(void)
 {
-    if (Toggle)
+    if (toggle)
     {
         uint64_t val;
 
@@ -109,7 +109,7 @@ void reg_elr_el1(void)
 
 void reg_esr_el1(void)
 {
-    if (Toggle)
+    if (toggle)
     {
         uint64_t val;
 
@@ -123,7 +123,7 @@ void reg_esr_el1(void)
 
 void reg_far_el1(void)
 {
-    if (Toggle)
+    if (toggle)
     {
         uint64_t val;
 
@@ -137,7 +137,7 @@ void reg_far_el1(void)
 
 void reg_vbar(void)
 {
-    if (Toggle)
+    if (toggle)
     {
         uint64_t vbar;
         asm volatile(
@@ -191,7 +191,7 @@ void flow_asm(void)
 
 void proc_dump(const char *name, pcb_t *proc)
 {
-    if (Toggle)
+    if (toggle)
     {
         puts("[Debug] ");
         puts(name);

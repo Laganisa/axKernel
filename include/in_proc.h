@@ -7,6 +7,8 @@ void ROOT(void);
 void INIT(void);
 
 void temp_posi(void);
+void task_wfi(void);
+void task_hang(void);
 
 // 디버깅용 프로세스
 void task_inf_A(void);

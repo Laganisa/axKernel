@@ -1,4 +1,4 @@
-# axOS
+# axKernel
 
 laganisa가 kernel을 공부하기 위해 만드는
 

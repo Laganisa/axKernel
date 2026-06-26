@@ -1,9 +1,9 @@
-#include "../include/io.h"
-#include "../include/exce.h"
+#include "io.h"
+#include "exce.h"
 
-#include "../include/mm.h"
+#include "mm.h"
 
-#include "../include/irq.h"
+#include "irq.h"
 
 #include "debug.h"
 #include "meta.h"

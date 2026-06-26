@@ -1,7 +1,7 @@
-#include "../include/types.h"
-#include "../include/io.h"
-#include "../include/exce.h"
-#include "../include/syscall.h"
+#include "types.h"
+#include "io.h"
+#include "exce.h"
+#include "syscall.h"
 #include "pm.h"
 
 #include "debug.h"
@@ -18,9 +18,11 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
     reg_x8();
 
+    /*
     reg_far_el1();
     reg_elr_el1();
     reg_esr_el1();
+    */
 
     switch (syscall_num)
     {
@@ -28,14 +30,17 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
     case SYS_WRITE:
     {
         enter("sys_write");
+
         // arg1: fd (0=stdin, 1=stdout, 2=stderr)
         // arg2: buffer pointer
         // arg3: length
 
         if (arg1 == 1 && arg2)
         {
+
             for (uint64_t i = 0; i < arg3; i++)
             {
+
                 putchar(((int8_t *)arg2)[i]);
             }
         }
@@ -46,9 +51,9 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
     {
         enter("sys_yield");
         // 처리 로직
+
         pcb_t *current = get_current_proc_addr();
-        pcb_t *
-            next;
+        pcb_t *next;
 
         pm_awake(&pm_object, 1, current);
         next = pm_run(&pm_object);
@@ -67,40 +72,36 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
     {
         enter("sys_read");
 
-        // arg1 : 0
         int fd = (int)arg1;
         char *buf = (char *)arg2;
         size_t count = (size_t)arg3;
 
-        // uart_flush();
+        if (fd != 0)
+            return -1;
 
-        if (fd == 0)
-        {
-            size_t i = 0;
-            // count만큼 루프를 돌며 한 글자씩 가져옴
-            while (i + 1 < count)
-            {
-                char c = getchar();
+        if (count == 0)
+            return 0;
 
-                // 엔터 입력 시 종료
-                if (c == '\r' || c == '\n')
-                {
-                    buf[i] = '\0';
-                    puts("\n");
-                    return (long)i;
-                }
+        char c = getchar();
 
-                putchar(c);
-                buf[i++] = c;
-            }
-            buf[i] = '\0';
-            return (long)i;
-        }
-        return -1;
+        putchar(c);
+        puts(":");
+        put_hex(c);
+
+        puts(" buf=");
+        put_hex((uint64_t)buf);
+
+        buf[0] = c;
+
+        puts(" after=");
+        put_hex((uint64_t)buf[0]);
+
+        return 1;
     }
     // 시스템 종료
     case SYS_EXIT: // 나중에 시스템 콜 sys_exit로 바꾸기
     {
+        enter("sys_exit");
         // arg1: exit code
         {
             pcb_t *current = get_current_proc_addr();

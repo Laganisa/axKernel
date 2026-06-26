@@ -1,7 +1,7 @@
-// #include "../include/types.h"
-#include "../include/io.h"
-#include "../include/mm.h"
-#include "../include/asm.h"
+// #include "types.h"
+#include "io.h"
+#include "mm.h"
+#include "asm.h"
 
 #include "debug.h"
 

@@ -1,10 +1,10 @@
-// #include "../include/types.h"
-// #include "../include/defs.h"
-#include "../include/io.h"
-#include "../include/exce.h"
+// #include "types.h"
+// #include "defs.h"
+#include "io.h"
+#include "exce.h"
 
-#include "../include/mm.h"
-// #include "../include/pm.h"
+#include "mm.h"
+// #include "pm.h"
 
 #include "debug.h"
 
