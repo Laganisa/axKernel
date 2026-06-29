@@ -13,7 +13,7 @@
 
 el1_spx_sync:
 
-    bl check_sync
+    bl check_el1_sync
     bl reg_elr_el1
     bl reg_esr_el1
     bl reg_far_el1

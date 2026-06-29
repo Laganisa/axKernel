@@ -1,5 +1,5 @@
 #include "io.h"
-#include "exce.h"
+#include "sync.h"
 
 #include "mm.h"
 

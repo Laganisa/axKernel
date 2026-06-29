@@ -10,7 +10,7 @@
 
 #include "io.h"   // 입출력 헤더
 #include "irq.h"  // 인터럽트 헤더 추가
-#include "exce.h" // Exception handlers
+#include "sync.h" // Exception handlers
 
 #include "mm.h" // 메모리 관리자가 있는 헤더
 #include "pm.h" // 프로세스 관리자 헤더

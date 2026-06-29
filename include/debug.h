@@ -17,8 +17,10 @@ void reg_esr_el1(void);
 void reg_far_el1(void);
 void reg_vbar(void);
 
-void check_sync(void);
-void check_irq(void);
+void check_el1_sync(void);
+void check_el0_sync(void);
+void check_el1_irq(void);
+void check_el0_irq(void);
 void check_inf_loop(void);
 void flow_asm(void);
 

@@ -1,6 +1,6 @@
 #include "io.h"
 #include "irq.h"
-#include "exce.h"
+#include "sync.h"
 #include "syscall.h"
 
 #include "debug.h"

@@ -1,7 +1,7 @@
 // #include "types.h"
 // #include "defs.h"
 #include "io.h"
-#include "exce.h"
+#include "sync.h"
 
 #include "mm.h"
 // #include "pm.h"

@@ -1,7 +1,9 @@
 // #include "types.h"
 // #include "defs.h"
-#include "exce.h"
+
+// #include "sync.h"
 #include "fm.h"
+
 // #include "pm.h"
 // #include "sect.h"
 
@@ -172,63 +174,3 @@ void remo_get(int8_t *s, int32_t max_len)
 // PCB-related 전역 변수
 // ! 이거 왜 있음 ??????
 void *current_pcb_addr = 0;
-
-// 클리어
-void clear()
-{
-    // \033[2J : 화면 전체 삭제
-    // \033[H  : 커서를 홈(0,0)으로 이동
-    puts("\033[2J\033[H");
-}
-
-/*
-// 어떤 함수가 있는지 알려주는 함수
-void knowcmd(void)
-{
-}
-
-// 쉘 실행 코드
-// shell로 옮기기
-
-void shell_run(int8_t *cmd)
-{
-    // 예시: 개행 문자 제거
-    for (int32_t i = 0; i < 64; i++)
-    {
-        if (cmd[i] == '\n' || cmd[i] == '\r')
-        {
-            cmd[i] = '\0';
-            break;
-        }
-    }
-
-    // 명령이 나오는 지 확인용
-    puts("comand");
-
-    if (strcmp(cmd, "clear") == 0)
-    {
-        clear();
-    }
-    else if (cmd[0] == 'r' && cmd[1] == 'u' && cmd[2] == 'n' && cmd[3] == ' ')
-    {
-        pcb_t *proc = fm_exec_file(fm_record, &pm_object, &cmd[4], 0);
-
-        if (proc == 0)
-        {
-            puts("run failed");
-        }
-        else
-        {
-            pm_awake(&pm_object, 0, proc);
-            puts("run queued");
-
-            if (current_proc == 0)
-            {
-                current_proc = proc;
-            }
-        }
-    }
-
-    puts("\n"); // 개행
-}
-*/

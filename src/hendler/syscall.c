@@ -1,6 +1,6 @@
 #include "types.h"
 #include "io.h"
-#include "exce.h"
+#include "sync.h"
 #include "syscall.h"
 #include "pm.h"
 
