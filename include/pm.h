@@ -8,13 +8,17 @@
 // 나중에 프로세스가 생성되고 레지스터 공간 따로 할당
 typedef struct pcb_t
 {
+    uint64_t reg_x[31]; // x0 ~ x30
+    uint64_t sp;        // 스택 포인터
+    uint64_t spsr;      // SPSR_EL1
+    uint64_t elr_el1;   // ELR_EL1 프로그램 카운터
+
     uint8_t id;         // 프로세스 id
     uint8_t p_id;       // 부모의 id
     uint8_t b_id;       // 죽을때 쓸 id
     uint16_t proc_info; // 프로세스 정보
     uint16_t mm_addr;   // 메모리 주소
 
-    uint32_t reg;          // 레지스터 주소값
     uint8_t is_msgbox : 1; // 메시지 박스가 차있는지
     uint8_t is_call : 1;   // 자신에게 읽으라고 했는지
     uint8_t state : 2;     // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
@@ -22,14 +26,15 @@ typedef struct pcb_t
     uint8_t from;          // 누구에게 왔는지
     uint8_t msgbox[64];    // 메세지
 
-    uint64_t sp; // 스택 포인터
-    uint64_t pc; // 프로그램 카운터
 } __attribute__((aligned(8))) pcb_t;
 
 typedef struct FMv2_record FMv2_record;
 
 typedef struct PMv1_object
 {
+    uint64_t temp_x[30];   // 임시 레지스터
+    uint64_t temp_exce[8]; // irq에 사용하는 임시 레지스터
+
     uint64_t *base; // 바닥 주소
     // 총 공간이 24KB 정도
     uint8_t proc_comocc : 4; // 그중에서 어떤 proc_occ 이 사용되지 않았는지

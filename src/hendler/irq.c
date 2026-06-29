@@ -18,30 +18,35 @@ pcb_t *get_current_proc_addr()
     return current_proc;
 }
 
-uint64_t irq_handler_main(pcb_t *proc, uint64_t current_sp)
+pcb_t *irq_handler_main(pcb_t *proc)
 {
+    disable_irq();
+
     enter("irq_handler_main");
 
     uint32_t iar = *(volatile uint32_t *)(GIC_CPU_BASE + 0x0C);
     uint32_t irq_nr = iar & 0x3FF;
-    pcb_t *next = NULL;
 
     if (irq_nr == 30)
     {
-
-        next = schedule_proc(proc, current_sp);
+        enter("schedule_proc");
+        current_proc = schedule_proc(proc);
+        exit("schedule_proc");
     }
 
     *(volatile uint32_t *)(GIC_CPU_BASE + 0x10) = iar;
 
-    if (next)
-    {
-        return next->sp; // "예약된 스위치"
-    }
+    // 타이머 재설정
+    asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
 
-    current_sp = current_proc->sp;
-    return current_sp;
+    exit("irq_handler_main");
+
+    enable_irq();
+
+    return current_proc;
 }
+
+#pragma region etc 함수
 
 // 이거 왜 있음?
 void handle_timer_tick()
@@ -149,3 +154,5 @@ void init_irq()
     asm volatile("msr daifclr, #2"); // IRQ 언마스크
     // puts("[TEST] After forced interrupt\n");
 }
+
+#pragma endregion

@@ -1,15 +1,11 @@
-.global lower_el_aarch64_sync
-.global lower_el_aarch64_irq
-.global lower_el_aarch64_fiq
-.global lower_el_aarch64_serror
-.global lower_el_aarch32_sync
-.global lower_el_aarch32_irq
-.global lower_el_aarch32_fiq
-.global lower_el_aarch32_serror
+.global el0_a64_sync
+.global el0_a64_irq
+.global el0_a64_fiq
+.global el0_a64_serror
 
 .extern current_task_id
 
-lower_el_aarch64_sync:
+el0_a64_sync:
     // bl check_sync
     sub sp, sp, #272
 
@@ -53,8 +49,11 @@ lower_el_aarch64_sync:
     
     b not_syscall
 
-lower_el_aarch64_sync_p2:
+el0_a64_sync_p2:
 
+    // 인터럽트 제거하기
+    msr daifset, #2
+    
     // 1. 유저의 x0 백업본(스택 #248)은 그대로 두고, 
     //    시스템 콜 리턴값(x0)을 스택의 #0 위치(x0 복원 위치)에 넣습니다.
     str x0, [sp, #0]
@@ -84,10 +83,13 @@ lower_el_aarch64_sync_p2:
 
     // 4. 스택 정리 및 복귀
     add sp,sp, #272
+
+    // 인터럽트 허용
+    msr daifclr, #2
     
     eret
 
-lower_el_aarch64_irq:
+el0_a64_irq:
     // 1. 스택 공간 확보 및 컨텍스트 저장
     sub sp, sp, #272
     stp x0,  x1,  [sp, #0]
@@ -206,8 +208,7 @@ no_current_proc:
 
 is_syscall:
     bl handle_syscall
-    bl check_sync
-    b lower_el_aarch64_sync_p2
+    b el0_a64_sync_p2
 
 not_syscall:
     // 예외 디버깅 일단 무한 루프 돌려두기
@@ -223,27 +224,11 @@ is_inst_abort:
     // bl check_inf_loop
     b hang
 
-lower_el_aarch64_fiq:
+el0_a64_fiq:
     bl check_inf_loop
     b hang
 
-lower_el_aarch64_serror:
-    bl check_inf_loop
-    b hang
-
-lower_el_aarch32_sync:
-    bl check_inf_loop
-    b hang
-
-lower_el_aarch32_irq:
-    bl check_inf_loop
-    b hang
-
-lower_el_aarch32_fiq:
-    bl check_inf_loop
-    b hang
-
-lower_el_aarch32_serror:
+el0_a64_serror:
     bl check_inf_loop
     b hang
 

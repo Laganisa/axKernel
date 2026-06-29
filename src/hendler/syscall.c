@@ -9,11 +9,13 @@
 // 여기도 수정해야함
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
-extern void _proc(uint64_t *reg_val);
+extern void _proc(pcb_t *);
 
 // Simple syscall handler
 uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
+    disable_irq();
+
     enter("handle_syscall");
 
     reg_x8();
@@ -88,13 +90,7 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
         puts(":");
         put_hex(c);
 
-        puts(" buf=");
-        put_hex((uint64_t)buf);
-
         buf[0] = c;
-
-        puts(" after=");
-        put_hex((uint64_t)buf[0]);
 
         return 1;
     }

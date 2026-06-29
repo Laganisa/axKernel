@@ -22,6 +22,10 @@ laganisa가 kernel을 공부하기 위해 만드는
 
 ## 자세한 정보
 
+패치 노트
+
+[patch note](./assets/PatchNote.txt)
+
 더 많은 정보
 
 [DETAIL](./assets/DETAIL.md)

@@ -5,9 +5,12 @@
 
 #include "debug.h"
 
+/*
+    헨들러 예외 처리를 C로 처리하는 파일
+*/
+
 // Called from exception path when a data abort from lower EL occurs.
 // Logs FAR/ELR/ESR and terminates the current process, scheduling next.
-// ! 이거 나중에 어셈블리로 옮길 예정
 void handle_data_abort(uint64_t far, uint64_t elr, uint64_t esr)
 {
 

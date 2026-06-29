@@ -16,7 +16,7 @@
 #include "pm.h" // 프로세스 관리자 헤더
 #include "fm.h" // 파일 관리자 헤더
 
-extern void _proc(uint64_t *reg_val);
+extern void _proc(pcb_t *);
 extern void vector_table(void);
 // extern void irq_handler_main(void);
 
@@ -36,7 +36,6 @@ int current_task_id = 0; // 반드시 함수 밖(Global)에 있어야 함
 // 커널 함수
 void main(void)
 {
-
 #pragma region reset
     // 하드웨어 초기화
     uart_init();
@@ -51,28 +50,26 @@ void main(void)
 
     FMv2_record *reco = (FMv2_record *)FM_ADDR_START;
 
-// 이거 쉘으로 넘기기
-#pragma region booting msg
-
     puts("Booting AxKernel\n");
 
-#pragma endregion
-
     // 파일로 실행해보기
-    pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_hang, 0);
-    pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_hang, 0);
+    pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_inf_A, 0);
+
+    pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_inf_B, 0);
+    pm_awake(&pm_object, 0, proc2);
+
     pcb_t *shell_p = proc_turn(reco, "SHEL.BIN", _shell_binary_start, 1);
+    pm_awake(&pm_object, 0, shell_p);
+
+    proc_dump("proc1", proc1);
+    proc_dump("proc2", proc2);
 
 #pragma region proc_change
-
-    // 깨우기
-    pm_awake(&pm_object, 0, proc2);
-    pm_awake(&pm_object, 0, shell_p);
 
     init_irq();
 
     current_proc = proc1;
-    _proc((uint64_t *)proc1->sp);
+    _proc(proc1);
 
 #pragma endregion
 }

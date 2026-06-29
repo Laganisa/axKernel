@@ -8,11 +8,13 @@
 
 #include "debug.h"
 
-extern void _proc(uint64_t *reg_val); // proc와 연결
+extern void _proc(pcb_t *); // proc와 연결
 
 /*
-    프로세스 생성
-    pid 생성을 오름차순으로
+    프로세스 생성하는 함수
+    프로세스로 만들고 싶어하는 함수의 주소랑
+    이 프로세스를 생성한 부모 프로세스의 id 값을 받고
+    생성함
 */
 pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 {
@@ -43,51 +45,44 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 
     pid = 64 - pid;
 
-    obj->PMv1_mem[pid].id = pid;      // 프로세스의 id를 할당된 pid로 변경
-    obj->PMv1_mem[pid].b_id = pid;    // 죽을때 쓸 id를 저장
-    obj->PMv1_mem[pid].p_id = parid;  // 부모 id를 수정함
-    obj->PMv1_mem[pid].proc_info = 0; // 정보를 0으로 수정
+    pcb_t *new_proc = &obj->PMv1_mem[pid];
+
+    new_proc->id = 64 - pid; // 프로세스의 id를 할당된 pid로 변경
+    new_proc->b_id = pid;    // 죽을때 쓸 id를 저장
+    new_proc->p_id = parid;  // 부모 id를 수정함
+    new_proc->proc_info = 0; // 정보를 0으로 수정
 
     // 메모리 로직
     // 128KB를 할당 리턴 된 메모리 스택 주소를 받음
-    obj->PMv1_mem[pid].mm_addr = mm_creat(&mm_stack, INITIAL_PROC_SIZE);
+    new_proc->mm_addr = mm_creat(&mm_stack, INITIAL_PROC_SIZE);
 
     // 할당 후 주소를 줌
     // 자신의 주소를 알아내고
-    uint64_t real_addr = mm_find(&mm_stack, obj->PMv1_mem[pid].mm_addr, 0);
-
-    uint64_t *reg_val = (uint64_t *)(real_addr + (INITIAL_PROC_SIZE << 10) - 272);
-    obj->PMv1_mem[pid].reg = (INITIAL_PROC_SIZE << 10) - 272; // 레지스터 위치
-
-    obj->PMv1_mem[pid].pc = entry;
-    obj->PMv1_mem[pid].sp = (uint64_t)reg_val;
+    uint64_t real_addr = mm_find(&mm_stack, new_proc->mm_addr, 0);
 
     for (int i = 0; i < 31; i++)
-        reg_val[i] = 0;              // x0~x30 초기화
-    reg_val[31] = (uint64_t)reg_val; // SP 초기값
-    reg_val[32] = entry;             // PC (ELR_EL1)
-
-    // SPSR_EL1: set appropriate return mode
-    // If entry==0 this is an IMAGE/user process (return to EL0), otherwise keep EL1 mode for kernel tasks
-    // 인셉션 레벨 분기`
-    if (entry == 0)
     {
-        reg_val[33] = 0x0; // return to EL0 (AArch64 lower EL)
-    }
-    else
-    {
-        reg_val[33] = 0x3C5; // EL1h for kernel-level tasks
+        new_proc->reg_x[i] = 0; // x0~x30 초기화
     }
 
-    return &obj->PMv1_mem[pid];
+    new_proc->elr_el1 = entry;                            // (ELR_EL1)
+    new_proc->sp = real_addr + (INITIAL_PROC_SIZE << 10); // sp
+    new_proc->spsr = (entry == 0) ? 0x0 : 0x3C5;          // 인셉션 레벨 분기
+
+    return new_proc;
 }
 
+/*
+    프로세스 생성 함수로 넘겨주는 래퍼
+*/
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
 {
     return creat_proc_entry(obj, (uint64_t)task, parid);
 }
 
-/* 주소를 주면 변환해서 내주는 코드
+/*
+    주소를 주면 변환해서 내주는 코드
+
     주소 -> 실제 주소
     pid
     cmd = 0 : 넣기
@@ -155,10 +150,7 @@ pcb_t *pm_run(PMv1_object *obj)
         data = pm_high(obj, 1, 0);
 
         // 안전 체크
-        if (data >= PMV1_MAX_PROC)
-            return &obj->PMv1_mem[INIT_PROC_SECT];
-
-        if (data == 0)
+        if (data >= PMV1_MAX_PROC || data == 0)
             return &obj->PMv1_mem[INIT_PROC_SECT];
 
         // 프로세스 좀비
@@ -168,6 +160,7 @@ pcb_t *pm_run(PMv1_object *obj)
             // ! 그냥 init에 붙여두고 정리하면 될듯
             return &obj->PMv1_mem[INIT_PROC_SECT];
         }
+
         // 프로세스 대기
         if (data == PROC_DORM)
         {
@@ -179,10 +172,7 @@ pcb_t *pm_run(PMv1_object *obj)
     {
         data = pm_low(obj, 1, 0);
 
-        if (data >= PMV1_MAX_PROC)
-            return &obj->PMv1_mem[INIT_PROC_SECT];
-
-        if (data == 0)
+        if (data >= PMV1_MAX_PROC || data == 0)
             return &obj->PMv1_mem[INIT_PROC_SECT];
 
         return &obj->PMv1_mem[data];

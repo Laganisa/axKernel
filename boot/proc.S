@@ -1,23 +1,26 @@
 .section ".text.proc"
 .global _proc
 
-// 프로세스 뒤에 있는 reg_val[]을 사용
+// pcb_t 구조체를 사용
 _proc:
-    ldr x1, [x0, #(32 * 8)]
-    msr elr_el1, x1
-
+    // SP
     ldr x1, [x0, #(31 * 8)]
-    msr SP_EL0, x1
+    msr sp_el0, x1
 
-    ldr x1, [x0, #(33 * 8)]
+    // SPSR_EL1
+    ldr x1, [x0, #(32 * 8)]
     msr spsr_el1, x1
 
-    // 레지스터 복원 코드
-    ldp x1, x2, [x0, #(1 * 8)]
-    ldp x3, x4, [x0, #(3 * 8)]
-    ldp x5, x6, [x0, #(5 * 8)]
-    ldp x7, x8, [x0, #(7 * 8)]
-    ldp x9, x10, [x0, #(9 * 8)]
+    // ELR_EL1
+    ldr x1, [x0, #(33 * 8)]
+    msr elr_el1, x1
+
+    // x1 ~ x30 복원
+    ldp x1,  x2,  [x0, #(1 * 8)]
+    ldp x3,  x4,  [x0, #(3 * 8)]
+    ldp x5,  x6,  [x0, #(5 * 8)]
+    ldp x7,  x8,  [x0, #(7 * 8)]
+    ldp x9,  x10, [x0, #(9 * 8)]
     ldp x11, x12, [x0, #(11 * 8)]
     ldp x13, x14, [x0, #(13 * 8)]
     ldp x15, x16, [x0, #(15 * 8)]
@@ -29,6 +32,7 @@ _proc:
     ldp x27, x28, [x0, #(27 * 8)]
     ldp x29, x30, [x0, #(29 * 8)]
 
+    // x0 복원
     ldr x1, [x0]
     mov x0, x1
 

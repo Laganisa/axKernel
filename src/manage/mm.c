@@ -5,10 +5,12 @@
 
 #include "debug.h"
 
-// 구조체 선언
-
 // ! 수정 사항 존재
+
+#pragma region 메모리 관리 함수
 /*
+    정규 스택 푸쉬 함수
+
     메모리 관리자 스택 연산 push
     retrun 0: fail
     else 주소
@@ -28,15 +30,41 @@ uint8_t MMv5_regu_push(MMv5_stack *stack, uint8_t val)
     stack->sp_top++; // 16비트 포인터 증가!
     return result;   // 할당된 위치 알려주기
 }
-// 서브스택의 푸쉬
+
+/*
+    비 정규 스택 푸쉬 함수
+    비트는 3비트
+*/
+uint8_t MMv5_irregu_push(MMv5_stack *stack, uint8_t val)
+{
+    /*
+    // 할당은 항상 sp_top에서 하고
+    uint16_t result;
+    // ?  bot 포인터와 겹치지 않는지 확인이 필요함
+    uint16_t byte_idx = stack->sp_top >> 2;     // 몇 번째 바이트인지 (0~16383)
+    uint8_t bit_pos = (stack->sp_top & 3) << 1; // 바이트 내 비트 위치 (0, 2, 4, 6)
+
+    // ! 기존 비트 청소 후 새 2비트 값 삽입
+    stack->MMv5_mem[byte_idx] &= ~(0x03 << bit_pos);
+    stack->MMv5_mem[byte_idx] |= (val & 0x03) << bit_pos;
+    result = stack->sp_top;
+    stack->sp_top++; // 16비트 포인터 증가!
+    */
+
+    // return result; // 할당된 위치 알려주기
+}
+
+// 서브스택의 푸쉬(가비지 컬랙터)
 uint8_t MMv5_regu_substack_push(MMv5_stack *stack, uint8_t val)
 {
     stack->MMv5_submem[stack->sp] = val;
     stack->sp++;
 }
 
-// 메모리_관리자 스택 연산 pop
-// ! 수정 사항 존재
+/*
+    // 메모리_관리자 스택 연산 pop
+    // ! 수정 사항 존재
+*/
 uint8_t MMv5_regu_pop(MMv5_stack *stack, uint16_t val)
 {
     // 해제는 val 값을 제거
@@ -53,7 +81,30 @@ uint8_t MMv5_regu_pop(MMv5_stack *stack, uint16_t val)
     return stack->MMv5_mem[byte_idx]; // 스택의 덤프 포인터가 가리키는 uint8_t 을 리턴
 }
 
-// 메모리 관리자 초기화 함수
+/*
+    비 정규로 할당하는 함수 팝
+*/
+uint8_t MMv5_irregu_pop(MMv5_stack *stack, uint16_t val)
+{
+    // 해제는 val 값을 제거
+    if (stack->sp_top == 0)
+    {
+        return 0xFF; // Stack Underflow
+    }
+
+    // ! 아래 로직 바꾸기 필수
+    stack->sp_temp = val; // 덤프 포인터를 val의 위치로 옮기고 0으로 포팅
+    uint16_t byte_idx = stack->sp_temp >> 2;
+    uint8_t bit_pos = (stack->sp_temp & 3) << 1;
+
+    return stack->MMv5_mem[byte_idx]; // 스택의 덤프 포인터가 가리키는 uint8_t 을 리턴
+}
+
+#pragma endregion
+
+/*
+    메모리 관리자 초기화 함수
+*/
 void mm_init(MMv5_stack *stack, uint64_t addr)
 {
     stack->base = (uint64_t *)addr; // 스택의 시작 위치 받기
@@ -102,9 +153,14 @@ uint16_t mm_creat(MMv5_stack *stack, uint16_t val16)
     return 0;
 }
 
+/*
+    가비지 컬랙터를 이용한 공간 해제
+    현재 가비지 컬랙터가 보고 있는 스택(4개의 주소가 있는)에
+    유효한 주소가 하나라면 uint16_t 주소를 다시 할당하기
+    그렇지 않다면
+*/
 uint8_t mm_free(MMv5_stack *stack, MMv5_stack *substack, uint16_t val16)
 {
-    // cmd = 1 해제 공간 해제 -> 그 보는 바이트에 주소가 하나라면 uint16_t 의 주소 재할당
     // ! 여기에 확인 로직 넣어야함 리턴 인자값도 변경해야함
     uint8_t remain_Byte = MMv5_regu_pop(stack, val16); // 남은 바이트 확인, 이미 기존 값은 없어짐
 
@@ -131,6 +187,10 @@ uint8_t mm_free(MMv5_stack *stack, MMv5_stack *substack, uint16_t val16)
     return 0;
 }
 
+/*
+    실제 주소를 리턴하는 함수
+    스택 주소로 되어 있는 주소에서 실제 주소를 리턴함
+*/
 uint64_t mm_find(MMv5_stack *stack, uint16_t val16, uint16_t indi_addr)
 {
     // cmd = 2 주소 탐색 -> 프로그램이 주소를 요청하면 uint64_t 를 리턴(간접 주소)

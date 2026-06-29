@@ -71,12 +71,8 @@ pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod
     return fm_exec_file(reco, &pm_object, name, 0);
 }
 
-pcb_t *schedule_proc(pcb_t *proc, uint64_t current_sp)
+pcb_t *schedule_proc(pcb_t *proc)
 {
-    enter("schedule_proc");
-
-    // 타이머 밸류 재설정
-    asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
 
     pcb_t *next = pm_run(&pm_object);
     if (next == (pcb_t *)PROC_SIGNAL)

@@ -317,7 +317,6 @@ pcb_t *fm_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_
         pcb_t *proc = creat_proc_entry(obj, 0, parid);
         uint64_t real_addr;
         uint64_t entry_addr;
-        uint64_t *reg_val;
 
         if (proc == 0)
         {
@@ -329,10 +328,8 @@ pcb_t *fm_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_
         memcpy((uint8_t *)real_addr, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size);
 
         entry_addr = real_addr + hdr->entry;
-        proc->pc = entry_addr;
+        proc->elr_el1 = entry_addr;
 
-        reg_val = (uint64_t *)proc->sp;
-        reg_val[32] = entry_addr;
         return proc;
     }
 

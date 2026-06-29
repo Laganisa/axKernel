@@ -2,7 +2,7 @@
 #include "io.h"
 #include "pm.h"
 
-#define toggle FALSE
+#define toggle TRUE
 
 void dump(const char *name, uint64_t val)
 {
@@ -210,8 +210,8 @@ void proc_dump(const char *name, pcb_t *proc)
         puts("\n");
         puts("[Debug] ");
         puts(name);
-        puts(" pc : ");
-        put_hex(proc->pc);
+        puts(" elr_el1 : ");
+        put_hex(proc->elr_el1);
         puts("\n");
     }
 }
