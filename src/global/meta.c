@@ -79,7 +79,7 @@ pcb_t *schedule_proc(pcb_t *proc)
 
     dump("next", next);
 
-    if (next == (pcb_t *)PROC_SIGNAL)
+    if (next->proc_info == (pcb_t *)PROC_SIGNAL)
     {
         pm_awake(&pm_object, 0, proc); // 현재 proc를 넣고
         mm_free(&mm_stack, &mm_substack, proc->mm_addr);

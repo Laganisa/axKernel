@@ -9,10 +9,6 @@
 #include "meta.h"
 extern void vector_table(void);
 
-pcb_t *current_proc = 0;
-
-#pragma region etc 함수
-
 // 이거 왜 있음?
 void handle_timer_tick()
 {
@@ -119,5 +115,3 @@ void init_irq()
     asm volatile("msr daifclr, #2"); // IRQ 언마스크
     // puts("[TEST] After forced interrupt\n");
 }
-
-#pragma endregion
