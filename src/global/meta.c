@@ -1,5 +1,6 @@
 #include "meta.h"
 #include "mm.h"
+#include "debug.h"
 
 extern pcb_t *current_proc;
 
@@ -75,6 +76,9 @@ pcb_t *schedule_proc(pcb_t *proc)
 {
 
     pcb_t *next = pm_run(&pm_object);
+
+    dump("next", next);
+
     if (next == (pcb_t *)PROC_SIGNAL)
     {
         pm_awake(&pm_object, 0, proc); // 현재 proc를 넣고

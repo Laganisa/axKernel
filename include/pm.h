@@ -28,8 +28,6 @@ typedef struct pcb_t
 
 } __attribute__((aligned(8))) pcb_t;
 
-typedef struct FMv2_record FMv2_record;
-
 typedef struct PMv1_object
 {
     uint64_t temp_x[30];   // 임시 레지스터

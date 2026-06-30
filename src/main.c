@@ -64,6 +64,11 @@ void main(void)
     proc_dump("proc1", proc1);
     proc_dump("proc2", proc2);
 
+    for (int i = 0; i < 5; i++)
+    {
+        dump("low_Q", pm_object.PMv1_lowqueue[i]);
+    }
+
 #pragma region proc_change
 
     init_irq();
