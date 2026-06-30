@@ -74,11 +74,6 @@ pcb_t *pm_run(PMv1_object *obj)
     uint8_t data;
     uint8_t sec = 0; // 선택한 것
 
-    for (int i = 0; i < 5; i++)
-    {
-        dump("pcd id's", obj->PMv1_mem[i].id);
-    }
-
     if (obj->highnum != 0)
     {
         log("case A");
@@ -106,15 +101,12 @@ pcb_t *pm_run(PMv1_object *obj)
 
     else if (obj->lownum != 0)
     {
-        log("case B");
-        data = pm_low(obj, 1, 0);
 
-        dump("data", data);
+        data = pm_low(obj, 1, 0);
 
         if (data >= PMV1_MAX_PROC || data == 0)
             return &obj->PMv1_mem[INIT_PROC_SECT];
 
-        dump("return in pm_run", &obj->PMv1_mem[data]);
         return &obj->PMv1_mem[data];
     }
 

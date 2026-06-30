@@ -25,6 +25,7 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
     // id 로직
     uint64_t target_chunk;
     uint64_t leading_zeros;
+    uint8_t temp_id;
 
     uint64_t search_com = ~(uint64_t)obj->proc_comocc;
     asm volatile("clz %0, %1" : "=r"(leading_zeros) : "r"(search_com << 60));
@@ -44,12 +45,14 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
     obj->proc_occ[obj->occ_num] |= (1ULL << bit_pos);
     if (obj->proc_occ[obj->occ_num] == ~0ULL)
     {
-        obj->proc_comocc |= (1 << (3 - obj->occ_num));
+        obj->proc_comocc |= (1ULL << (3 - obj->occ_num));
     }
 
-    pcb_t *new_proc = &obj->PMv1_mem[pid];
+    temp_id = 64 - pid; // 순방향으로 바꾸기
 
-    new_proc->id = 64 - pid; // 프로세스의 id를 할당된 pid로 변경
+    pcb_t *new_proc = &obj->PMv1_mem[temp_id];
+
+    new_proc->id = temp_id;  // 프로세스의 id를 할당된 pid로 변경
     new_proc->b_id = pid;    // 죽을때 쓸 id를 저장
     new_proc->p_id = parid;  // 부모 id를 수정함
     new_proc->proc_info = 0; // 정보를 0으로 수정

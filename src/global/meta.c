@@ -77,8 +77,6 @@ pcb_t *schedule_proc(pcb_t *proc)
 
     pcb_t *next = pm_run(&pm_object);
 
-    dump("next", next);
-
     if (next->proc_info == (pcb_t *)PROC_SIGNAL)
     {
         pm_awake(&pm_object, 0, proc); // 현재 proc를 넣고
