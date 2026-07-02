@@ -3,7 +3,7 @@
 .global _shell_binary_size
 
 _shell_binary_start:
-    .incbin "init/SHELL.BIN"
+    .incbin "init/SHELL.elf"
 _shell_binary_end:
 
 _shell_binary_size:

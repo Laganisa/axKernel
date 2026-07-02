@@ -57,6 +57,7 @@ uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val)
 }
 
 // ! 정확히 작동하는지 확인 필요
+// ? 이거 참조하는 부분이 없는데
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val)
 {
     if (type == 0)
@@ -67,49 +68,36 @@ uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val)
     return pm_high(queue, cmd, val);
 }
 
-// 프로세스 실행 함수
-// 큐에 들어가 있는 대로 진행함
+/*
+    프로세스 실행 함수
+    큐에 들어가 있는 대로 진행함
+    큐에 있는 프로세스를 리턴함
+*/
 pcb_t *pm_run(PMv1_object *obj)
 {
-    uint8_t data;
-    uint8_t sec = 0; // 선택한 것
+    uint8_t data; // pm 큐에서 뽑은 id 값
 
     if (obj->highnum != 0)
     {
         data = pm_high(obj, 1, 0);
-
-        // 안전 체크
-        if (data >= PMV1_MAX_PROC || data == 0)
-            return &obj->PMv1_mem[INIT_PROC_SECT];
-
-        // 프로세스 좀비
-        if (data == PROC_ZOMB)
-        {
-            // ! 좀비 처리
-            // ! 그냥 init에 붙여두고 정리하면 될듯
-            return &obj->PMv1_mem[INIT_PROC_SECT];
-        }
-
-        // 프로세스 대기
-        if (data == PROC_DORM)
-        {
-        }
-
-        return &obj->PMv1_mem[data];
     }
-
     else if (obj->lownum != 0)
     {
-
         data = pm_low(obj, 1, 0);
-
-        if (data >= PMV1_MAX_PROC || data == 0)
-            return &obj->PMv1_mem[INIT_PROC_SECT];
-
-        return &obj->PMv1_mem[data];
+    }
+    else
+    {
+        // 큐가 비어있으면 ROOT로 리턴
+        return &obj->PMv1_mem[ROOT_PROC_SECT];
     }
 
-    return &obj->PMv1_mem[INIT_PROC_SECT];
+    // 범위를 넘었다면 ROOT 프로세스를 리턴하기
+    if (data >= PMV1_MAX_PROC || data == 0)
+    {
+        return &obj->PMv1_mem[ROOT_PROC_SECT];
+    }
+
+    return &obj->PMv1_mem[data];
 }
 
 /*
