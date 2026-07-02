@@ -76,7 +76,6 @@ pcb_t *pm_run(PMv1_object *obj)
 
     if (obj->highnum != 0)
     {
-        log("case A");
         data = pm_high(obj, 1, 0);
 
         // 안전 체크
@@ -125,7 +124,6 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     // pm_run의 대기 큐에 삽입
     if (cmd == 0)
     {
-        dump("id", proc->id);
         pm_low(&pm_object, 0, proc->id);
     }
     else

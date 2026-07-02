@@ -21,7 +21,6 @@ pcb_t *get_current_proc_addr()
 pcb_t *irq_handler_main(pcb_t *proc)
 {
     disable_irq();
-
     enter("irq_handler_main");
 
     uint32_t iar = *(volatile uint32_t *)(GIC_CPU_BASE + 0x0C);
@@ -29,9 +28,7 @@ pcb_t *irq_handler_main(pcb_t *proc)
 
     if (irq_nr == 30)
     {
-        enter("schedule_proc");
         current_proc = schedule_proc(proc);
-        exit("schedule_proc");
     }
 
     *(volatile uint32_t *)(GIC_CPU_BASE + 0x10) = iar;
@@ -40,7 +37,6 @@ pcb_t *irq_handler_main(pcb_t *proc)
     asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
 
     dump("proc", current_proc);
-
     exit("irq_handler_main");
     enable_irq();
 
