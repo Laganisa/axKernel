@@ -37,6 +37,10 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
         // arg2: buffer pointer
         // arg3: length
 
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+
         if (arg1 == 1 && arg2)
         {
 
