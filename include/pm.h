@@ -30,7 +30,7 @@ typedef struct pcb_t
 
 typedef struct PMv1_object
 {
-    uint64_t temp_x[30];   // 임시 레지스터
+    uint64_t temp_x[31];   // 임시 레지스터
     uint64_t temp_exce[8]; // irq에 사용하는 임시 레지스터
 
     uint64_t *base; // 바닥 주소

@@ -53,23 +53,24 @@ void main(void)
     puts("Booting AxKernel\n");
 
     // 파일로 실행해보기
-    pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_inf_A, 0);
+    // pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_inf_A, 0);
 
     // pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_inf_B, 0);
     // pm_awake(&pm_object, 0, proc2);
 
-    // pcb_t *shell_p = proc_turn(reco, "SHEL.BIN", _shell_binary_start, 1);
-    // pm_awake(&pm_object, 0, shell_p);
+    pcb_t *shell_proc = proc_turn(reco, "SHEL.BIN", _shell_binary_start, 1);
+    pm_awake(&pm_object, 0, shell_proc);
 
-    proc_dump("proc1", proc1);
+    // proc_dump("proc1", proc1);
     // proc_dump("proc2", proc2);
+    proc_dump("shell proc", shell_proc);
 
 #pragma region proc_change
 
     init_irq();
 
-    current_proc = proc1;
-    _proc(proc1);
+    current_proc = shell_proc;
+    _proc(shell_proc);
 
 #pragma endregion
 }

@@ -11,6 +11,7 @@
 
 .extern current_task_id
 
+// 여기도 바꾼 방식으로 수정하기
 el1_spx_sync:
 
     bl check_el1_sync
@@ -77,10 +78,10 @@ el1_spx_sync:
     add sp, sp, #272
     eret
 
+// 나중에 고칠거
 el1_spx_irq:
-    // 1. pm_object 주소 로드
     ldr x9, =0x40024000
-
+    
     stp x0, x1, [x9, #0]
 
     ldr x10, =current_proc
@@ -89,32 +90,33 @@ el1_spx_irq:
     stp x2,  x3,  [x10, #(2*8)]
     stp x4,  x5,  [x10, #(4*8)]
     stp x6,  x7,  [x10, #(6*8)]
-    stp x8,  x9,  [x10, #(8*8)]
-    stp x10, x11, [x10, #(10*8)]
-    stp x12, x13, [x10, #(12*8)]
-    stp x14, x15, [x10, #(14*8)]
-    stp x16, x17, [x10, #(16*8)]
-    stp x18, x19, [x10, #(18*8)]
-    stp x20, x21, [x10, #(20*8)]
-    stp x22, x23, [x10, #(22*8)]
-    stp x24, x25, [x10, #(24*8)]
-    stp x26, x27, [x10, #(26*8)]
-    stp x28, x29, [x10, #(28*8)]
-    str x30,      [x10, #(30*8)]
+    stp x8,  x9,  [x10, #(8*8)]   
+    
+    mov x11, x10
+    stp x10, x12, [x11, #(10*8)]
+    stp x13, x14, [x11, #(12*8)]
+    stp x15, x16, [x11, #(14*8)]
+    stp x17, x18, [x11, #(16*8)]
+    stp x19, x20, [x11, #(18*8)]
+    stp x21, x22, [x11, #(20*8)]
+    stp x23, x24, [x11, #(22*8)]
+    stp x25, x26, [x11, #(24*8)]
+    stp x27, x28, [x11, #(26*8)]
+    stp x29, x30, [x11, #(28*8)]
 
-    mov x11, sp
-    str x11, [x10, #(31*8)]
+    mov x12, sp
+    str x12, [x11, #(31*8)]
 
-    mrs x11, spsr_el1
-    str x11, [x10, #(32*8)]
+    mrs x12, spsr_el1
+    str x12, [x11, #(32*8)]
 
-    mrs x11, elr_el1
-    str x11, [x10, #(33*8)]
+    mrs x12, elr_el1
+    str x12, [x11, #(33*8)]
 
-    ldp x0, x1, [x9, #OFF_TEMP_X + (0*8)]
-    stp x0, x1, [x10, #(0*8)]
+    ldp x0, x1, [x9, #0]
+    stp x0, x1, [x11, #(0*8)]
 
-    mov x0, x10          
+    mov x0, x11
     bl irq_handler_main
 
     b _proc
