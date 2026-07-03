@@ -51,7 +51,7 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
             }
         }
         return arg3;
-    }
+    }   
     // 시스템
     case SYS_YIELD:
     {

@@ -56,18 +56,6 @@ uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val)
     return ret;
 }
 
-// ! 정확히 작동하는지 확인 필요
-// ? 이거 참조하는 부분이 없는데
-uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val)
-{
-    if (type == 0)
-    {
-        return pm_low(queue, cmd, val);
-    }
-
-    return pm_high(queue, cmd, val);
-}
-
 /*
     프로세스 실행 함수
     큐에 들어가 있는 대로 진행함
@@ -116,11 +104,34 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     }
     else
     {
-        // 프로세스를 종료 상태로 표시
-        proc->state = PROC_ZOMB;
-        proc->b_id = proc->id; // 종료 시 원래 pid를 기록
-        // id는 유지해서 식별을 보존
+        // ! 나중에 만들기
 
+        // 휴면
+        if (cmd == 1)
+        {
+            proc->state = PROC_DORM;
+        }
+        // 정지
+        else if (cmd == 2)
+        {
+            proc->state = PROC_STOP;
+        }
+        // 좀비
+        else if (cmd == 3)
+        {
+            proc->state = PROC_ZOMB;
+        }
+        else
+        {
+        }
+
+        /*
+            id는 유지해서 식별을 보존
+            종료 시 원래 pid를 기록
+        */
+        proc->b_id = proc->id;
+
+        // ? 이거 왜 있음?
         uint8_t *ptr = (uint8_t *)proc;
 
         // ! 프로세스가 차지한 공간을 가비지 컬랙터에게 줌

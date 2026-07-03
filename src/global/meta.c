@@ -1,6 +1,7 @@
 #include "meta.h"
 #include "mm.h"
 #include "debug.h"
+#include "asm.h"
 
 extern pcb_t *current_proc;
 
@@ -15,7 +16,7 @@ pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod
     fm_exec_hdr_t task;
     task.magic = FM_EXEC_MAGIC;
     task.mode = (mod == 0) ? FM_EXEC_MODE_DIRECT : FM_EXEC_MODE_IMAGE;
-    task.entry = (uint64_t)entry_point;
+    task.entry = (mod == 0) ? (uint64_t)entry_point : 0;
     task.image_size = 0;
 
     // 2. IMAGE 모드일 때 바이너리 파일 기록
@@ -28,31 +29,173 @@ pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod
         {
             uint64_t shell_size = *((uint64_t *)_task_shell_size);
 
-            // 헤더를 앞에 붙이지 않고, 전체 바이너리를 파일에 통째로 기록
-            // 그래야 링커가 배치한 데이터 섹션들이 그대로 유지됨
-            uint32_t alloc_size = (uint32_t)(((shell_size + 4095) / 4096) * 4096);
+            // ELF 이미지와 FM 헤더를 함께 저장
+            uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + shell_size);
+            uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
 
             fm_create(reco, name, alloc_size, 0);
+            task.image_size = shell_size;
+            fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
+            fm_write(reco, name, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
 
-            // task 헤더를 파일 앞에 쓰고 싶다면 쓰되,
-            // 바이너리 데이터는 오프셋 0부터 시작하도록 유지해야 함
-            // 만약 FM_exec_file이 오프셋을 처리한다면, 헤더를 건너뛰도록 하거나
-            // 아예 헤더를 파일 외부에 두는 설계를 고려해 봐.
-            fm_write(reco, name, _task_shell_start, (uint32_t)shell_size, 0);
-
-            return fm_exec_file(reco, &pm_object, name, 0);
+            return mata_exec_file(reco, &pm_object, name, 0);
         }
     }
 
     // 기본 동작
     fm_create(reco, name, 1024, 0);
     fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
-    return fm_exec_file(reco, &pm_object, name, 0);
+    return mata_exec_file(reco, &pm_object, name, 0);
 }
 
-void loader(void)
+/*
+    ELF loader helper functions
+*/
+
+static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
 {
-    ;
+    if (image_size < sizeof(elf_ehdr_t))
+    {
+        return FALSE;
+    }
+    if (ehdr->e_ident[0] != ELF_MAGIC0 || ehdr->e_ident[1] != ELF_MAG1 || ehdr->e_ident[2] != ELF_MAG2 || ehdr->e_ident[3] != ELF_MAG3)
+    {
+        return FALSE;
+    }
+    if (ehdr->e_ident[4] != ELF_CLASS_64 || ehdr->e_ident[5] != ELF_DATA_LSB)
+    {
+        return FALSE;
+    }
+    if (ehdr->e_machine != ELF_MACHINE_AARCH64)
+    {
+        return FALSE;
+    }
+    if (ehdr->e_phentsize != sizeof(elf_phdr_t))
+    {
+        return FALSE;
+    }
+    if ((uint64_t)ehdr->e_phoff + (uint64_t)ehdr->e_phnum * sizeof(elf_phdr_t) > image_size)
+    {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
+{
+    elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
+
+    if (!elf_valid_header(ehdr, image_size))
+    {
+        return 0;
+    }
+
+    uint64_t min_vaddr = (uint64_t)-1;
+    for (uint16_t i = 0; i < ehdr->e_phnum; i++)
+    {
+        elf_phdr_t *phdr = (elf_phdr_t *)(image + ehdr->e_phoff + (i * sizeof(elf_phdr_t)));
+        if (phdr->p_type != ELF_PT_LOAD)
+        {
+            continue;
+        }
+        if (phdr->p_filesz > phdr->p_memsz)
+        {
+            return 0;
+        }
+        if (phdr->p_offset + phdr->p_filesz > image_size)
+        {
+            return 0;
+        }
+        if (phdr->p_vaddr < min_vaddr)
+        {
+            min_vaddr = phdr->p_vaddr;
+        }
+    }
+
+    if (min_vaddr == (uint64_t)-1)
+    {
+        return 0;
+    }
+
+    uint64_t real_addr = mm_find(&mm_stack, proc->mm_addr, 0);
+
+    for (uint16_t i = 0; i < ehdr->e_phnum; i++)
+    {
+        elf_phdr_t *phdr = (elf_phdr_t *)(image + ehdr->e_phoff + (i * sizeof(elf_phdr_t)));
+        if (phdr->p_type != ELF_PT_LOAD)
+        {
+            continue;
+        }
+
+        uint64_t seg_offset = phdr->p_vaddr - min_vaddr;
+        if (seg_offset + phdr->p_memsz > (INITIAL_PROC_SIZE << 10))
+        {
+            return 0;
+        }
+
+        uint8_t *dest = (uint8_t *)(real_addr + seg_offset);
+        memcpy(dest, image + phdr->p_offset, (uint32_t)phdr->p_filesz);
+        for (uint64_t j = phdr->p_filesz; j < phdr->p_memsz; j++)
+        {
+            dest[j] = 0;
+        }
+    }
+
+    if (ehdr->e_entry < min_vaddr)
+    {
+        return 0;
+    }
+
+    proc->elr_el1 = real_addr + (ehdr->e_entry - min_vaddr);
+    return proc;
+}
+
+// 파일 실행
+pcb_t *mata_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
+{
+
+    fcb_t *file = fm_find(reco, path);
+    fm_exec_hdr_t *hdr;
+
+    if (file == 0 || file->is_dir)
+    {
+
+        return 0;
+    }
+
+    hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
+
+    if (hdr->magic != FM_EXEC_MAGIC)
+    {
+
+        return 0;
+    }
+
+    if (hdr->mode == FM_EXEC_MODE_DIRECT)
+    {
+
+        return creat_proc_entry(obj, hdr->entry, parid);
+    }
+
+    if (hdr->mode == FM_EXEC_MODE_IMAGE)
+    {
+
+        pcb_t *proc = creat_proc_entry(obj, 0, parid);
+
+        if (proc == 0)
+        {
+            return 0;
+        }
+
+        if (elf_load_image(proc, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size) == 0)
+        {
+            return 0;
+        }
+
+        return proc;
+    }
+
+    return 0;
 }
 
 pcb_t *schedule_proc(pcb_t *proc)
