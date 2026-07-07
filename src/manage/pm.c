@@ -102,6 +102,7 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     {
         pm_low(&pm_object, 0, proc->id);
     }
+    // 여기 하단은 호출되지 않음
     else
     {
         // ! 나중에 만들기

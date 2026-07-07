@@ -83,6 +83,8 @@ static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
 
 static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
 {
+    enter("elf load image");
+
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 
     if (!elf_valid_header(ehdr, image_size))
@@ -135,6 +137,17 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
 
         uint8_t *dest = (uint8_t *)(real_addr + seg_offset);
         memcpy(dest, image + phdr->p_offset, (uint32_t)phdr->p_filesz);
+
+        dump("p_offset", phdr->p_offset);
+        dump("p_vaddr", phdr->p_vaddr);
+        dump("p_filesz", phdr->p_filesz);
+
+        dump("dest+0x840", *(uint64_t *)(dest + 0x840));
+        dump("dest+0x848", *(uint64_t *)(dest + 0x848));
+        dump("real_addr", real_addr);
+        dump("min_vaddr", min_vaddr);
+        dump("entry", ehdr->e_entry);
+
         for (uint64_t j = phdr->p_filesz; j < phdr->p_memsz; j++)
         {
             dest[j] = 0;
