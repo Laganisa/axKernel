@@ -41,6 +41,9 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
         dump("arg2", arg2);
         dump("arg3", arg3);
 
+        put_hex(*(uint64_t *)arg2);
+        puts("\n");
+
         if (arg1 == 1 && arg2)
         {
 

@@ -56,60 +56,36 @@ uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val)
     return ret;
 }
 
-// ! 정확히 작동하는지 확인 필요
-uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val)
-{
-    if (type == 0)
-    {
-        return pm_low(queue, cmd, val);
-    }
-
-    return pm_high(queue, cmd, val);
-}
-
-// 프로세스 실행 함수
-// 큐에 들어가 있는 대로 진행함
+/*
+    프로세스 실행 함수
+    큐에 들어가 있는 대로 진행함
+    큐에 있는 프로세스를 리턴함
+*/
 pcb_t *pm_run(PMv1_object *obj)
 {
-    uint8_t data;
-    uint8_t sec = 0; // 선택한 것
+    uint8_t data; // pm 큐에서 뽑은 id 값
 
     if (obj->highnum != 0)
     {
         data = pm_high(obj, 1, 0);
-
-        // 안전 체크
-        if (data >= PMV1_MAX_PROC || data == 0)
-            return &obj->PMv1_mem[INIT_PROC_SECT];
-
-        // 프로세스 좀비
-        if (data == PROC_ZOMB)
-        {
-            // ! 좀비 처리
-            // ! 그냥 init에 붙여두고 정리하면 될듯
-            return &obj->PMv1_mem[INIT_PROC_SECT];
-        }
-
-        // 프로세스 대기
-        if (data == PROC_DORM)
-        {
-        }
-
-        return &obj->PMv1_mem[data];
     }
-
     else if (obj->lownum != 0)
     {
-
         data = pm_low(obj, 1, 0);
-
-        if (data >= PMV1_MAX_PROC || data == 0)
-            return &obj->PMv1_mem[INIT_PROC_SECT];
-
-        return &obj->PMv1_mem[data];
+    }
+    else
+    {
+        // 큐가 비어있으면 ROOT로 리턴
+        return &obj->PMv1_mem[ROOT_PROC_SECT];
     }
 
-    return &obj->PMv1_mem[INIT_PROC_SECT];
+    // 범위를 넘었다면 ROOT 프로세스를 리턴하기
+    if (data >= PMV1_MAX_PROC || data == 0)
+    {
+        return &obj->PMv1_mem[ROOT_PROC_SECT];
+    }
+
+    return &obj->PMv1_mem[data];
 }
 
 /*
@@ -126,13 +102,37 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     {
         pm_low(&pm_object, 0, proc->id);
     }
+    // 여기 하단은 호출되지 않음
     else
     {
-        // 프로세스를 종료 상태로 표시
-        proc->state = PROC_ZOMB;
-        proc->b_id = proc->id; // 종료 시 원래 pid를 기록
-        // id는 유지해서 식별을 보존
+        // ! 나중에 만들기
 
+        // 휴면
+        if (cmd == 1)
+        {
+            proc->state = PROC_DORM;
+        }
+        // 정지
+        else if (cmd == 2)
+        {
+            proc->state = PROC_STOP;
+        }
+        // 좀비
+        else if (cmd == 3)
+        {
+            proc->state = PROC_ZOMB;
+        }
+        else
+        {
+        }
+
+        /*
+            id는 유지해서 식별을 보존
+            종료 시 원래 pid를 기록
+        */
+        proc->b_id = proc->id;
+
+        // ? 이거 왜 있음?
         uint8_t *ptr = (uint8_t *)proc;
 
         // ! 프로세스가 차지한 공간을 가비지 컬랙터에게 줌

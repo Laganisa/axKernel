@@ -2,6 +2,7 @@
 #include "io.h"
 #include "mm.h"
 #include "asm.h"
+#include "meta.h"
 #include "debug.h"
 
 /*
@@ -279,58 +280,6 @@ fcb_t *fm_find(FMv2_record *reco, int8_t path[27])
                 return &(reco->FMv2_mem[pos_dir1][pos_dir2][i]);
             }
         }
-    }
-
-    return 0;
-}
-
-// 파일 실행
-pcb_t *fm_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
-{
-
-    fcb_t *file = fm_find(reco, path);
-    fm_exec_hdr_t *hdr;
-
-    if (file == 0 || file->is_dir)
-    {
-
-        return 0;
-    }
-
-    hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
-
-    if (hdr->magic != FM_EXEC_MAGIC)
-    {
-
-        return 0;
-    }
-
-    if (hdr->mode == FM_EXEC_MODE_DIRECT)
-    {
-
-        return creat_proc_entry(obj, hdr->entry, parid);
-    }
-
-    if (hdr->mode == FM_EXEC_MODE_IMAGE)
-    {
-
-        pcb_t *proc = creat_proc_entry(obj, 0, parid);
-        uint64_t real_addr;
-        uint64_t entry_addr;
-
-        if (proc == 0)
-        {
-            return 0;
-        }
-
-        real_addr = mm_find(&mm_stack, proc->mm_addr, 0);
-
-        memcpy((uint8_t *)real_addr, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size);
-
-        entry_addr = real_addr + hdr->entry;
-        proc->elr_el1 = entry_addr;
-
-        return proc;
     }
 
     return 0;

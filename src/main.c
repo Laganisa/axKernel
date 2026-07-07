@@ -16,22 +16,21 @@
 #include "pm.h" // 프로세스 관리자 헤더
 #include "fm.h" // 파일 관리자 헤더
 
+#include "meta.h"
+#include "debug.h"
+#include "in_proc.h"
+
 extern void _proc(pcb_t *);
 extern void vector_table(void);
-// extern void irq_handler_main(void);
 
 // 쉘 코드
-extern uint8_t _shell_binary_start[];
-extern uint8_t _shell_binary_size[];
+extern uint8_t _task_shell_start[];
+extern uint8_t _task_shell_size[];
 
 volatile uint8_t resched_flag = 0;
 int current_task_id = 0; // 반드시 함수 밖(Global)에 있어야 함
 
 #pragma endregion
-
-#include "meta.h"
-#include "debug.h"
-#include "in_proc.h"
 
 // 커널 함수
 void main(void)
@@ -52,25 +51,29 @@ void main(void)
 
     puts("Booting AxKernel\n");
 
-    // 파일로 실행해보기
+    /*
+        파일로 만든뒤 대기 큐에 넣기
+    */
+
     // pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_inf_A, 0);
 
     // pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_inf_B, 0);
     // pm_awake(&pm_object, 0, proc2);
 
-    pcb_t *shell_proc = proc_turn(reco, "SHEL.BIN", _shell_binary_start, 1);
+    pcb_t *shell_proc = proc_turn(reco, "SHEL.BIN", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
 
     // proc_dump("proc1", proc1);
     // proc_dump("proc2", proc2);
     proc_dump("shell proc", shell_proc);
 
-#pragma region proc_change
+    /*
+        프로세스 전환
+    */
 
+    // ? 이거 왜 초기화 부분에 있지 않지?
     init_irq();
 
     current_proc = shell_proc;
     _proc(shell_proc);
-
-#pragma endregion
 }

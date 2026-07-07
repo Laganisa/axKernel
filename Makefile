@@ -28,7 +28,7 @@ user_modules:
 	@$(MAKE) -C $(LIB_DIR) --no-print-directory
 	@$(MAKE) -C $(SHELL_DIR) --no-print-directory
 	@mkdir -p init
-	@cp -f $(SHELL_DIR)/SHELL.BIN init/
+	@cp -f $(SHELL_DIR)/build/SHELL.elf init/
 
 $(BUILD_DIR)/%.o: %
 	@mkdir -p $(dir $@)
