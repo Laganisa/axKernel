@@ -11,7 +11,7 @@
 
 .extern current_task_id
 
-// 여기도 바꾼 방식으로 수정하기
+// ! 여기도 바꾼 방식으로 수정하기
 el1_spx_sync:
 
     bl check_el1_sync

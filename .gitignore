@@ -17,7 +17,8 @@ build/
 .idea/
 *.swp
 *.swo
-*~                  # 백업 파일
+# 백업 파일
+*~                
 
 # OS 메타 파일
 .DS_Store

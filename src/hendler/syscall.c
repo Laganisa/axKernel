@@ -37,6 +37,15 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
         // arg2: buffer pointer
         // arg3: length
 
+        /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+        */
+
+        // put_hex(*(uint64_t *)arg2);
+        // puts("\n");
+
         if (arg1 == 1 && arg2)
         {
 
@@ -86,16 +95,16 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
         char c = getchar();
 
-        putchar(c);
-        puts(":");
-        put_hex(c);
+        // putchar(c);
+        // puts(":");
+        // put_hex(c);
 
         buf[0] = c;
 
         return 1;
     }
     // 시스템 종료
-    case SYS_EXIT: // 나중에 시스템 콜 sys_exit로 바꾸기
+    case SYS_EXIT:
     {
         enter("sys_exit");
         // arg1: exit code

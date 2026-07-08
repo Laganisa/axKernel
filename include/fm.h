@@ -84,7 +84,6 @@ fcb_t *fm_find(FMv2_record *reco, int8_t path[27]);
 void *fm_data_addr(FMv2_record *reco, fcb_t *file);
 uint32_t fm_write(FMv2_record *reco, int8_t path[27], void *buf, uint32_t size, uint32_t offset);
 void fm_list(FMv2_record *reco, int8_t path[27]);
-pcb_t *fm_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid);
 void fm_execute(FMv2_record *reco);
 
 /*

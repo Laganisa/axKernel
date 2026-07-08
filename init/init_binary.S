@@ -1,10 +1,10 @@
-.section .rodata.shell, "a"
-.global _shell_binary_start
-.global _shell_binary_size
+.section .rodata.tasks, "a"
+.global _task_shell_start
+.global _task_shell_size
 
-_shell_binary_start:
-    .incbin "init/SHELL.BIN"
-_shell_binary_end:
+_task_shell_start:
+    .incbin "init/shell.elf"
+_task_shell_end:
 
-_shell_binary_size:
-    .quad _shell_binary_end - _shell_binary_start
+_task_shell_size:
+    .quad _task_shell_end - _task_shell_start

@@ -1,4 +1,3 @@
-/* 오류없는지 확인 필요 */
 ENTRY(_start)
 
 SECTIONS
@@ -7,13 +6,13 @@ SECTIONS
     . = 0x40000000;
     
     .text : {
-        KEEP(*(.text.boot))  /* 부트 코드는 무조건 맨 앞에 유지 */
-        *(.text.proc*)        /* 프로세스 코드*/
+        KEEP(*(.text.boot))
+        *(.text.proc*)       
         *(.text)
         *(.text.*)           
     }
     
-    . = ALIGN(8);            /* 8바이트 정렬 (64비트 최적화) */
+    . = ALIGN(8);            
     .rodata : {
         *(.rodata)
         *(.rodata.*)

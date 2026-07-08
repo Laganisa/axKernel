@@ -29,6 +29,7 @@
 #define PROC_STOP 0x2          // 프로세스 휴면 상태
 #define PROC_ZOMB 0x3          // 프로세스 휴면 상태
 #define INIT_PROC_SECT 1       // 큐에서 아무 것도 없을때 꺼내는 값을 정하는거
+#define ROOT_PROC_SECT 1
 
 #pragma endregion
 
