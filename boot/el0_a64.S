@@ -5,7 +5,6 @@
 
 .extern current_task_id
 
-// 바꾼 방식으로 수정하기
 el0_a64_sync:
     ldr x9, =current_proc
     ldr x9, [x9]
@@ -46,19 +45,16 @@ el0_a64_sync:
 
     bl sync_handler_main
 
-    // 1. PCB 주소를 다시 가져옴 (x9이 베이스 주소)
     ldr x9, =current_proc
     ldr x9, [x9]
 
-    // 2. 시스템 콜 리턴값(x0)을 PCB의 reg_x[0] 위치에 저장
     str x0, [x9, #0]
 
-    // 3. 모든 범용 레지스터 복구 (PCB에서)
     ldp x0,  x1,  [x9, #(0 * 8)]
     ldp x2,  x3,  [x9, #(2 * 8)]
     ldp x4,  x5,  [x9, #(4 * 8)]
     ldp x6,  x7,  [x9, #(6 * 8)]
-    ldp x8,  x10, [x9, #(8 * 8)]  // x9은 베이스주소이므로 x9레지스터 자체는 복구 안함
+    ldp x8,  x10, [x9, #(8 * 8)]  
     ldp x11, x12, [x9, #(10 * 8)]
     ldp x13, x14, [x9, #(12 * 8)]
     ldp x15, x16, [x9, #(14 * 8)]
@@ -71,7 +67,6 @@ el0_a64_sync:
     ldr x29,      [x9, #(28 * 8)]
     ldr x30,      [x9, #(29 * 8)]
 
-    // 4. PC와 SPSR 복원 (PCB에서)
     ldr x1, [x9, #(33 * 8)] // elr_el1
     ldr x2, [x9, #(32 * 8)] // spsr
     msr elr_el1, x1
@@ -151,30 +146,6 @@ loop_copy:
     ldp x28, x29, [sp, #224]
     ldr x30,      [sp, #240]
 
-    add sp, sp, #272
-    eret
-
-no_current_proc:
-    mov sp, x19
-    ldp x0, x1, [sp, #256]
-    msr elr_el1, x0
-    msr spsr_el1, x1
-    ldr x30, [sp, #240]
-    ldp x28, x29, [sp, #224]
-    ldp x26, x27, [sp, #208]
-    ldp x24, x25, [sp, #192]
-    ldp x22, x23, [sp, #176]
-    ldp x20, x21, [sp, #160]
-    ldp x18, x19, [sp, #144]
-    ldp x16, x17, [sp, #128]
-    ldp x14, x15, [sp, #112]
-    ldp x12, x13, [sp, #96]
-    ldp x10, x11, [sp, #80]
-    ldp x8, x9, [sp, #64]
-    ldp x6, x7, [sp, #48]
-    ldp x4, x5, [sp, #32]
-    ldp x2, x3, [sp, #16]
-    ldp x0, x1, [sp, #0]
     add sp, sp, #272
     eret
 

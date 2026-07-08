@@ -12,14 +12,14 @@ extern pcb_t *current_proc;
 */
 pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod)
 {
-    // 1. 헤더 설정 (이제는 정보 전달용으로만 사용)
+    // 헤더 설정
     fm_exec_hdr_t task;
     task.magic = FM_EXEC_MAGIC;
     task.mode = (mod == 0) ? FM_EXEC_MODE_DIRECT : FM_EXEC_MODE_IMAGE;
     task.entry = (mod == 0) ? (uint64_t)entry_point : 0;
     task.image_size = 0;
 
-    // 2. IMAGE 모드일 때 바이너리 파일 기록
+    // IMAGE 모드일 때 바이너리 파일 기록
     if (mod == 1)
     {
         extern uint8_t _task_shell_start[];
@@ -83,7 +83,6 @@ static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
 
 static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
 {
-    enter("elf load image");
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 
@@ -158,17 +157,6 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
 
         uint8_t *dest = (uint8_t *)(load_base + seg_offset);
         memcpy(dest, image + phdr->p_offset, (uint32_t)phdr->p_filesz);
-
-        dump("p_offset", phdr->p_offset);
-        dump("p_vaddr", phdr->p_vaddr);
-        dump("p_filesz", phdr->p_filesz);
-
-        dump("dest+0x840", *(uint64_t *)(dest + 0x840));
-        dump("dest+0x848", *(uint64_t *)(dest + 0x848));
-        dump("real_addr", real_addr);
-        dump("load_base", load_base);
-        dump("min_vaddr", min_vaddr);
-        dump("entry", ehdr->e_entry);
 
         for (uint64_t j = phdr->p_filesz; j < phdr->p_memsz; j++)
         {
