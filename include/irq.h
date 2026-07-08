@@ -3,7 +3,7 @@
 #ifndef __IRQ_H__
 #define __IRQ_H__
 
-uint64_t irq_handler_main(pcb_t *proc, uint64_t current_sp);
+pcb_t *irq_handler_main(pcb_t *proc);
 
 void handle_timer_tick();
 void init_vectors();

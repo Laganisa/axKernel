@@ -1,6 +1,6 @@
 #include "types.h"
 #include "io.h"
-#include "exce.h"
+#include "sync.h"
 #include "syscall.h"
 #include "pm.h"
 
@@ -9,11 +9,13 @@
 // 여기도 수정해야함
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
-extern void _proc(uint64_t *reg_val);
+extern void _proc(pcb_t *);
 
 // Simple syscall handler
 uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
+    disable_irq();
+
     enter("handle_syscall");
 
     reg_x8();
@@ -34,6 +36,15 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
         // arg1: fd (0=stdin, 1=stdout, 2=stderr)
         // arg2: buffer pointer
         // arg3: length
+
+        /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+        */
+
+        // put_hex(*(uint64_t *)arg2);
+        // puts("\n");
 
         if (arg1 == 1 && arg2)
         {
@@ -84,22 +95,16 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
         char c = getchar();
 
-        putchar(c);
-        puts(":");
-        put_hex(c);
-
-        puts(" buf=");
-        put_hex((uint64_t)buf);
+        // putchar(c);
+        // puts(":");
+        // put_hex(c);
 
         buf[0] = c;
-
-        puts(" after=");
-        put_hex((uint64_t)buf[0]);
 
         return 1;
     }
     // 시스템 종료
-    case SYS_EXIT: // 나중에 시스템 콜 sys_exit로 바꾸기
+    case SYS_EXIT:
     {
         enter("sys_exit");
         // arg1: exit code

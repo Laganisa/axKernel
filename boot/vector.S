@@ -5,46 +5,43 @@
 .extern current_task_id // 나중에 주석 달아서 없에기
 
 vector_table:
-    // 현재 EL에서 SP_EL0 사용(거의 사용하지 않음)
     .align 7
-    b curr_el_sp0_sync
+    b el1_sp0_sync
     .align 7
-    b curr_el_sp0_irq
+    b el1_sp0_irq
     .align 7
-    b curr_el_sp0_fiq
+    b el1_sp0_fiq
     .align 7
-    b curr_el_sp0_serror
+    b el1_sp0_serror
 
-    //현재 EL에서 SP_ELx 사용 (커널 내부 예외)
     .align 7
-    b curr_el_spx_sync
+    b el1_spx_sync
     .align 7
-    b curr_el_spx_irq   // 커널 실행 중 인터럽트 터지면 이 함수 실행
+    b el1_spx_irq  
     .align 7
-    b curr_el_spx_fiq
+    b el1_spx_fiq
     .align 7
-    b curr_el_spx_serror
+    b el1_spx_serror
 
-    //하위 EL에서 AArch64 사용 (태스크가 돌다 터질 때)
     .align 7
-    b lower_el_aarch64_sync  // 시스템 콜 (svc)
+    b el0_a64_sync 
     .align 7
-    b lower_el_aarch64_irq   // 태스크 실행 중 타이머 터지면 이 함수 실행
+    b el0_a64_irq   
     .align 7
-    b lower_el_aarch64_fiq
+    b el0_a64_fiq
     .align 7
-    b lower_el_aarch64_serror
+    b el0_a64_serror
 
-    // 하위 EL에서 AArch32 사용 (거의 안 씀)
     .align 7
-    b lower_el_aarch32_sync
+    b el0_a32_sync
     .align 7
-    b lower_el_aarch32_irq
+    b el0_a32_irq
     .align 7
-    b lower_el_aarch32_fiq
+    b el0_a32_fiq
     .align 7
-    b lower_el_aarch32_serror
+    b el0_a32_serror
 
+// 이거 어디서 쓰는지 확인해야하는데
 new_context:
     mov sp, x0               
 

@@ -2,7 +2,7 @@
 #include "io.h"
 #include "pm.h"
 
-#define toggle FALSE
+#define toggle TRUE
 
 void dump(const char *name, uint64_t val)
 {
@@ -160,14 +160,24 @@ void reg_cntfrq_el0(void)
 
 #pragma region check_used_asm
 
-void check_sync(void)
+void check_el0_sync(void)
 {
-    log("SYNC");
+    log("el0_SYNC");
 }
 
-void check_irq(void)
+void check_el1_sync(void)
 {
-    log("IRQ");
+    log("el1_SYNC");
+}
+
+void check_el1_irq(void)
+{
+    log("el1_IRQ");
+}
+
+void check_el0_irq(void)
+{
+    log("el0_IRQ");
 }
 
 void check_inf_loop(void)
@@ -210,8 +220,8 @@ void proc_dump(const char *name, pcb_t *proc)
         puts("\n");
         puts("[Debug] ");
         puts(name);
-        puts(" pc : ");
-        put_hex(proc->pc);
+        puts(" elr_el1 : ");
+        put_hex(proc->elr_el1);
         puts("\n");
     }
 }
