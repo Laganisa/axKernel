@@ -6,7 +6,7 @@ OBJCOPY = aarch64-linux-gnu-objcopy
 LIB_DIR   = usr/axLib
 SHELL_DIR = usr/axShell
 
-# 헤더 경로를 변수로 관리 (커널은 커널 헤더만, 필요시 유저 헤더도 추가)
+# 헤더 경로를 변수로 관리
 KERNEL_INC = -Iinclude -I$(LIB_DIR)/include -I$(SHELL_DIR)/include
 
 # CFLAGS에 KERNEL_INC 적용

@@ -93,6 +93,8 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
     }
 
     uint64_t min_vaddr = (uint64_t)-1;
+    uint64_t max_vaddr = 0;
+    uint64_t max_align = 1;
     for (uint16_t i = 0; i < ehdr->e_phnum; i++)
     {
         elf_phdr_t *phdr = (elf_phdr_t *)(image + ehdr->e_phoff + (i * sizeof(elf_phdr_t)));
@@ -112,6 +114,14 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
         {
             min_vaddr = phdr->p_vaddr;
         }
+        if (phdr->p_vaddr + phdr->p_memsz > max_vaddr)
+        {
+            max_vaddr = phdr->p_vaddr + phdr->p_memsz;
+        }
+        if (phdr->p_align > max_align)
+        {
+            max_align = phdr->p_align;
+        }
     }
 
     if (min_vaddr == (uint64_t)-1)
@@ -119,7 +129,18 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
         return 0;
     }
 
+    if ((max_vaddr - min_vaddr) > (INITIAL_PROC_SIZE << 10))
+    {
+        return 0;
+    }
+
     uint64_t real_addr = mm_find(&mm_stack, proc->mm_addr, 0);
+    uint64_t load_base = real_addr;
+    if (max_align > 1)
+    {
+        uint64_t align_mask = max_align - 1;
+        load_base = (load_base + align_mask) & ~align_mask;
+    }
 
     for (uint16_t i = 0; i < ehdr->e_phnum; i++)
     {
@@ -135,7 +156,7 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
             return 0;
         }
 
-        uint8_t *dest = (uint8_t *)(real_addr + seg_offset);
+        uint8_t *dest = (uint8_t *)(load_base + seg_offset);
         memcpy(dest, image + phdr->p_offset, (uint32_t)phdr->p_filesz);
 
         dump("p_offset", phdr->p_offset);
@@ -145,6 +166,7 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
         dump("dest+0x840", *(uint64_t *)(dest + 0x840));
         dump("dest+0x848", *(uint64_t *)(dest + 0x848));
         dump("real_addr", real_addr);
+        dump("load_base", load_base);
         dump("min_vaddr", min_vaddr);
         dump("entry", ehdr->e_entry);
 
@@ -159,7 +181,7 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
         return 0;
     }
 
-    proc->elr_el1 = real_addr + (ehdr->e_entry - min_vaddr);
+    proc->elr_el1 = load_base + (ehdr->e_entry - min_vaddr);
     return proc;
 }
 
