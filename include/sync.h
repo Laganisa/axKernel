@@ -1,4 +1,4 @@
-#include "../include/pm.h"
+#include "pm.h"
 
 #ifndef __EXCEPTION_H__
 #define __EXCEPTION_H__
@@ -27,7 +27,7 @@ uint64_t handle_ill_exec_state(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint
 uint64_t handle_svc_a32(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t arg3);
 uint64_t handle_hvc_a32(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t arg3);
 uint64_t handle_smc_a32(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t arg3);
-uint64_t handle_syscall(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t arg3);
+uint64_t handle_svc_a64(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t arg3);
 uint64_t handle_hvc_a64(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t arg3);
 uint64_t handle_smc_a64(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t arg3);
 uint64_t handle_trap_msr_mrs_sys_inst(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t arg3);

@@ -12,7 +12,7 @@ extern pcb_t *get_current_proc_addr(void);
 extern void _proc(pcb_t *);
 
 // Simple syscall handler
-uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
+uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     enter("handle_syscall");
 
@@ -134,7 +134,6 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
         puts("\n");
 
         // full_stop();
-
         return -1ULL;
     }
 
