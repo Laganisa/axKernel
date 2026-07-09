@@ -6,3 +6,7 @@
 - 한빛 미디어, 임베디드 개발자를 위한 파일시스템의 원리와 실습
 - 사이텍 미디어, 컴퓨터 네트워크; TCP/IP
 - 디버깅을 통해 배우는 리눅스 커널의 구조와 원리 1 & 2
+
+## 사이트
+
+- aarch 문서(<https://developer.arm.com/documentation/ddi0487/af/>)

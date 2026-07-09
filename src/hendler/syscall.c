@@ -14,8 +14,6 @@ extern void _proc(pcb_t *);
 // Simple syscall handler
 uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
-    disable_irq();
-
     enter("handle_syscall");
 
     reg_x8();
@@ -26,6 +24,7 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
     reg_esr_el1();
     */
 
+    // ! 이것도 나중에 함수 포인터를 사용해야 할지도
     switch (syscall_num)
     {
     // 시스템 쓰기
@@ -42,9 +41,6 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
         dump("arg2", arg2);
         dump("arg3", arg3);
         */
-
-        // put_hex(*(uint64_t *)arg2);
-        // puts("\n");
 
         if (arg1 == 1 && arg2)
         {
@@ -83,6 +79,10 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
     {
         enter("sys_read");
 
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+
         int fd = (int)arg1;
         char *buf = (char *)arg2;
         size_t count = (size_t)arg3;
@@ -95,12 +95,12 @@ uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
         char c = getchar();
 
-        // putchar(c);
-        // puts(":");
-        // put_hex(c);
+        dump("input", c);
 
         buf[0] = c;
 
+        exit("sys_read");
+        exit("handle_syscall");
         return 1;
     }
     // 시스템 종료
