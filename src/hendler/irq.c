@@ -9,6 +9,8 @@
 #include "meta.h"
 extern void vector_table(void);
 
+static uint64_t system_timer;
+
 // extern volatile uint8_t resched_flag;
 
 pcb_t *current_proc = 0;

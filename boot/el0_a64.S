@@ -44,7 +44,7 @@ el0_a64_sync:
     lsr x4, x4, #26
 
     bl sync_handler_main
-
+    
     ldr x9, =current_proc
     ldr x9, [x9]
 
@@ -67,11 +67,17 @@ el0_a64_sync:
     ldr x29,      [x9, #(28 * 8)]
     ldr x30,      [x9, #(29 * 8)]
 
-    ldr x1, [x9, #(33 * 8)] // elr_el1
-    ldr x2, [x9, #(32 * 8)] // spsr
-    msr elr_el1, x1
-    msr spsr_el1, x2
+    ldr x10, [x9, #(31 * 8)] 
+    msr sp_el0, x10
     
+    ldr x10, [x9, #(32 * 8)] 
+    msr spsr_el1, x10
+
+    ldr x10, [x9, #(33 * 8)] 
+    msr elr_el1, x10
+
+    isb // 파이프라인 동기화
+
     eret
 
 el0_a64_irq:
