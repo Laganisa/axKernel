@@ -1,7 +1,7 @@
-// #include "../include/defs.h"
-// #include "../include/types.h"
-#include "../include/pm.h"
-#include "../include/sect.h"
+// #include "defs.h"
+// #include "types.h"
+#include "pm.h"
+#include "sect.h"
 
 #ifndef __FM_H__
 #define __FM_H__

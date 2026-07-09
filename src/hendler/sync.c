@@ -11,7 +11,7 @@
 
 uint64_t (*ec_table[64])(uint64_t, uint64_t, uint64_t, uint64_t) = {
     [0x0] = &handle_unknown,
-    [0x15] = &handle_syscall,
+    [0x15] = &handle_svc_a64,
     [0x20] = &handle_inst_abort,
     [0x24] = &handle_data_abort,
 };

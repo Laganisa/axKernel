@@ -49,7 +49,7 @@ el1_spx_sync:
     b.ne hang
 
     mov x0, x8              
-    bl handle_syscall
+    bl handle_svc_a64
 
     str x0, [sp, #248]
 

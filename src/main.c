@@ -27,9 +27,6 @@ extern void vector_table(void);
 extern uint8_t _task_shell_start[];
 extern uint8_t _task_shell_size[];
 
-volatile uint8_t resched_flag = 0;
-int current_task_id = 0; // 반드시 함수 밖(Global)에 있어야 함
-
 #pragma endregion
 
 // 커널 함수
@@ -44,6 +41,9 @@ void main(void)
     // pm_init(&pm_object, PM_ADDR_START);
     fm_init((uint64_t *)USER_FILE_START);
     // 인터럽트/타이머 초기화
+
+    // 초기화 부분으로 옮김
+    init_irq();
 
 #pragma endregion
 
@@ -63,16 +63,16 @@ void main(void)
     pcb_t *shell_proc = proc_turn(reco, "SHEL.BIN", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
 
+    fcb_t *a_file = fm_create(reco, "a", 1, 0);
+
     // proc_dump("proc1", proc1);
     // proc_dump("proc2", proc2);
     proc_dump("shell proc", shell_proc);
+    file_dump("a file", a_file);
 
     /*
         프로세스 전환
     */
-
-    // ? 이거 왜 초기화 부분에 있지 않지?
-    init_irq();
 
     current_proc = shell_proc;
     _proc(shell_proc);

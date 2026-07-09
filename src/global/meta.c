@@ -196,13 +196,12 @@ pcb_t *mata_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
-        log("FM_EXEC_MODE_DIRECT");
+
         return creat_proc_entry(obj, hdr->entry, parid);
     }
 
     if (hdr->mode == FM_EXEC_MODE_IMAGE)
     {
-        log("FM_EXEC_MODE_IMAGE");
 
         pcb_t *proc = creat_proc_entry(obj, 0, parid);
 
