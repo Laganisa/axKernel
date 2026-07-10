@@ -44,6 +44,6 @@ $(KERNEL).img: $(KERNEL).elf
 	@echo "---------------------------------------"
 
 clean:
-	rm -rf $(BUILD_DIR) init/SHELL.BIN
+	rm -rf $(BUILD_DIR) init/SHELL.elf
 	@$(MAKE) -C $(LIB_DIR) clean --no-print-directory 2>/dev/null || true
 	@$(MAKE) -C $(SHELL_DIR) clean --no-print-directory 2>/dev/null || true
