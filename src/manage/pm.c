@@ -122,9 +122,6 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
         {
             proc->state = PROC_ZOMB;
         }
-        else
-        {
-        }
 
         /*
             id는 유지해서 식별을 보존

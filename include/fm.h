@@ -1,7 +1,7 @@
-// #include "../include/defs.h"
-// #include "../include/types.h"
-#include "../include/pm.h"
-#include "../include/sect.h"
+// #include "defs.h"
+// #include "types.h"
+#include "pm.h"
+#include "sect.h"
 
 #ifndef __FM_H__
 #define __FM_H__
@@ -85,22 +85,5 @@ void *fm_data_addr(FMv2_record *reco, fcb_t *file);
 uint32_t fm_write(FMv2_record *reco, int8_t path[27], void *buf, uint32_t size, uint32_t offset);
 void fm_list(FMv2_record *reco, int8_t path[27]);
 void fm_execute(FMv2_record *reco);
-
-/*
-fcb_t *fm_delete(FMv2_record *reco, uint8_t path[26]);
-fcb_t *fm_find_path(FMv2_record *reco, uint8_t path[26]);
-void fm_list_dir(FMv2_record *reco, uint8_t path[26]);
-int32_t fm_read(FMv2_record *reco, uint8_t path[26], uint64_t offset, uint8_t *buf, uint32_t size);
-int32_t fm_write(FMv2_record *reco, uint8_t path[26], uint64_t offset, uint8_t *buf, uint32_t size);
-int8_t fm_rename(FMv2_record *reco, uint8_t path[26], int8_t new_name[8]);
-int8_t fm_change_auth(FMv2_record *reco, uint8_t path[26], uint8_t me_auth, uint8_t you_auth);
-fcb_t *fm_get_info(FMv2_record *reco, uint8_t path[26]);
-uint32_t fm_allocate_space(FMv2_record *reco, uint32_t size);
-void fm_deallocate_space(FMv2_record *reco, uint32_t addr, uint32_t size);
-int8_t fm_mkdir(FMv2_record *reco, uint8_t path[26], int8_t dir_name[8]);
-int8_t fm_rmdir(FMv2_record *reco, uint8_t path[26]);
-uint8_t fm_check_available(FMv2_record *reco, uint32_t required_size);
-void fm_sync(FMv2_record *reco);
-*/
 
 #endif

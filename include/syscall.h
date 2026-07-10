@@ -1,4 +1,4 @@
-#include "../include/types.h"
+#include "types.h"
 
 #ifndef __SYSCALL_H__
 #define __SYSCALL_H__
@@ -19,7 +19,7 @@
 
 #define SYS_WRITE 6
 #define SYS_READ 7
-#define SYS_FN_CRATE 8
+#define SYS_FM_CRATE 8
 #define SYT_FM_DELETE 9
 #define SYS_OPEN 10
 #define SYS_CLOSE 11
@@ -34,5 +34,11 @@
 #define SYS_CHMOD 14 // 파일 권한 변경
 
 // Syscall handler
-uint64_t handle_syscall(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3);
+uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3);
+
+int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+
 #endif
