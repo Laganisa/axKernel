@@ -3,7 +3,7 @@
 .global _task_shell_size
 
 _task_shell_start:
-    .incbin "init/shell.elf"
+    .incbin "init/SHELL.elf"
 _task_shell_end:
 
 _task_shell_size:
