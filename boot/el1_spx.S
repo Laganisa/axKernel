@@ -13,72 +13,76 @@
 
 // ! 여기도 바꾼 방식으로 수정하기
 el1_spx_sync:
+    ldr x9, =current_proc
+    ldr x9, [x9]
 
-    bl check_el1_sync
-    bl reg_elr_el1
-    bl reg_esr_el1
-    bl reg_far_el1
-
-    // 스택 공간 확보 및 컨텍스트 저장
-    sub sp, sp, #272
-    stp x0, x1, [sp, #0]
-    stp x2, x3, [sp, #16]
-    stp x4, x5, [sp, #32]
-    stp x6, x7, [sp, #48]
-    stp x8, x9, [sp, #64]
-    stp x10, x11, [sp, #80]
-    stp x12, x13, [sp, #96]
-    stp x14, x15, [sp, #112]
-    stp x16, x17, [sp, #128]
-    stp x18, x19, [sp, #144]
-    stp x20, x21, [sp, #160]
-    stp x22, x23, [sp, #176]
-    stp x24, x25, [sp, #192]
-    stp x26, x27, [sp, #208]
-    stp x28, x29, [sp, #224]
-    str x30, [sp, #240]
-    
-    mrs x9, elr_el1
+    // 저장부
+    stp x0,  x1,  [x9, #(0 * 8)]
+    stp x2,  x3,  [x9, #(2 * 8)]
+    stp x4,  x5,  [x9, #(4 * 8)]
+    stp x6,  x7,  [x9, #(6 * 8)]
+    stp x8,  x10, [x9, #(8 * 8)] 
+    stp x11, x12, [x9, #(10 * 8)]
+    stp x13, x14, [x9, #(12 * 8)]
+    stp x15, x16, [x9, #(14 * 8)]
+    stp x17, x18, [x9, #(16 * 8)]
+    stp x19, x20, [x9, #(18 * 8)]
+    stp x21, x22, [x9, #(20 * 8)]
+    stp x23, x24, [x9, #(22 * 8)]
+    stp x25, x26, [x9, #(24 * 8)]
+    stp x27, x28, [x9, #(26 * 8)]
+    str x29,      [x9, #(28 * 8)]
+    str x30,      [x9, #(29 * 8)]
+ 
     mrs x10, spsr_el1
-    stp x9, x10, [sp, #256]
+    str x10, [x9, #(32 * 8)] 
+    mrs x10, elr_el1
+    str x10, [x9, #(33 * 8)] 
 
-    mrs x0, esr_el1
-    lsr x1, x0, #26
+    // 시스템 콜
+    mov x0, x8
+    ldr x1, [x9, #0]
+    ldr x2, [x9, #8]
+    ldr x3, [x9, #16]
 
-    cmp x1, #0x15           // SVC 예외인지 확인
-    b.ne hang
+    mrs x4, esr_el1
+    lsr x4, x4, #26
 
-    mov x0, x8              
-    bl handle_svc_a64
-
-    str x0, [sp, #248]
-
-    ldp x9, x10, [sp, #256]
-    msr elr_el1, x9
-    msr spsr_el1, x10
+    bl sync_handler_main
     
-    ldp x0, x1, [sp, #0]
-    ldp x2, x3, [sp, #16]
-    ldp x4, x5, [sp, #32]
-    ldp x6, x7, [sp, #48]
-    ldp x8, x9, [sp, #64]
-    ldp x10, x11, [sp, #80]
-    ldp x12, x13, [sp, #96]
-    ldp x14, x15, [sp, #112]
-    ldp x16, x17, [sp, #128]
-    ldp x18, x19, [sp, #144]
-    ldp x20, x21, [sp, #160]
-    ldp x22, x23, [sp, #176]
-    ldp x24, x25, [sp, #192]
-    ldp x26, x27, [sp, #208]
-    ldp x28, x29, [sp, #224]
-    ldr x30, [sp, #240]
+    ldr x9, =current_proc
+    ldr x9, [x9]
 
-    ldr x0, [sp, #248]
-    add sp, sp, #272
+    str x0, [x9, #0]
+
+    ldp x0,  x1,  [x9, #(0 * 8)]
+    ldp x2,  x3,  [x9, #(2 * 8)]
+    ldp x4,  x5,  [x9, #(4 * 8)]
+    ldp x6,  x7,  [x9, #(6 * 8)]
+    ldp x8,  x10, [x9, #(8 * 8)]  
+    ldp x11, x12, [x9, #(10 * 8)]
+    ldp x13, x14, [x9, #(12 * 8)]
+    ldp x15, x16, [x9, #(14 * 8)]
+    ldp x17, x18, [x9, #(16 * 8)]
+    ldp x19, x20, [x9, #(18 * 8)]
+    ldp x21, x22, [x9, #(20 * 8)]
+    ldp x23, x24, [x9, #(22 * 8)]
+    ldp x25, x26, [x9, #(24 * 8)]
+    ldp x27, x28, [x9, #(26 * 8)]
+    ldr x29,      [x9, #(28 * 8)]
+    ldr x30,      [x9, #(29 * 8)]
+    
+    ldr x10, [x9, #(32 * 8)] 
+    msr spsr_el1, x10
+
+    ldr x10, [x9, #(33 * 8)] 
+    msr elr_el1, x10
+
+    isb // 파이프라인 동기화
+
     eret
 
-// 나중에 고칠거
+
 el1_spx_irq:
     ldr x9, =0x40024000
     

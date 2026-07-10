@@ -8,7 +8,6 @@
     FAT 시스템을 정리하는 파일
     fm.c, exfm.c의 파일 크기를 줄이고자
 */
-#pragma region 파일 도움 함수
 
 /*
    글자 8자 - 구문자 - 글자 8자 - 구문자 - 글자 8자
@@ -258,5 +257,3 @@ bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
         return FALSE;
     }
 }
-
-#pragma endregion

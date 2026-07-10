@@ -7,7 +7,7 @@
 
 #include "debug.h"
 #include "meta.h"
-extern void vector_table(void);
+// extern void vector_table(void);
 
 // 시스템 타이머: 두 타이머 인터럽트 간의 시간을 tick으로 나타낸거
 static uint64_t system_tick = 0;

@@ -63,12 +63,9 @@ void main(void)
     pcb_t *shell_proc = proc_turn(reco, "SHEL.BIN", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
 
-    fcb_t *a_file = fm_create(reco, "a", 1, 0);
-
     // proc_dump("proc1", proc1);
     // proc_dump("proc2", proc2);
-    proc_dump("shell proc", shell_proc);
-    file_dump("a file", a_file);
+    // proc_dump("shell proc", shell_proc);
 
     /*
         프로세스 전환
