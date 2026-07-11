@@ -19,8 +19,8 @@
 
 #define SYS_WRITE 6
 #define SYS_READ 7
-#define SYS_FM_CRATE 8
-#define SYT_FM_DELETE 9
+#define SYS_FILE_CRATE 8
+#define SYS_FILE_DELETE 9
 #define SYS_OPEN 10
 #define SYS_CLOSE 11
 
@@ -40,5 +40,6 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t creat_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 
 #endif

@@ -43,16 +43,17 @@ uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
 int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
-    enter("sys_write");
+    // enter("sys_write");
 
     // arg1: fd (0=stdin, 1=stdout, 2=stderr)
     // arg2: buffer pointer
     // arg3: length
 
+    /*
     dump("arg1", arg1);
     dump("arg2", arg2);
     dump("arg3", arg3);
-
+    */
     if (arg1 == 1 && arg2)
     {
 
@@ -62,8 +63,35 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
             putchar(((int8_t *)arg2)[i]);
         }
     }
-    exit("sys_write");
     return arg3;
+}
+
+int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+    dump("arg1", arg1);
+    dump("arg2", arg2);
+    */
+
+    // 어디를 어떻게 열지
+    char *path = (char *)arg1;
+    int flags = (int)arg2;
+}
+
+int32_t creat_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+    dump("arg1", arg1);
+    dump("arg2", arg2);
+    */
+
+    // 어디를 어떤 식으로 만들지
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+}
+
+int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
 }
 
 int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
@@ -103,12 +131,14 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 
         pm_awake(&pm_object, 1, current);
         next = pm_run(&pm_object);
+
+        dump("next", next);
+
         current_proc = next;
 
         if (next != 0)
         {
-            // ! 바꾸기
-            _proc((uint64_t *)next->sp);
+            _proc(next);
         }
 
         // 대기 함수 이거 나중에 바꿔야지
@@ -116,12 +146,4 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
             ;
     }
     return 0;
-}
-
-int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
-{
-    // 인자를 받기
-    char *path = (char *)arg1;
-    int flags = (int)arg2;
-    int mod = (int)arg3;
 }
