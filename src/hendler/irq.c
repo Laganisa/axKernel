@@ -1,13 +1,15 @@
-#include "io.h"
-#include "sync.h"
+#include "_io.h"
+#include "_sync.h"
 
-#include "mm.h"
+#include "_mm.h"
 
-#include "irq.h"
+#include "_irq.h"
+#include "_dm.h"
 
-#include "debug.h"
-#include "meta.h"
-// extern void vector_table(void);
+#include "_debug.h"
+#include "_meta.h"
+
+#include "_defs.h"
 
 // 시스템 타이머: 두 타이머 인터럽트 간의 시간을 tick으로 나타낸거
 static uint64_t system_tick = 0;
@@ -25,10 +27,13 @@ pcb_t *irq_handler_main(pcb_t *proc)
     disable_irq();
 
     // ! 장치 관리자 만들기
+
     uint32_t iar = *(volatile uint32_t *)(GIC_CPU_BASE + 0x0C);
     uint32_t irq_nr = iar & 0x3FF;
 
-    if (irq_nr == 30)
+    // uint32_t irq_nr = check_glc();
+
+    if (irq_nr == NSPTI)
     {
         current_proc = schedule_proc(proc);
     }

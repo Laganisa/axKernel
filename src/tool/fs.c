@@ -1,8 +1,8 @@
-#include "fm.h"
-#include "io.h"
-#include "mm.h"
-#include "asm.h"
-#include "debug.h"
+#include "_fm.h"
+#include "_io.h"
+#include "_mm.h"
+#include "_asm.h"
+#include "_debug.h"
 
 /*
     FAT 시스템을 정리하는 파일
@@ -64,7 +64,7 @@ uint16_t token(int8_t segment[8])
     현재 주소를 변환한 값(저기 위에 token 함수를 통과한 값)이랑
     같은 문자가 있는지 확인
 */
-bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
+uint8_t fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
 {
     // 경로길이가 짧으면 늘려주는 함수
     // 얼마나 짧은지 확인
@@ -189,7 +189,7 @@ bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27])
             dir_count++;
         }
 
-        bool is_ok = TRUE;
+        uint8_t is_ok = TRUE;
 
         // 디렉토리는 다음에 나오는 위치가 16임
         if (dir_count == 0)

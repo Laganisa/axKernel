@@ -1,4 +1,5 @@
-#include "../include/types.h"
+#include "_types.h"
+#include "_sect.h"
 
 #ifndef __DM_H__
 #define __DM_H__
@@ -12,6 +13,22 @@ typedef struct Driver
     int (*write)(void *buf); // 데이터 쓰기 함수 포인터
     void (*handler)(void);   // 인터럽트 발생 시 처리 로직
 } Driver;
+
+static inline uint32_t check_glc(void)
+{
+    uint32_t iar = *(volatile uint32_t *)(GIC_CPU_BASE + 0x0C);
+    uint32_t irq_nr = iar & 0x3FF;
+    return irq_nr;
+}
+
+static inline void reset_timer(void)
+{
+    uint32_t iar = *(volatile uint32_t *)(GIC_CPU_BASE + 0x0C);
+    *(volatile uint32_t *)(GIC_CPU_BASE + 0x10) = iar;
+
+    // 타이머 재설정
+    asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
+}
 
 #pragma region not_imp
 

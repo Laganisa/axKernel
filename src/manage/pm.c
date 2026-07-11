@@ -1,12 +1,12 @@
 // #include "types.h"
 // #include "defs.h"
-#include "io.h"
-#include "sync.h"
+#include "_io.h"
+#include "_sync.h"
 
-#include "mm.h"
+#include "_mm.h"
 // #include "pm.h"
 
-#include "debug.h"
+#include "_debug.h"
 
 /*
     주소를 주면 변환해서 내주는 코드

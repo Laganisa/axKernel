@@ -1,5 +1,5 @@
-#include "debug.h"
-#include "io.h"
+#include "_debug.h"
+#include "_io.h"
 
 #define toggle TRUE
 

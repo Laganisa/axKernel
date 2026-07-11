@@ -1,4 +1,4 @@
-#include "alloc.h"
+#include "_alloc.h"
 
 /*
     linked list를 이용한 동적할당 구현

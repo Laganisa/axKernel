@@ -1,5 +1,5 @@
-#include "../include/defs.h"
-#include "../include/sect.h"
+#include "_defs.h"
+#include "_sect.h"
 
 #ifndef __IO_H__
 #define __IO_H__

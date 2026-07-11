@@ -1,8 +1,8 @@
-#include "fm.h"
-#include "io.h"
-#include "mm.h"
-#include "asm.h"
-#include "debug.h"
+#include "_fm.h"
+#include "_io.h"
+#include "_mm.h"
+#include "_asm.h"
+#include "_debug.h"
 
 /*
     파일 만들기

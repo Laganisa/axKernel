@@ -46,4 +46,8 @@
 
 #pragma endregion
 
+// 장치 관리자 관련
+
+#define NSPTI 30 // Non-Secure Physical Timer Interrupt
+
 #endif

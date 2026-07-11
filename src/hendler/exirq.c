@@ -1,12 +1,12 @@
-#include "io.h"
-#include "sync.h"
+#include "_io.h"
+#include "_sync.h"
 
-#include "mm.h"
+#include "_mm.h"
 
-#include "irq.h"
+#include "_irq.h"
 
-#include "debug.h"
-#include "meta.h"
+#include "_debug.h"
+#include "_meta.h"
 extern void vector_table(void);
 
 // 이거 왜 있음?

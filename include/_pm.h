@@ -1,5 +1,5 @@
-#include "../include/defs.h"
-#include "types.h"
+#include "_defs.h"
+#include "_types.h"
 
 #ifndef __PM_H__
 #define __PM_H__

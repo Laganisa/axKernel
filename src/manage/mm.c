@@ -1,9 +1,9 @@
 // #include "types.h"
-#include "io.h"
-#include "mm.h"
-#include "asm.h"
+#include "_io.h"
+#include "_mm.h"
+#include "_asm.h"
 
-#include "debug.h"
+#include "_debug.h"
 
 // ! 수정 사항 존재
 

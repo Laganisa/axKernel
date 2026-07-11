@@ -1,7 +1,6 @@
 // #include "defs.h"
-// #include "types.h"
-#include "pm.h"
-#include "sect.h"
+#include "_pm.h"
+#include "_sect.h"
 
 #ifndef __FM_H__
 #define __FM_H__
@@ -77,7 +76,7 @@ typedef struct fm_exec_hdr_t
 #define fm_record ((FMv2_record *)FM_ADDR_START)
 
 void fm_init(uint64_t *addr);
-bool fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27]);
+uint8_t fm_check(FMv2_record *reco, uint8_t cmd, int8_t path[27]);
 fcb_t *fm_create(FMv2_record *reco, int8_t path[27], uint32_t size, uint8_t ok_dir);
 fcb_t *fm_delete(FMv2_record *reco, int8_t path[27]);
 fcb_t *fm_find(FMv2_record *reco, int8_t path[27]);

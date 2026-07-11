@@ -1,10 +1,10 @@
-#include "types.h"
-#include "io.h"
-#include "sync.h"
-#include "syscall.h"
-#include "pm.h"
+#include "_types.h"
+#include "_io.h"
+#include "_sync.h"
+#include "_syscall.h"
+#include "_pm.h"
 
-#include "debug.h"
+#include "_debug.h"
 
 // 여기도 수정해야함
 extern pcb_t *current_proc;
@@ -49,11 +49,9 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     // arg2: buffer pointer
     // arg3: length
 
-    /*
     dump("arg1", arg1);
     dump("arg2", arg2);
     dump("arg3", arg3);
-    */
 
     if (arg1 == 1 && arg2)
     {
@@ -64,6 +62,7 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
             putchar(((int8_t *)arg2)[i]);
         }
     }
+    exit("sys_write");
     return arg3;
 }
 

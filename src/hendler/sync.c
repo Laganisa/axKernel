@@ -1,9 +1,9 @@
-#include "io.h"
-#include "irq.h"
-#include "sync.h"
-#include "syscall.h"
+#include "_io.h"
+#include "_irq.h"
+#include "_sync.h"
+#include "_syscall.h"
 
-#include "debug.h"
+#include "_debug.h"
 
 /*
     헨들러 예외 처리를 C로 처리하는 파일

@@ -1,4 +1,4 @@
-#include "../include/types.h"
+#include "_types.h"
 
 #ifndef __SECT_H__
 #define __SECT_H__

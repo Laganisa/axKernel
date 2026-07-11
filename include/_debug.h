@@ -1,6 +1,6 @@
-#include "types.h"
-#include "pm.h"
-#include "fm.h"
+#include "_types.h"
+#include "_pm.h"
+#include "_fm.h"
 
 #ifndef __DEBUG_H__
 #define __DEBUG_H__

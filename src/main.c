@@ -1,24 +1,24 @@
 #pragma region include_Header
 
 // 타입 헤더
-#include "types.h"
+#include "_types.h"
 
 // 분리 파일
-#include "asm.h"  // 어셈블리 함수가 있는 헤더
-#include "defs.h" // 정의 헤더
-#include "sect.h" // 메모리 매핑 헤더
+#include "_asm.h"  // 어셈블리 함수가 있는 헤더
+#include "_defs.h" // 정의 헤더
+#include "_sect.h" // 메모리 매핑 헤더
 
-#include "io.h"   // 입출력 헤더
-#include "irq.h"  // 인터럽트 헤더 추가
-#include "sync.h" // Exception handlers
+#include "_io.h"   // 입출력 헤더
+#include "_irq.h"  // 인터럽트 헤더 추가
+#include "_sync.h" // Exception handlers
 
-#include "mm.h" // 메모리 관리자가 있는 헤더
-#include "pm.h" // 프로세스 관리자 헤더
-#include "fm.h" // 파일 관리자 헤더
+#include "_mm.h" // 메모리 관리자가 있는 헤더
+#include "_pm.h" // 프로세스 관리자 헤더
+#include "_fm.h" // 파일 관리자 헤더
 
-#include "meta.h"
-#include "debug.h"
-#include "in_proc.h"
+#include "_meta.h"
+#include "_debug.h"
+#include "_in_proc.h"
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);
