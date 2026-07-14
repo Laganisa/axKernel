@@ -11,11 +11,13 @@ extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
 extern void _proc(pcb_t *);
 
-int32_t (*call_table[15])(uint64_t, uint64_t, uint64_t) = {
+int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
     [1] = &exit_call,
     [6] = &write_call,
     [7] = &read_call,
-    [10] = &open_call};
+    [8] = &creat_call,
+    [10] = &open_call,
+    [11] = &close_call};
 
 // Simple syscall handler
 uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
@@ -54,9 +56,21 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     dump("arg2", arg2);
     dump("arg3", arg3);
     */
+
+    // stdin 시스템 출력
     if (arg1 == 1 && arg2)
     {
 
+        for (uint64_t i = 0; i < arg3; i++)
+        {
+
+            putchar(((int8_t *)arg2)[i]);
+        }
+    }
+    // stderr 시스템 출력
+    else if (arg1 == 2 && arg2)
+    {
+        put("[debug] ");
         for (uint64_t i = 0; i < arg3; i++)
         {
 
@@ -120,7 +134,6 @@ int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return 1;
 }
 
-// ! 수정하기
 int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     enter("sys_exit");

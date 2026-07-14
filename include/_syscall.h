@@ -8,8 +8,8 @@
 #pragma region pm
 
 #define SYS_EXIT 1
-#define sys_ABORT 2
-#define sys_LOAD 3
+#define SYS_ABORT 2
+#define SYS_LOAD 3
 #define SYS_YIELD 4
 #define SYS_PROC_CRATE 5
 
