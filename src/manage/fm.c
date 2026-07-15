@@ -3,6 +3,7 @@
 #include "_mm.h"
 #include "_asm.h"
 #include "_debug.h"
+#include "_alloc.h"
 
 /*
     파일 만들기
@@ -286,4 +287,82 @@ fcb_t *fm_delete(FMv2_record *reco, int8_t path[27])
     reco->all_num -= 1;
 
     return target_file;
+}
+
+/*
+    FMv3 로직
+*/
+
+bpt_node *search_leaf(bpt_node *root, uint64_t key)
+{
+    bpt_node *pre = root;
+    while (!pre->leaf)
+    {
+        int i;
+        for (i = 0; i < pre->data_num; i++)
+        {
+            if (key < pre->fnv1a_hash_key[i])
+                break;
+        }
+
+        pre = pre->child[i];
+    }
+
+    // 리프노드가 나오겠지?
+    return pre;
+}
+
+void insert(bpt_node *root, char *name, uint64_t value)
+{
+
+    uint64_t key = fnv1a_hash_64(name);
+    bpt_node *leaf = search_leaf(root, key);
+
+    if (leaf->data_num < MAX_BPT_NODE_NUM - 1)
+    {
+        // 그냥 삽입
+        int pos = 0;
+
+        while (pos < leaf->data_num && leaf->fnv1a_hash_key[pos] < key)
+        {
+            pos++;
+        }
+        for (int i = leaf->data_num; i > pos; i--)
+        {
+            leaf->fnv1a_hash_key[i] = leaf->fnv1a_hash_key[i - 1];
+            leaf->djb2_hash_Key[i] = leaf->djb2_hash_Key[i - 1];
+            leaf->data[i] = leaf->data[i - 1];
+        }
+        leaf->fnv1a_hash_key[pos] = key;
+        leaf->data[pos] = value;
+
+        leaf->data_num++;
+    }
+    else
+    {
+        // Split
+    }
+}
+
+bpt_node *create_root(void)
+{
+    return create_node(1);
+}
+
+bpt_node *create_node(uint8_t leaf)
+{
+    bpt_node *new_node = heap_alloc(sizeof(bpt_node));
+
+    if (new_node == NULL)
+    {
+        return NULL;
+    }
+
+    memset(new_node, 0, sizeof(bpt_node));
+
+    new_node->leaf = leaf;
+    new_node->data_num = 0;
+    new_node->next = NULL;
+
+    return new_node;
 }

@@ -6,3 +6,5 @@
 
 // heap을 시작점으로 잡고 할당하기
 // 즉 그 주소를 리턴하기
+
+uint64_t *heap_alloc(uint64_t size) { ; }

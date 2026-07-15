@@ -69,9 +69,25 @@ typedef struct fm_exec_hdr_t
     uint64_t image_size;
 } fm_exec_hdr_t;
 
+#define MAX_BPT_NODE_NUM 4
+
+typedef struct bpt_node
+{
+    uint8_t data_num : 7;
+    uint8_t leaf : 1;
+    uint64_t fnv1a_hash_key[MAX_BPT_NODE_NUM - 1]; // 검색에 주된 키
+    uint64_t djb2_hash_Key[MAX_BPT_NODE_NUM - 1];  // 다시 확인용도
+    uint64_t data[MAX_BPT_NODE_NUM - 1];           // 3개
+    struct node *parent;                           // 부모 포인터
+    struct node *child[MAX_BPT_NODE_NUM];
+    struct node *next;
+} bpt_node;
+
 #define FM_EXEC_MAGIC 0x415853504144453BULL // "AXSPADE;"라는 매직넘버
 #define FM_EXEC_MODE_DIRECT 0ULL
 #define FM_EXEC_MODE_IMAGE 1ULL
+
+#pragma region fmv2
 
 #define fm_record ((FMv2_record *)FM_ADDR_START)
 
@@ -84,5 +100,16 @@ void *fm_data_addr(FMv2_record *reco, fcb_t *file);
 uint32_t fm_write(FMv2_record *reco, int8_t path[27], void *buf, uint32_t size, uint32_t offset);
 void fm_list(FMv2_record *reco, int8_t path[27]);
 void fm_execute(FMv2_record *reco);
+
+#pragma endregion
+
+#pragma region fmv3
+
+bpt_node *search_leaf(bpt_node *root, uint64_t key);
+
+bpt_node *create_root(void);
+bpt_node *create_node(uint8_t leaf);
+void insert(bpt_node *root, char *name, uint64_t value);
+#pragma endregion
 
 #endif
