@@ -249,10 +249,5 @@ void file_dump(const char *name, fcb_t *file)
         puts(" size : ");
         put_hex(file->lens);
         puts("\n");
-        puts("[Debug] ");
-        puts(name);
-        puts(" auth : ");
-        put_hex(file->me_auth);
-        puts("\n");
     }
 }

@@ -52,40 +52,15 @@ typedef struct fm_exec_hdr_t
     uint64_t image_size;
 } fm_exec_hdr_t;
 
-typedef struct bpt_node
-{
-    uint8_t data_num : 7;
-    uint8_t leaf : 1;
-    uint64_t fnv1a_hash_key[MAX_BPT_NODE_NUM - 1]; // 검색에 주된 키
-    uint64_t djb2_hash_Key[MAX_BPT_NODE_NUM - 1];  // 다시 확인용도
-    uint16_t data[MAX_BPT_NODE_NUM - 1];           // 3개
-    struct node *parent;                           // 부모 포인터
-    struct node *child[MAX_BPT_NODE_NUM];
-    struct node *next;
-} bpt_node;
-
-#pragma region fmv2
-
 #define fm_record ((FMv3_record *)FM_ADDR_START)
 
 void fm_init(uint64_t *addr);
-fcb_t *fm_create(FMv3_record *reco, int8_t *path, uint32_t size, uint8_t ok_dir);
-fcb_t *fm_delete(FMv3_record *reco, int8_t path[27]);
-fcb_t *fm_find(FMv3_record *reco, int8_t *path);
+fcb_t *fm_create(FMv3_record *reco, char *path, uint32_t size, uint8_t ok_dir);
+fcb_t *fm_delete(FMv3_record *reco, char *path);
+fcb_t *fm_find(FMv3_record *reco, char *name);
 void *fm_data_addr(FMv3_record *reco, fcb_t *file);
-uint32_t fm_write(FMv3_record *reco, int8_t path[27], void *buf, uint32_t size, uint32_t offset);
-void fm_list(FMv3_record *reco, int8_t path[27]);
+uint32_t fm_write(FMv3_record *reco, char *name, void *buf, uint32_t size, uint32_t offset);
+void fm_list(FMv3_record *reco, int8_t *path);
 void fm_execute(FMv3_record *reco);
-
-#pragma endregion
-
-#pragma region fmv3
-
-bpt_node *search_leaf(bpt_node *root, uint64_t key);
-bpt_node *create_node(uint8_t leaf);
-void insert(bpt_node *root, char *name, uint16_t value);
-uint16_t *search(bpt_node *root, char *name);
-
-#pragma endregion
 
 #endif

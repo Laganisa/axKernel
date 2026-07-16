@@ -61,12 +61,9 @@ void main(void)
 
     // pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_inf_B, 0);
     // pm_awake(&pm_object, 0, proc2);
-
-    flow(0);
     pcb_t *shell_proc = proc_turn(reco, "SHEL.BIN", _task_shell_start, 1);
-    flow(0);
     pm_awake(&pm_object, 0, shell_proc);
-    flow(0);
+
     // proc_dump("proc1", proc1);
     // proc_dump("proc2", proc2);
     proc_dump("shell proc", shell_proc);
