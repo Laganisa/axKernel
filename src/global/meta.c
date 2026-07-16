@@ -180,7 +180,7 @@ pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint
 
     fm_exec_hdr_t *hdr;
 
-    if (file == 0 || file->is_dir)
+    if (file == 0)
     {
         return 0;
     }

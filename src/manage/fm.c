@@ -27,7 +27,7 @@ void fm_init(uint64_t *addr)
 }
 
 /*
-    파일의 경로, 파일 크기, 파일 위치, 권한
+    파일의 이름, 크기, 권한을 받아서 파일 타입 구조체를 리턴함
 */
 fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
 {

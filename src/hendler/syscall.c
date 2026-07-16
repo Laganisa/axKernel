@@ -80,6 +80,7 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return arg3;
 }
 
+// ! 미구현
 int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     /*
@@ -104,17 +105,12 @@ int32_t creat_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     int mode = (int)arg2;
     uint32_t size = (uint32_t)arg3;
 
-    dump("arg1", arg1);
-
-    puts(arg1);
-    puts("\n");
-    dump("arg2", arg2);
-
     fm_create(fm_record, arg1, arg3, arg2);
 
     return 1;
 }
 
+// ! 미구현
 int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
 }
