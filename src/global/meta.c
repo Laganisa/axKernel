@@ -10,7 +10,7 @@ extern pcb_t *current_proc;
     ! 나중에 바꾸기
     만약 모드값이 1이라면 loader 함수를 호출하기
 */
-pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod)
+pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod)
 {
     // 헤더 설정
     fm_exec_hdr_t task;
@@ -47,10 +47,6 @@ pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod
     fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
     return mata_exec_file(reco, &pm_object, name, 0);
 }
-
-/*
-    ELF loader helper functions
-*/
 
 static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
 {
@@ -174,7 +170,7 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
 }
 
 // 파일 실행
-pcb_t *mata_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
+pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
 {
 
     fcb_t *file = fm_find(reco, path);

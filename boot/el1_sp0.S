@@ -4,6 +4,9 @@
 .global el1_sp0_serror
 
 el1_sp0_sync:
+    bl reg_elr_el1
+    bl reg_esr_el1
+    bl reg_far_el1
     bl check_inf_loop
     b hang
 

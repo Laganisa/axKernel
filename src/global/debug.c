@@ -179,6 +179,11 @@ void check_el0_irq(void)
     log("el0_IRQ");
 }
 
+void check_loop(void)
+{
+    log("A loop");
+}
+
 void check_inf_loop(void)
 {
     log("inf loop");

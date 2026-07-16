@@ -65,39 +65,6 @@ static inline void memcpy(uint8_t *dst, uint8_t *src, uint32_t size)
     }
 }
 
-static inline void normalize_path(const int8_t *src, int8_t dst[27])
-{
-    uint8_t i = 0;
-
-    while (i < 26 && src[i] != '\0')
-    {
-        dst[i] = src[i];
-        i++;
-    }
-
-    while (i < 26)
-    {
-        dst[i++] = 0x20;
-    }
-
-    dst[26] = '\0';
-}
-
-static inline uint32_t slot_index(fcb_t *file)
-{
-    if (file->depth == 0)
-    {
-        return (uint32_t)file->ppdir_addr;
-    }
-
-    if (file->depth == 1)
-    {
-        return 16U + ((uint32_t)file->ppdir_addr * 16U) + (uint32_t)file->pdir_addr;
-    }
-
-    return 16U + 256U + ((uint32_t)file->ppdir_addr * 256U) + ((uint32_t)file->pdir_addr * 16U) + (uint32_t)file->me_addr;
-}
-
 #pragma endregion
 
 #endif
