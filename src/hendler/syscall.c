@@ -70,7 +70,7 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     // stderr 시스템 출력
     else if (arg1 == 2 && arg2)
     {
-        put("[debug] ");
+        puts("[debug] ");
         for (uint64_t i = 0; i < arg3; i++)
         {
 

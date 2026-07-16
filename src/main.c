@@ -19,6 +19,7 @@
 #include "_meta.h"
 #include "_debug.h"
 #include "_in_proc.h"
+#include "_alloc.h"
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);
@@ -35,19 +36,20 @@ void main(void)
 #pragma region reset
     // 하드웨어 초기화
     uart_init();
+    // 초기화 부분으로 옮김
+    init_irq();
+    // 동적할당 초기화
+    heap_init();
+
     // 관리자 초기화
     // MM 메타데이터는 MM_ADDR_START에 두고, 실제 프로세스 메모리는 사용자 영역에서 시작한다.
     mm_init(&mm_stack, USER_PROC_START);
     // pm_init(&pm_object, PM_ADDR_START);
     fm_init((uint64_t *)USER_FILE_START);
-    // 인터럽트/타이머 초기화
-
-    // 초기화 부분으로 옮김
-    init_irq();
 
 #pragma endregion
 
-    FMv2_record *reco = (FMv2_record *)FM_ADDR_START;
+    FMv3_record *reco = (FMv3_record *)FM_ADDR_START;
 
     puts("Booting AxKernel\n");
 
@@ -59,13 +61,12 @@ void main(void)
 
     // pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_inf_B, 0);
     // pm_awake(&pm_object, 0, proc2);
-
     pcb_t *shell_proc = proc_turn(reco, "SHEL.BIN", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
 
     // proc_dump("proc1", proc1);
     // proc_dump("proc2", proc2);
-    // proc_dump("shell proc", shell_proc);
+    proc_dump("shell proc", shell_proc);
 
     /*
         프로세스 전환
