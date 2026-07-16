@@ -15,17 +15,12 @@ typedef struct fcb_t
     uint16_t lens : 11; // 파일 길이 (1KB 단위, 최대 1MB)
     uint16_t fid : 5;   // 파일 id
 
-    uint16_t depth : 3;      // 파일 깊이 (0~2)
-    uint16_t is_dir : 1;     // 디렉토리 여부
-    uint16_t me_auth : 3;    // 나의 권한
-    uint16_t team_auth : 3;  // 너의 권한
-    uint16_t other_auth : 3; // 타인의 권한
-    uint16_t is_alloc : 1;   // 할당 여부
-    uint16_t is_lock : 1;    // 누가 읽고 있는지 확인
-    uint16_t padding : 1;
+    uint16_t depth : 4;    // 파일 깊이 (0~2)
+    uint16_t auth : 10;    // 권한
+    uint16_t is_alloc : 1; // 할당 여부
+    uint16_t is_lock : 1;  // 누가 읽고 있는지 확인
 
     uint8_t checksum; // 체크섬
-
     uint16_t YYYY : 7;
     uint16_t MM : 4;
     uint16_t DD : 5;
@@ -55,7 +50,7 @@ typedef struct fm_exec_hdr_t
 #define fm_record ((FMv3_record *)FM_ADDR_START)
 
 void fm_init(uint64_t *addr);
-fcb_t *fm_create(FMv3_record *reco, char *path, uint32_t size, uint8_t ok_dir);
+fcb_t *fm_create(FMv3_record *reco, char *path, uint32_t size, uint16_t auth);
 fcb_t *fm_delete(FMv3_record *reco, char *path);
 fcb_t *fm_find(FMv3_record *reco, char *name);
 void *fm_data_addr(FMv3_record *reco, fcb_t *file);

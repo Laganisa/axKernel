@@ -31,7 +31,7 @@ extern uint8_t _task_shell_size[];
 #pragma endregion
 
 // 커널 함수
-void main(void)
+void master(void)
 {
 #pragma region reset
     // 하드웨어 초기화

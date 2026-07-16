@@ -27,21 +27,18 @@ void fm_init(uint64_t *addr)
 }
 
 /*
-    파일의 경로, 파일 크기, 파일 위치, 디랙토리 여부
+    파일의 경로, 파일 크기, 파일 위치, 권한
 */
-// ! 수정해야함
-fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint8_t ok_dir)
+fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
 {
     // 파일 검사
     if (size > MAX_FILE_SIZE)
         return 0;
-    if (ok_dir && size > MAX_DIR_SIZE)
-        return 0;
 
-    fcb_t *new_file = NULL;
+    if (reco->all_num >= MAX_FILE_NUM)
+        return NULL;
 
-    // 남는 위치에 삽입
-    new_file = &(reco->FMv3_mem[reco->all_num]);
+    fcb_t *new_file = &(reco->FMv3_mem[reco->all_num]);
 
     uint16_t value = reco->all_num;
 
@@ -64,10 +61,11 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint8_t ok_dir)
         new_file->alias[i] = name[i];
     }
 
-    new_file->is_dir = ok_dir;
     new_file->is_alloc = 1;
     new_file->lens = size >> 10;
-    new_file->fid = (uint16_t)reco->all_num; // 파일의 slot 인덱스 저장
+    new_file->fid = (uint16_t)reco->all_num;
+    new_file->auth = auth;
+
     reco->all_num += 1;
 
     return new_file;
@@ -107,7 +105,7 @@ uint32_t fm_write(FMv3_record *reco, char *name, void *buf, uint32_t size, uint3
     fcb_t *file = fm_find(reco, name);
     uint32_t file_size;
 
-    if (file == 0 || file->is_dir)
+    if (file == 0)
     {
         return 0;
     }

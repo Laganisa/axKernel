@@ -81,7 +81,7 @@ clear_bss:
     b clear_bss
 
 clear_bss_done:
-    bl main
+    bl master
 
 hang:
     b hang

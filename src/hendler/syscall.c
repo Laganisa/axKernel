@@ -102,6 +102,17 @@ int32_t creat_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     // 어디를 어떤 식으로 만들지
     char *path = (char *)arg1;
     int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
+
+    dump("arg1", arg1);
+
+    puts(arg1);
+    puts("\n");
+    dump("arg2", arg2);
+
+    fm_create(fm_record, arg1, arg3, arg2);
+
+    return 1;
 }
 
 int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)

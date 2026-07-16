@@ -22,7 +22,6 @@ extern void _proc(pcb_t *); // proc와 연결
 */
 pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 {
-    enter("creat_proc");
     // id 로직
     uint64_t target_chunk;
     uint64_t leading_zeros;
@@ -53,9 +52,6 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 
     pcb_t *new_proc = &obj->PMv1_mem[temp_id];
 
-    dump("id", temp_id);
-    dump("entry", entry);
-
     new_proc->id = temp_id;  // 프로세스의 id를 할당된 pid로 변경
     new_proc->b_id = pid;    // 죽을때 쓸 id를 저장
     new_proc->p_id = parid;  // 부모 id를 수정함
@@ -68,8 +64,6 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
     // 할당 후 주소를 줌
     // 자신의 주소를 알아내고
     uint64_t real_addr = mm_find(&mm_stack, new_proc->mm_addr, 0);
-
-    dump("sp ", real_addr + (INITIAL_PROC_SIZE << 10));
 
     for (int i = 0; i < 31; i++)
     {
