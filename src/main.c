@@ -33,8 +33,11 @@ extern uint8_t _task_shell_size[];
 // 커널 함수
 void master(void)
 {
-#pragma region reset
-    // 하드웨어 초기화
+    kernel_main();
+}
+
+void kernel_main(void)
+{ // 하드웨어 초기화
     uart_init();
     // 초기화 부분으로 옮김
     init_irq();
@@ -46,8 +49,6 @@ void master(void)
     mm_init(&mm_stack, USER_PROC_START);
     // pm_init(&pm_object, PM_ADDR_START);
     fm_init((uint64_t *)USER_FILE_START);
-
-#pragma endregion
 
     FMv3_record *reco = (FMv3_record *)FM_ADDR_START;
 
@@ -75,3 +76,71 @@ void master(void)
     current_proc = shell_proc;
     _proc(shell_proc);
 }
+
+/*
+#define VIRTIO_MMIO_STATUS 0x00C
+#define VIRTIO_STATUS_ACKNOWLEDGE 1
+#define VIRTIO_STATUS_DRIVER 2
+
+#define VIRTIO_MMIO_BASE 0x0A000000
+#define VIRTIO_MMIO_MAGIC 0x000 // Magic Value 레지스터 오프셋
+
+void init_nic(uint64_t base)
+{
+    // 1. 장치 리셋
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = 0;
+
+    // 2. ACKNOWLEDGE 설정
+    uint32_t status = 0;
+    status |= VIRTIO_STATUS_ACKNOWLEDGE;
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
+
+    // 3. DRIVER 설정
+    status |= VIRTIO_STATUS_DRIVER;
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
+
+    puts("NIC Status Initialized!\n");
+}
+
+#define VIRTIO_MMIO_QUEUE_SEL 0x030 // 어떤 큐를 고를지 (0: RX, 1: TX)
+#define VIRTIO_MMIO_QUEUE_NUM 0x038 // 큐의 크기 설정
+#define VIRTIO_MMIO_QUEUE_PFN 0x040 // 큐의 물리 메모리 주소(PFN) 등록
+
+void setup_virtqueue(uint64_t base, int queue_index)
+{
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_SEL) = queue_index;
+
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_NUM) = 128;
+
+    uint32_t pfn = (uint32_t)(((uint64_t)get_ring_buffer_addr() >> 12));
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_PFN) = pfn;
+
+    puts("Queue setup done!\n");
+}
+
+static unsigned char virtio_ring_buffer[4096] __attribute__((aligned(4096)));
+
+void get_ring_buffer_addr()
+{
+    return (void *)virtio_ring_buffer;
+}
+
+#define VIRTIO_STATUS_DRIVER_OK 4
+
+void debug_main(void)
+{
+    uint64_t base = 0x0A000000;
+
+    init_nic(base);
+
+    // RX 큐(0번)와 TX 큐(1번)를 각각 등록
+    setup_virtqueue(base, 0);
+    setup_virtqueue(base, 1);
+
+       uint32_t status = *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS);
+    status |= VIRTIO_STATUS_DRIVER_OK;
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
+
+    puts("NIC is fully ready and running!\n");
+}
+*/
