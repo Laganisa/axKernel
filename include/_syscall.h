@@ -12,6 +12,7 @@
 #define SYS_LOAD 3
 #define SYS_YIELD 4
 #define SYS_PROC_CRATE 5
+#define SYS_PROC_CRATE 15
 
 #pragma endregion
 

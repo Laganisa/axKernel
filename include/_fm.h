@@ -36,7 +36,7 @@ typedef struct FMv3_record
     struct bpt_node *root;
 
     // 메타데이터 배열
-    fcb_t FMv3_mem[MAX_FILE_NUM];
+    struct fcb_t FMv3_mem[MAX_FILE_NUM];
 } FMv3_record;
 
 typedef struct fm_exec_hdr_t

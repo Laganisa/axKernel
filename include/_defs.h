@@ -7,6 +7,7 @@
 
 // 산수 관련
 
+// 절댓값 함수
 #define abs(x) ((x) < 0 ? -(x) : (x))
 
 // 계산 관련
@@ -15,6 +16,8 @@
 
 #define BIT_ODD64_t 0x5555555555555555  // 64비트 홀수 비트 검정
 #define BIT_EVEN64_t 0xAAAAAAAAAAAAAAAA // 64비트 짝수 비트 검정
+
+// 메모리 관리자 관련
 
 // 프로세스 관련
 #pragma region Proc
@@ -55,6 +58,9 @@
 
 // 장치 관리자 관련
 
-#define NSPTI 30 // Non-Secure Physical Timer Interrupt
+#define MAX_DEVI_NUM 32 // 최대 디바이스 개수
+#define NSPTI 30        // Non-Secure Physical Timer Interrupt
+
+// 네트워크 관리자 관련
 
 #endif

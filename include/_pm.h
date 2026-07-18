@@ -28,6 +28,7 @@ typedef struct pcb_t
 
 } __attribute__((aligned(8))) pcb_t;
 
+// ? 전체적으로 개편이 필요함
 typedef struct PMv1_object
 {
     uint64_t temp_x[31];   // 임시 레지스터
@@ -37,14 +38,16 @@ typedef struct PMv1_object
     // 총 공간이 24KB 정도
     uint8_t proc_comocc : 4; // 그중에서 어떤 proc_occ 이 사용되지 않았는지
     uint8_t proc_comscj : 4; // 프로세서 pm_rum에 들어가는 관리하는
-    uint8_t lownum;          // low에 들어있는 프로세스 수
-    uint8_t highnum;         // high에 들어있는 프로세스 수
-    uint8_t lowhead;         // 원형큐 머리
-    uint8_t lowtail;         // 원형큐 꼬리
-    uint8_t highhead;        // 원형큐 머리
-    uint8_t hightail;        // 원형큐 꼬리
 
-    pcb_t PMv1_mem[MAX_PCB_SIZE];         // 최대 프로세스 수 만큼 만들기 8KB 정도 pcb의 배열
+    // ? 이 큐 데이터들 제거 해야할듯 너무 많은 공간을 차지함
+    uint8_t lownum;   // low에 들어있는 프로세스 수
+    uint8_t highnum;  // high에 들어있는 프로세스 수
+    uint8_t lowhead;  // 원형큐 머리
+    uint8_t lowtail;  // 원형큐 꼬리
+    uint8_t highhead; // 원형큐 머리
+    uint8_t hightail; // 원형큐 꼬리
+
+    struct pcb_t PMv1_mem[MAX_PCB_SIZE];  // 최대 프로세스 수 만큼 만들기 8KB 정도 pcb의 배열
     uint8_t PMv1_lowqueue[MAX_PCB_SIZE];  // 프로세스 low q
     uint8_t PMv1_highqueue[MAX_PCB_SIZE]; // 프로세스 high q
 

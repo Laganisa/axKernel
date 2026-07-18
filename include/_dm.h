@@ -1,18 +1,29 @@
 #include "_types.h"
 #include "_sect.h"
+#include "_defs.h"
 
 #ifndef __DM_H__
 #define __DM_H__
 
 // 드라이버 구조체
-typedef struct Driver
+typedef struct device
 {
-    char *name;              // 드라이버 이름
-    int (*init)(void);       // 초기화 함수 포인터
-    int (*read)(void *buf);  // 데이터 읽기 함수 포인터
-    int (*write)(void *buf); // 데이터 쓰기 함수 포인터
-    void (*handler)(void);   // 인터럽트 발생 시 처리 로직
-} Driver;
+    char *name;                       // 드라이버 이름
+    uint64_t base_addr;               // 장치의 주소
+    uint32_t irq_nr;                  // 본인의 IRQ 번호 저장
+    int (*init)(void);                // 초기화 함수 포인터
+    int (*read)(void *buf);           // 데이터 읽기 함수 포인터
+    int (*write)(void *buf);          // 데이터 쓰기 함수 포인터
+    void (*handler)(uint32_t irq_nr); // 인터럽트 발생 시 처리 로직
+} device;
+
+typedef struct DMv1_driver
+{
+    // 관리자 주소
+    uint64_t *base;
+
+    struct device DMv1_mem[MAX_DEVI_NUM];
+} DMv1_driver;
 
 static inline uint32_t check_glc(void)
 {
@@ -29,6 +40,9 @@ static inline void reset_timer(void)
     // 타이머 재설정
     asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
 }
+
+// 전역 구조체 선언
+// #define dm_driver (*(DMv1_driver *)DM_ADDR_START)
 
 #pragma region not_imp
 
