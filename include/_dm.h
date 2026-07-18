@@ -44,6 +44,14 @@ static inline void reset_timer(void)
 // 전역 구조체 선언
 // #define dm_driver (*(DMv1_driver *)DM_ADDR_START)
 
+device *dm_creat(
+    DMv1_driver *driv,
+    uint32_t irq_nr,
+    char *dev_name,
+    uint64_t dev_addr,
+    int (*init_func)(void),
+    void (*handler_func)(uint32_t));
+
 #pragma region not_imp
 
 /*

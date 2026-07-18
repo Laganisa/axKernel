@@ -78,13 +78,6 @@ void kernel_main(void)
 }
 
 /*
-#define VIRTIO_MMIO_STATUS 0x00C
-#define VIRTIO_STATUS_ACKNOWLEDGE 1
-#define VIRTIO_STATUS_DRIVER 2
-
-#define VIRTIO_MMIO_BASE 0x0A000000
-#define VIRTIO_MMIO_MAGIC 0x000 // Magic Value 레지스터 오프셋
-
 void init_nic(uint64_t base)
 {
     // 1. 장치 리셋
@@ -102,10 +95,6 @@ void init_nic(uint64_t base)
     puts("NIC Status Initialized!\n");
 }
 
-#define VIRTIO_MMIO_QUEUE_SEL 0x030 // 어떤 큐를 고를지 (0: RX, 1: TX)
-#define VIRTIO_MMIO_QUEUE_NUM 0x038 // 큐의 크기 설정
-#define VIRTIO_MMIO_QUEUE_PFN 0x040 // 큐의 물리 메모리 주소(PFN) 등록
-
 void setup_virtqueue(uint64_t base, int queue_index)
 {
     *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_SEL) = queue_index;
@@ -120,7 +109,7 @@ void setup_virtqueue(uint64_t base, int queue_index)
 
 static unsigned char virtio_ring_buffer[4096] __attribute__((aligned(4096)));
 
-void get_ring_buffer_addr()
+void *get_ring_buffer_addr(void)
 {
     return (void *)virtio_ring_buffer;
 }
@@ -137,7 +126,7 @@ void debug_main(void)
     setup_virtqueue(base, 0);
     setup_virtqueue(base, 1);
 
-       uint32_t status = *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS);
+    uint32_t status = *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS);
     status |= VIRTIO_STATUS_DRIVER_OK;
     *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
 
