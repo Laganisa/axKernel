@@ -9,7 +9,7 @@
 #include "_debug.h"
 
 extern void _proc(pcb_t *); // proc와 연결
-
+extern device uart_device;
 /*
     프로세스 생성 및 삭제와 관련한 파일
 */
@@ -52,10 +52,10 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 
     pcb_t *new_proc = &obj->PMv1_mem[temp_id];
 
-    new_proc->id = temp_id;  // 프로세스의 id를 할당된 pid로 변경
-    new_proc->b_id = pid;    // 죽을때 쓸 id를 저장
-    new_proc->p_id = parid;  // 부모 id를 수정함
-    new_proc->proc_info = 0; // 정보를 0으로 수정
+    new_proc->id = temp_id;           // 프로세스의 id를 할당된 pid로 변경
+    new_proc->b_id = pid;             // 죽을때 쓸 id를 저장
+    new_proc->p_id = parid;           // 부모 id를 수정함
+    new_proc->use_dev = &uart_device; // 정보를 0으로 수정
 
     // 메모리 로직
     // 128KB를 할당 리턴 된 메모리 스택 주소를 받음

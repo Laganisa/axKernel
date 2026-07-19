@@ -1,13 +1,8 @@
 #include "_dm.h"
+#include "_io.h"
 
 // 장치 등록 함수
-device *dm_creat(
-    DMv1_driver *driv,
-    uint32_t irq_nr,
-    char *dev_name,
-    uint64_t dev_addr,
-    int (*init_func)(void),
-    void (*handler_func)(uint32_t))
+device *dm_creat(DMv1_driver *driv, uint32_t irq_nr, device dev)
 {
     if (irq_nr >= MAX_DEVI_NUM)
     {
@@ -25,10 +20,6 @@ device *dm_creat(
 
     // 값 할당
     new_device->irq_nr = irq_nr;
-    new_device->name = dev_name;
-    new_device->base_addr = dev_addr;
-    new_device->init = init_func;
-    new_device->handler = handler_func;
 
     // 초기화 함수가 제공되었다면 즉시 실행
     if (new_device->init != NULL)
@@ -42,6 +33,52 @@ device *dm_creat(
     return new_device;
 }
 
+// uart 장치 등록
+device uart_device = {
+    .name = "uart0",
+    .base_addr = UART0_BASE,
+    .init = uart_dev_init,
+    .read = uart_dev_read,
+    .write = uart_dev_write,
+    .handler = NULL // 인터럽트 쓸 거면 여기에 별도 함수 등록
+};
+
+#pragma region uart
+
+int uart_dev_write(void *buf)
+{
+    char *str = (char *)buf;
+    while (*str)
+    {
+        // 기존 네 로직 (한 글자씩 쏘기)
+        while (*UART0_FR & (1 << 5))
+        {
+        }
+        *UART0_DR = *str++;
+    }
+    return 0; // 성공
+}
+
+int uart_dev_read(void *buf)
+{
+    char *ptr = (char *)buf;
+    while (*UART0_FR & (1 << 4))
+    {
+    }
+    *ptr = *UART0_DR;
+    return 1; // 1바이트 읽음
+}
+
+// 이거 왜 있지?
+void uart_dev_init()
+{
+    *UART0_CR &= ~(1 << 0);
+    // 등등의 기타 초기화
+    *UART0_CR |= (1 << 0) | (1 << 8) | (1 << 9);
+}
+
+#pragma endregion
+
 void dm_init(void)
 {
 }
@@ -50,4 +87,20 @@ uint8_t timer_init(void)
     // 타이머 초기화
     asm volatile("msr cntp_tval_el0, %0" : : "r"(TIMER_TICK));
     return 0;
+}
+
+device *dm_find(DMv1_driver *driv, const char *name)
+{
+    for (int i = 0; i < MAX_DEVI_NUM; i++)
+    {
+        if (driv->DMv1_mem[i].name != NULL)
+        {
+            // 각 디바이스 구조체의 순서를 순회하면서 탐색
+            if (strcmp(driv->DMv1_mem[i].name, name) == 0)
+            {
+                return &(driv->DMv1_mem[i]);
+            }
+        }
+    }
+    return NULL; // 못 찾음
 }

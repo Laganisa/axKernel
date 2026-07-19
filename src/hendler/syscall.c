@@ -3,6 +3,7 @@
 #include "_sync.h"
 #include "_syscall.h"
 #include "_pm.h"
+#include "_dm.h"
 
 #include "_debug.h"
 
@@ -15,7 +16,7 @@ int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
     [1] = &exit_call,
     [6] = &write_call,
     [7] = &read_call,
-    [8] = &creat_call,
+    [8] = &creat_file_call,
     [10] = &open_call,
     [11] = &close_call};
 
@@ -55,25 +56,13 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     dump("arg3", arg3);
     */
 
-    // stdin 시스템 출력
-    if (arg1 == 1 && arg2)
+    if (arg1 == 1 || arg1 == 2)
     {
-
-        for (uint64_t i = 0; i < arg3; i++)
+        if (arg1 == 2)
         {
-
-            putchar(((int8_t *)arg2)[i]);
+            puts("[debug]");
         }
-    }
-    // stderr 시스템 출력
-    else if (arg1 == 2 && arg2)
-    {
-        puts("[debug] ");
-        for (uint64_t i = 0; i < arg3; i++)
-        {
-
-            putchar(((int8_t *)arg2)[i]);
-        }
+        return current_proc->use_dev->write(arg2);
     }
     return arg3;
 }
@@ -89,9 +78,13 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     // 어디를 어떻게 열지
     char *path = (char *)arg1;
     int flags = (int)arg2;
+    // 아직은 arg2 안씀
+    // 장치를 바꿔주기
+    current_proc->use_dev = dm_find(dm_driver, arg1);
+    return 1;
 }
 
-int32_t creat_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     /*
     dump("arg1", arg1);

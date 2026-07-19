@@ -3,6 +3,7 @@
 
 // #include "sync.h"
 #include "_fm.h"
+#include "_macro.h"
 
 // #include "pm.h"
 // #include "sect.h"
@@ -133,44 +134,4 @@ int32_t strcmp(const int8_t *s1, const int8_t *s2)
     return *(uint8_t *)s1 - *(uint8_t *)s2;
 }
 
-// 제거 가능한 입력
-void remo_get(int8_t *s, int32_t max_len)
-{
-    int32_t i = 0;
-    while (i < max_len - 1)
-    {
-        int8_t c = getchar();
-
-        // 1. 엔터: 입력 완료 시점
-        if (c == '\r' || c == '\n')
-        {
-            putchar('\n');
-            break;
-        }
-
-        // 2. 백스페이스(0x08) 및 DEL(0x7F): 제거(Remove) 로직
-        else if (c == '\b' || c == 0x7F)
-        {
-            if (i > 0) // 프롬프트 가드 (방화벽 역할)
-            {
-                i--;           // 인덱스 뒤로
-                s[i] = '\0';   // 버퍼에서 제거
-                puts("\b \b"); // 화면에서 한 글자 지우기
-            }
-        }
-
-        // 3. 일반 문자: 버퍼 추가 및 에코(Echo)
-        else if (c >= 32 && c < 127)
-        {
-            s[i++] = c; // 버퍼에 저장
-            putchar(c); // 화면에 출력
-        }
-    }
-    s[i] = '\0'; // 최종 문자열 마무리
-}
-
 #pragma endregion
-
-// PCB-related 전역 변수
-// ! 이거 왜 있음 ??????
-void *current_pcb_addr = 0;

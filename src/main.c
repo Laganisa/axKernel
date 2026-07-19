@@ -76,7 +76,6 @@ void kernel_main(void)
     current_proc = shell_proc;
     _proc(shell_proc);
 }
-
 /*
 void init_nic(uint64_t base)
 {
