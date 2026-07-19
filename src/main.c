@@ -20,6 +20,7 @@
 #include "_debug.h"
 #include "_in_proc.h"
 #include "_alloc.h"
+#include "_nm.h"
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);
@@ -33,7 +34,7 @@ extern uint8_t _task_shell_size[];
 // 커널 함수
 void master(void)
 {
-    kernel_main();
+    debug_main();
 }
 
 void kernel_main(void)
@@ -76,7 +77,7 @@ void kernel_main(void)
     current_proc = shell_proc;
     _proc(shell_proc);
 }
-/*
+
 void init_nic(uint64_t base)
 {
     // 1. 장치 리셋
@@ -94,6 +95,13 @@ void init_nic(uint64_t base)
     puts("NIC Status Initialized!\n");
 }
 
+static unsigned char virtio_ring_buffer[4096] __attribute__((aligned(4096)));
+
+void *get_ring_buffer_addr(void)
+{
+    return (void *)virtio_ring_buffer;
+}
+
 void setup_virtqueue(uint64_t base, int queue_index)
 {
     *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_SEL) = queue_index;
@@ -105,18 +113,39 @@ void setup_virtqueue(uint64_t base, int queue_index)
 
     puts("Queue setup done!\n");
 }
-
-static unsigned char virtio_ring_buffer[4096] __attribute__((aligned(4096)));
-
-void *get_ring_buffer_addr(void)
-{
-    return (void *)virtio_ring_buffer;
-}
-
 #define VIRTIO_STATUS_DRIVER_OK 4
+
+struct virtio_mmio_regs
+{
+    volatile uint32_t magic;          // 0x000
+    volatile uint32_t version;        // 0x004
+    volatile uint32_t device_id;      // 0x008
+    volatile uint32_t vendor_id;      // 0x00C
+    volatile uint32_t host_features;  // 0x010
+    uint32_t _reserved1[3];           // 0x014-0x01C
+    volatile uint32_t guest_features; // 0x020
+    uint32_t _reserved2[3];           // 0x024-0x02C
+    volatile uint32_t queue_sel;      // 0x030
+    uint32_t _reserved3;              // 0x034
+    volatile uint32_t queue_num;      // 0x038
+    uint32_t _reserved4;              // 0x03C
+    volatile uint32_t queue_pfn;      // 0x040
+    uint32_t _reserved5[3];           // 0x044-0x04C
+    volatile uint32_t queue_notify;   // 0x050
+    uint32_t _reserved6[3];           // 0x054-0x05C
+    volatile uint32_t status;         // 0x060
+};
+
+// 사용 예시
+#define VIRTIO0 ((struct virtio_mmio_regs *)0x0A000000)
 
 void debug_main(void)
 {
+
+    uint32_t ver = VIRTIO0->version;
+    // 이제는 직관적으로 ver를 찍어볼 수 있습니다.
+    put_hex(ver);
+
     uint64_t base = 0x0A000000;
 
     init_nic(base);
@@ -131,4 +160,3 @@ void debug_main(void)
 
     puts("NIC is fully ready and running!\n");
 }
-*/

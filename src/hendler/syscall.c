@@ -11,6 +11,7 @@
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
 extern void _proc(pcb_t *);
+extern dcb_t uart_device;
 
 int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
     [1] = &exit_call,
@@ -67,7 +68,6 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return arg3;
 }
 
-// ! 미구현
 int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     /*
@@ -80,8 +80,26 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     int flags = (int)arg2;
     // 아직은 arg2 안씀
     // 장치를 바꿔주기
-    current_proc->use_dev = dm_find(dm_driver, arg1);
-    return 1;
+
+    // 플레그의 하위 1비트의 값이 0이면 장치라고 생각
+    if (flags & 1 == 0)
+    {
+        // ? 여기서도 플레그 쓰겠지 아마도
+
+        dcb_t *dev = dm_find(dm_driver, path);
+
+        if (dev == NULL)
+        {
+            return 0;
+        }
+        current_proc->use_dev = dev;
+        return 1;
+    }
+    // 플레그의 하위 1비트의 값이 1이면 장치가 아님
+    else
+    {
+        // 플레그를 사용한 파일 열기
+    }
 }
 
 int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
@@ -96,16 +114,18 @@ int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     int mode = (int)arg2;
     uint32_t size = (uint32_t)arg3;
 
-    fm_create(fm_record, arg1, arg3, arg2);
+    fm_create(fm_record, path, size, mode);
 
     return 1;
 }
 
-// ! 미구현
 int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
+    current_proc->use_dev = &uart_device;
+    return 1;
 }
 
+// ! DS 이식하기
 int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     /*
@@ -130,6 +150,24 @@ int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 
     buf[0] = c;
     return 1;
+
+    // ! 아직 VDS 로 바꾸지 않음
+    /*
+    if (fd == 0 && current_proc->use_dev != NULL)
+    {
+        // 1. 장치에서 1바이트 읽기 (하드웨어 의존적)
+        int bytes_read = current_proc->use_dev->read(buf);
+
+        // 2. 에코는 커널의 약속된 stdout(putchar)을 사용!
+        if (bytes_read > 0)
+        {
+            putchar(*(char *)buf);
+        }
+
+        return bytes_read;
+    }
+    return -1;
+    */
 }
 
 int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)

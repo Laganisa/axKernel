@@ -1,12 +1,9 @@
-// #include "types.h"
-// #include "defs.h"
-
-// #include "sync.h"
 #include "_fm.h"
 #include "_macro.h"
 
-// #include "pm.h"
-// #include "sect.h"
+/*
+    커널용 입출력 함수들
+*/
 
 // UART 초기화
 void uart_init(void)
@@ -14,8 +11,6 @@ void uart_init(void)
     // QEMU virt는 이미 UART 활성화됨
     // 아무것도 안 해도 됨
 }
-
-#pragma region string
 
 void putchar(int8_t c)
 {
@@ -133,5 +128,3 @@ int32_t strcmp(const int8_t *s1, const int8_t *s2)
     }
     return *(uint8_t *)s1 - *(uint8_t *)s2;
 }
-
-#pragma endregion

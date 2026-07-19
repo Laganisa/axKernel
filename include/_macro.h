@@ -1,6 +1,10 @@
 #ifndef __MACRO_H__
 #define __MACRO_H__
 
+/*
+    장치들의 주소를 적어두는 헤더
+*/
+
 #include "_types.h"
 
 #pragma region UART
@@ -36,7 +40,7 @@
 
 #pragma region virtq
 
-#define GIC_VIRTQ_BASE 0x08000000
+#define VIRTQ_BASE 0x08000000
 
 #pragma endregion
 

@@ -2,7 +2,7 @@
 #include "_io.h"
 
 // 장치 등록 함수
-device *dm_creat(DMv1_driver *driv, uint32_t irq_nr, device dev)
+dcb_t *dm_creat(DMv1_driver *driv, uint32_t irq_nr, dcb_t dev)
 {
     if (irq_nr >= MAX_DEVI_NUM)
     {
@@ -16,7 +16,7 @@ device *dm_creat(DMv1_driver *driv, uint32_t irq_nr, device dev)
     }
 
     // 공간을 주고
-    device *new_device = &(driv->DMv1_mem[irq_nr]);
+    dcb_t *new_device = &(driv->DMv1_mem[irq_nr]);
 
     // 값 할당
     new_device->irq_nr = irq_nr;
@@ -34,7 +34,7 @@ device *dm_creat(DMv1_driver *driv, uint32_t irq_nr, device dev)
 }
 
 // uart 장치 등록
-device uart_device = {
+dcb_t uart_device = {
     .name = "uart0",
     .base_addr = UART0_BASE,
     .init = uart_dev_init,
@@ -89,7 +89,7 @@ uint8_t timer_init(void)
     return 0;
 }
 
-device *dm_find(DMv1_driver *driv, const char *name)
+dcb_t *dm_find(DMv1_driver *driv, const char *name)
 {
     for (int i = 0; i < MAX_DEVI_NUM; i++)
     {

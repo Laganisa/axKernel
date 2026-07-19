@@ -147,3 +147,5 @@ void *fm_data_addr(FMv3_record *reco, fcb_t *file)
 {
     return (void *)(reco->base + (file->fid * MAX_FILE_SIZE));
 }
+
+fcb_t *fm_open(void) {}
