@@ -4,10 +4,10 @@
 #include "handler/_syscall.h"
 #include "manage/_pm.h"
 #include "manage/_dm.h"
-
 #include "global/_debug.h"
 
 // 여기도 수정해야함
+// ? 무었을?
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
 extern void _proc(pcb_t *);
@@ -21,7 +21,14 @@ int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
     [10] = &open_call,
     [11] = &close_call};
 
-// Simple syscall handler
+/*
+    시스템 콜을 연결하는 파일
+    현재 추가된 시스템 콜
+        나가기, 쓰기, 읽기, 파일 생성, 파일 및 장치 열기, 파일 닫기
+    앞으로 추가될 시스템 콜
+        소켓 관련, 프로세스 관련
+*/
+
 uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     // reg_x8();
@@ -206,13 +213,14 @@ int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return 1;
 
     // ! 아직 VDS 로 바꾸지 않음
+    // ! 이후 이어진 수정 사항에서 수정할 예정
     /*
     if (fd == 0 && current_proc->use_dev != NULL)
     {
-        // 1. 장치에서 1바이트 읽기 (하드웨어 의존적)
+        // 장치에서 1바이트 읽기
         int bytes_read = current_proc->use_dev->read(buf);
 
-        // 2. 에코는 커널의 약속된 stdout(putchar)을 사용!
+        // 에코는 커널의 약속된 stdout(putchar)을 사용
         if (bytes_read > 0)
         {
             putchar(*(char *)buf);
@@ -228,6 +236,7 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     enter("sys_exit");
     // arg1: exit code
+    // ! 아직은 그 인자에 대하여 사용하지 않음
     {
         pcb_t *current = get_current_proc_addr();
         pcb_t *next;
@@ -235,6 +244,7 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
         pm_awake(&pm_object, 1, current);
         next = pm_run(&pm_object);
 
+        // 다음 값이 무었인지 확인하기
         dump("next", next);
 
         current_proc = next;

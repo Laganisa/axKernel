@@ -6,6 +6,7 @@
 #include "global/_alloc.h"
 #include "tools/_hash.h"
 
+// ! 이 함수 다른 곳으로 옮기기
 void *memset(void *ptr, int value, size_t num)
 {
     unsigned char *p = (unsigned char *)ptr;
