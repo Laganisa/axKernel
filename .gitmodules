@@ -4,3 +4,9 @@
 [submodule "usr/axShell"]
 	path = usr/axShell
 	url = https://github.com/Laganisa/axShell.git
+[submodule "usr/axShell"]
+	path = usr/axCompiler
+	url = https://github.com/Laganisa/axCompiler.git
+[submodule "usr/axShell"]
+	path = usr/axBridge
+	url = https://github.com/Laganisa/axBridge.git
