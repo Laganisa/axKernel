@@ -4,22 +4,23 @@
 #include "_types.h"
 
 // 분리 파일
-#include "_asm.h"  // 어셈블리 함수가 있는 헤더
-#include "_defs.h" // 정의 헤더
-#include "_sect.h" // 메모리 매핑 헤더
+#include "tools/_asm.h" // 어셈블리 함수가 있는 헤더
+#include "_defs.h"      // 정의 헤더
+#include "_sect.h"      // 메모리 매핑 헤더
 
-#include "_io.h"   // 입출력 헤더
-#include "_irq.h"  // 인터럽트 헤더 추가
-#include "_sync.h" // Exception handlers
+#include "global/_io.h"    // 입출력 헤더
+#include "handler/_irq.h"  // 인터럽트 헤더 추가
+#include "handler/_sync.h" // Exception handlers
 
-#include "_mm.h" // 메모리 관리자가 있는 헤더
-#include "_pm.h" // 프로세스 관리자 헤더
-#include "_fm.h" // 파일 관리자 헤더
+#include "manage/_mm.h" // 메모리 관리자가 있는 헤더
+#include "manage/_pm.h" // 프로세스 관리자 헤더
+#include "manage/_fm.h" // 파일 관리자 헤더
 
-#include "_meta.h"
-#include "_debug.h"
-#include "_in_proc.h"
-#include "_alloc.h"
+#include "global/_meta.h"
+#include "global/_debug.h"
+#include "global/_in_proc.h"
+#include "global/_alloc.h"
+#include "manage/_nm.h"
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);
@@ -31,10 +32,13 @@ extern uint8_t _task_shell_size[];
 #pragma endregion
 
 // 커널 함수
-void main(void)
+void master(void)
 {
-#pragma region reset
-    // 하드웨어 초기화
+    kernel_main();
+}
+
+void kernel_main(void)
+{ // 하드웨어 초기화
     uart_init();
     // 초기화 부분으로 옮김
     init_irq();
@@ -46,8 +50,6 @@ void main(void)
     mm_init(&mm_stack, USER_PROC_START);
     // pm_init(&pm_object, PM_ADDR_START);
     fm_init((uint64_t *)USER_FILE_START);
-
-#pragma endregion
 
     FMv3_record *reco = (FMv3_record *)FM_ADDR_START;
 
@@ -74,4 +76,87 @@ void main(void)
 
     current_proc = shell_proc;
     _proc(shell_proc);
+}
+
+void init_nic(uint64_t base)
+{
+    // 1. 장치 리셋
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = 0;
+
+    // 2. ACKNOWLEDGE 설정
+    uint32_t status = 0;
+    status |= VIRTIO_STATUS_ACKNOWLEDGE;
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
+
+    // 3. DRIVER 설정
+    status |= VIRTIO_STATUS_DRIVER;
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
+
+    puts("NIC Status Initialized!\n");
+}
+
+static unsigned char virtio_ring_buffer[4096] __attribute__((aligned(4096)));
+
+void *get_ring_buffer_addr(void)
+{
+    return (void *)virtio_ring_buffer;
+}
+
+void setup_virtqueue(uint64_t base, int queue_index)
+{
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_SEL) = queue_index;
+
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_NUM) = 128;
+
+    uint32_t pfn = (uint32_t)(((uint64_t)get_ring_buffer_addr() >> 12));
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_PFN) = pfn;
+
+    puts("Queue setup done!\n");
+}
+#define VIRTIO_STATUS_DRIVER_OK 4
+
+struct virtio_mmio_regs
+{
+    volatile uint32_t magic;          // 0x000
+    volatile uint32_t version;        // 0x004
+    volatile uint32_t device_id;      // 0x008
+    volatile uint32_t vendor_id;      // 0x00C
+    volatile uint32_t host_features;  // 0x010
+    uint32_t _reserved1[3];           // 0x014-0x01C
+    volatile uint32_t guest_features; // 0x020
+    uint32_t _reserved2[3];           // 0x024-0x02C
+    volatile uint32_t queue_sel;      // 0x030
+    uint32_t _reserved3;              // 0x034
+    volatile uint32_t queue_num;      // 0x038
+    uint32_t _reserved4;              // 0x03C
+    volatile uint32_t queue_pfn;      // 0x040
+    uint32_t _reserved5[3];           // 0x044-0x04C
+    volatile uint32_t queue_notify;   // 0x050
+    uint32_t _reserved6[3];           // 0x054-0x05C
+    volatile uint32_t status;         // 0x060
+};
+
+// 사용 예시
+#define VIRTIO0 ((struct virtio_mmio_regs *)0x0A000000)
+
+void debug_main(void)
+{
+
+    uint32_t ver = VIRTIO0->version;
+    // 이제는 직관적으로 ver를 찍어볼 수 있습니다.
+    put_hex(ver);
+
+    uint64_t base = 0x0A000000;
+
+    init_nic(base);
+
+    // RX 큐(0번)와 TX 큐(1번)를 각각 등록
+    setup_virtqueue(base, 0);
+    setup_virtqueue(base, 1);
+
+    uint32_t status = *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS);
+    status |= VIRTIO_STATUS_DRIVER_OK;
+    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
+
+    puts("NIC is fully ready and running!\n");
 }

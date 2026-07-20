@@ -1,4 +1,4 @@
-#include "_hash.h"
+#include "tools/_hash.h"
 
 #define FNV_OFFSET_BASIS_64 0xcbf29ce484222325ULL
 #define FNV_PRIME_64 0x100000001b3ULL

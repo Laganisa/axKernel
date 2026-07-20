@@ -1,9 +1,8 @@
-#include "_io.h"
-#include "_irq.h"
-#include "_sync.h"
-#include "_syscall.h"
-
-#include "_debug.h"
+#include "global/_io.h"
+#include "handler/_irq.h"
+#include "handler/_sync.h"
+#include "handler/_syscall.h"
+#include "global/_debug.h"
 
 extern void _proc(pcb_t *);
 

@@ -1,6 +1,6 @@
-#include "_in_proc.h"
-#include "_io.h"
-#include "_asm.h"
+#include "global/_in_proc.h"
+#include "global/_io.h"
+#include "tools/_asm.h"
 
 /*
     pid 0 : 루트 프로세스

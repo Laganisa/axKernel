@@ -12,6 +12,7 @@
 #define SYS_LOAD 3
 #define SYS_YIELD 4
 #define SYS_PROC_CRATE 5
+#define SYS_PROC_CRATE 15
 
 #pragma endregion
 
@@ -40,7 +41,7 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
-int32_t creat_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 
 #endif

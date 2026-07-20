@@ -1,7 +1,7 @@
-#include "_meta.h"
-#include "_mm.h"
-#include "_debug.h"
-#include "_asm.h"
+#include "global/_meta.h"
+#include "manage/_mm.h"
+#include "global/_debug.h"
+#include "tools/_asm.h"
 
 extern pcb_t *current_proc;
 
@@ -34,20 +34,20 @@ pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + shell_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
 
-            fm_create(reco, name, alloc_size, 0);
+            fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
             task.image_size = shell_size;
-            fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
+            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
 
-            fm_write(reco, name, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
+            fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
 
             return mata_exec_file(reco, &pm_object, name, 0);
         }
     }
 
     // 기본 동작
-    fm_create(reco, name, 1024, 0);
-    fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
+    fcb_t *fil = fm_create(reco, name, 1024, 0);
+    fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
     return mata_exec_file(reco, &pm_object, name, 0);
 }
 
@@ -180,7 +180,7 @@ pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint
 
     fm_exec_hdr_t *hdr;
 
-    if (file == 0 || file->is_dir)
+    if (file == 0)
     {
         return 0;
     }

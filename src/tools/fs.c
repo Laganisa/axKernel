@@ -1,11 +1,8 @@
-// #include "_fm.h"
-// #include "_io.h"
-// #include "_mm.h"
-#include "_asm.h"
-#include "_debug.h"
-#include "_alloc.h"
-#include "_hash.h"
-#include "_fs.h"
+#include "tools/_asm.h"
+#include "global/_debug.h"
+#include "global/_alloc.h"
+#include "tools/_hash.h"
+#include "tools/_fs.h"
 
 bpt_node *create_node(uint8_t leaf)
 {

@@ -1,11 +1,12 @@
-#include "_fm.h"
-#include "_io.h"
-#include "_mm.h"
-#include "_asm.h"
-#include "_debug.h"
-#include "_alloc.h"
-#include "_hash.h"
+#include "manage/_fm.h"
+#include "global/_io.h"
+#include "manage/_mm.h"
+#include "tools/_asm.h"
+#include "global/_debug.h"
+#include "global/_alloc.h"
+#include "tools/_hash.h"
 
+// ! 이 함수 다른 곳으로 옮기기
 void *memset(void *ptr, int value, size_t num)
 {
     unsigned char *p = (unsigned char *)ptr;
@@ -27,21 +28,18 @@ void fm_init(uint64_t *addr)
 }
 
 /*
-    파일의 경로, 파일 크기, 파일 위치, 디랙토리 여부
+    파일의 이름, 크기, 권한을 받아서 파일 타입 구조체를 리턴함
 */
-// ! 수정해야함
-fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint8_t ok_dir)
+fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
 {
     // 파일 검사
     if (size > MAX_FILE_SIZE)
         return 0;
-    if (ok_dir && size > MAX_DIR_SIZE)
-        return 0;
 
-    fcb_t *new_file = NULL;
+    if (reco->all_num >= MAX_FILE_NUM)
+        return NULL;
 
-    // 남는 위치에 삽입
-    new_file = &(reco->FMv3_mem[reco->all_num]);
+    fcb_t *new_file = &(reco->FMv3_mem[reco->all_num]);
 
     uint16_t value = reco->all_num;
 
@@ -64,10 +62,11 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint8_t ok_dir)
         new_file->alias[i] = name[i];
     }
 
-    new_file->is_dir = ok_dir;
     new_file->is_alloc = 1;
     new_file->lens = size >> 10;
-    new_file->fid = (uint16_t)reco->all_num; // 파일의 slot 인덱스 저장
+    new_file->fid = (uint16_t)reco->all_num;
+    new_file->auth = auth;
+
     reco->all_num += 1;
 
     return new_file;
@@ -102,12 +101,11 @@ void fm_execute(FMv3_record *reco)
     // ! fm_sync(reco);
 }
 
-uint32_t fm_write(FMv3_record *reco, char *name, void *buf, uint32_t size, uint32_t offset)
+uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset)
 {
-    fcb_t *file = fm_find(reco, name);
     uint32_t file_size;
 
-    if (file == 0 || file->is_dir)
+    if (file == 0)
     {
         return 0;
     }
@@ -149,3 +147,5 @@ void *fm_data_addr(FMv3_record *reco, fcb_t *file)
 {
     return (void *)(reco->base + (file->fid * MAX_FILE_SIZE));
 }
+
+fcb_t *fm_open(void) {}
