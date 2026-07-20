@@ -3,7 +3,7 @@
 #ifndef __PM_H__
 #define __PM_H__
 
-// 나중에 프로세스가 생성되고 레지스터 공간 따로 할당
+// ! 구조체 수정할 예정
 typedef struct pcb_t
 {
     // 건들면 안됨
@@ -20,8 +20,9 @@ typedef struct pcb_t
 
     uint8_t is_msgbox : 1; // 메시지 박스가 차있는지
     uint8_t is_call : 1;   // 자신에게 읽으라고 했는지
+    uint8_t is_file : 1;   // 파일이 열려 있는지
     uint8_t state : 2;     // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
-    uint8_t padding : 4;   // 패딩값
+    uint8_t padding : 3;   // 패딩값
 
     uint8_t from;       // 누구에게 왔는지
     uint8_t msgbox[64]; // 메세지

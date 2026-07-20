@@ -58,12 +58,12 @@ fcb_t *fm_create(FMv3_record *reco, char *path, uint32_t size, uint16_t auth);
 fcb_t *fm_delete(FMv3_record *reco, char *path);
 fcb_t *fm_find(FMv3_record *reco, char *name);
 void *fm_data_addr(FMv3_record *reco, fcb_t *file);
-uint32_t fm_write(FMv3_record *reco, char *name, void *buf, uint32_t size, uint32_t offset);
+uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset);
 void fm_list(FMv3_record *reco, int8_t *path);
 void fm_execute(FMv3_record *reco);
 
 // 파일 열기
-void fm_open(void);
+fcb_t *fm_open(void);
 // 파일 닫기
 
 #endif

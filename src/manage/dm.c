@@ -40,7 +40,7 @@ dcb_t uart_device = {
     .init = uart_dev_init,
     .read = uart_dev_read,
     .write = uart_dev_write,
-    .handler = NULL // 인터럽트 쓸 거면 여기에 별도 함수 등록
+    .handler = NULL // 인터럽트 용 헨들러 아직 미정
 };
 
 #pragma region uart

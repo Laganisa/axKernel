@@ -100,9 +100,8 @@ void fm_execute(FMv3_record *reco)
     // ! fm_sync(reco);
 }
 
-uint32_t fm_write(FMv3_record *reco, char *name, void *buf, uint32_t size, uint32_t offset)
+uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset)
 {
-    fcb_t *file = fm_find(reco, name);
     uint32_t file_size;
 
     if (file == 0)

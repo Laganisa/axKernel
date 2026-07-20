@@ -52,7 +52,9 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
     new_proc->b_id = pid;             // 죽을때 쓸 id를 저장
     new_proc->p_id = parid;           // 부모 id를 수정함
     new_proc->use_dev = &uart_device; // 정보를 0으로 수정
-    new_proc->file_offset = 0;
+    new_proc->file_offset = 0;        // 파일 오프셋
+    new_proc->use_file = NULL;        // 사용중인 파일
+    new_proc->is_file = 0;            // 파일을 열지 않음
 
     // 메모리 로직
     // 128KB를 할당 리턴 된 메모리 스택 주소를 받음
