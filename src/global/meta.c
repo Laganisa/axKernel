@@ -1,7 +1,7 @@
-#include "_meta.h"
-#include "_mm.h"
-#include "_debug.h"
-#include "_asm.h"
+#include "global/_meta.h"
+#include "manage/_mm.h"
+#include "global/_debug.h"
+#include "tools/_asm.h"
 
 extern pcb_t *current_proc;
 

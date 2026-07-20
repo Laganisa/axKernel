@@ -1,7 +1,7 @@
-#include "_io.h"
-#include "_sync.h"
-#include "_mm.h"
-#include "_debug.h"
+#include "global/_io.h"
+#include "handler/_sync.h"
+#include "manage/_mm.h"
+#include "global/_debug.h"
 
 extern void _proc(pcb_t *); // proc와 연결
 extern dcb_t uart_device;

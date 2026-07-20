@@ -1,7 +1,7 @@
-#include "_io.h"
-#include "_sync.h"
-#include "_mm.h"
-#include "_debug.h"
+#include "global/_io.h"
+#include "handler/_sync.h"
+#include "manage/_mm.h"
+#include "global/_debug.h"
 
 /*
     프로세스 간의 작업과 관련한 파일

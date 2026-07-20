@@ -1,10 +1,10 @@
-#include "_fm.h"
-#include "_io.h"
-#include "_mm.h"
-#include "_asm.h"
-#include "_debug.h"
-#include "_alloc.h"
-#include "_hash.h"
+#include "manage/_fm.h"
+#include "global/_io.h"
+#include "manage/_mm.h"
+#include "tools/_asm.h"
+#include "global/_debug.h"
+#include "global/_alloc.h"
+#include "tools/_hash.h"
 
 void *memset(void *ptr, int value, size_t num)
 {

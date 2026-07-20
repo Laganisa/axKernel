@@ -4,23 +4,23 @@
 #include "_types.h"
 
 // 분리 파일
-#include "_asm.h"  // 어셈블리 함수가 있는 헤더
-#include "_defs.h" // 정의 헤더
-#include "_sect.h" // 메모리 매핑 헤더
+#include "tools/_asm.h" // 어셈블리 함수가 있는 헤더
+#include "_defs.h"      // 정의 헤더
+#include "_sect.h"      // 메모리 매핑 헤더
 
-#include "_io.h"   // 입출력 헤더
-#include "_irq.h"  // 인터럽트 헤더 추가
-#include "_sync.h" // Exception handlers
+#include "global/_io.h"    // 입출력 헤더
+#include "handler/_irq.h"  // 인터럽트 헤더 추가
+#include "handler/_sync.h" // Exception handlers
 
-#include "_mm.h" // 메모리 관리자가 있는 헤더
-#include "_pm.h" // 프로세스 관리자 헤더
-#include "_fm.h" // 파일 관리자 헤더
+#include "manage/_mm.h" // 메모리 관리자가 있는 헤더
+#include "manage/_pm.h" // 프로세스 관리자 헤더
+#include "manage/_fm.h" // 파일 관리자 헤더
 
-#include "_meta.h"
-#include "_debug.h"
-#include "_in_proc.h"
-#include "_alloc.h"
-#include "_nm.h"
+#include "global/_meta.h"
+#include "global/_debug.h"
+#include "global/_in_proc.h"
+#include "global/_alloc.h"
+#include "manage/_nm.h"
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);

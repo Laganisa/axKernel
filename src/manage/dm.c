@@ -1,5 +1,5 @@
-#include "_dm.h"
-#include "_io.h"
+#include "manage/_dm.h"
+#include "global/_io.h"
 
 // 장치 등록 함수
 dcb_t *dm_creat(DMv1_driver *driv, uint32_t irq_nr, dcb_t dev)

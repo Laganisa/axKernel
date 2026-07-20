@@ -1,11 +1,11 @@
 #include "_types.h"
-#include "_io.h"
-#include "_sync.h"
-#include "_syscall.h"
-#include "_pm.h"
-#include "_dm.h"
+#include "global/_io.h"
+#include "handler/_sync.h"
+#include "handler/_syscall.h"
+#include "manage/_pm.h"
+#include "manage/_dm.h"
 
-#include "_debug.h"
+#include "global/_debug.h"
 
 // 여기도 수정해야함
 extern pcb_t *current_proc;

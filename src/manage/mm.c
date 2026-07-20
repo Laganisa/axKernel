@@ -1,9 +1,9 @@
 // #include "types.h"
-#include "_io.h"
-#include "_mm.h"
-#include "_asm.h"
+#include "global/_io.h"
+#include "manage/_mm.h"
+#include "tools/_asm.h"
 
-#include "_debug.h"
+#include "global/_debug.h"
 
 // ! 수정 사항 존재
 

@@ -1,8 +1,8 @@
-#include "_io.h"
-#include "_sync.h"
-#include "_irq.h"
-#include "_dm.h"
-#include "_debug.h"
+#include "global/_io.h"
+#include "handler/_sync.h"
+#include "handler/_irq.h"
+#include "manage/_dm.h"
+#include "global/_debug.h"
 #include "_defs.h"
 
 // 시스템 타이머: 두 타이머 인터럽트 간의 시간을 tick으로 나타낸거
@@ -15,22 +15,23 @@ pcb_t *get_current_proc_addr()
     return current_proc;
 }
 
-// 타이머 켜지면 틱 값을 올리기
+// 타이머 인터럽트가 발생하면 틱 값을 올리고 스케줄링
 pcb_t *irq_handler_main(pcb_t *proc)
 {
     disable_irq();
 
-    uint32_t iar = *GICC_IAR;
+    // 인터럽트 번호 읽기
+    uint32_t iar = GIC_CPU_IAR;
     uint32_t irq_nr = iar & 0x3FF;
 
-    // uint32_t irq_nr = check_glc();
+    // 타이머 인터럽트 처리
     if (irq_nr == NSPTI)
     {
         current_proc = schedule_proc(proc);
     }
 
-    // *(volatile uint32_t *)(GIC_CPU_BASE + 0x10) = iar;
-    *GICC_EOI = iar;
+    // 인터럽트 처리 완료 알림
+    GIC_CPU_EOI = iar;
 
     // 타이머 재설정
     asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));

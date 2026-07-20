@@ -18,24 +18,31 @@
 #pragma endregion
 
 #pragma region GIC
+// QEMU virt machine GICv2 base addresses
+#define GIC_DIST_BASE 0x08000000U
+#define GIC_CPU_BASE 0x08010000U
 
-// 인터럽트 해석 QEMU virt machine GIC V2 주소
-#define GIC_DIST_BASE 0x08000000 // Distributor
-#define GIC_CPU_BASE 0x08010000  // CPU Interface
+// Register access macros
+#define GIC_DIST_REG(offset) \
+    (*(volatile uint32_t *)((uintptr_t)GIC_DIST_BASE + (offset)))
 
-// 인터럽트 제어 레지스터
-#define GICC_IAR ((volatile uint32_t *)(GIC_CPU_BASE + 0x0C))
-#define GICC_EOI ((volatile uint32_t *)(GIC_CPU_BASE + 0x10))
-#define GICC_CTLR ((volatile uint32_t *)(GIC_CPU_BASE + 0x00))
-#define GICD_CTLR ((volatile uint32_t *)(GIC_DIST_BASE + 0x00))
-#define GICD_ISENABLER ((volatile uint32_t *)(GIC_DIST_BASE + 0x100))
+#define GIC_DIST_REG8(offset) \
+    (*(volatile uint8_t *)((uintptr_t)GIC_DIST_BASE + (offset)))
 
-// 인터럽트 확인 레지스터
-#define GIC_INTERFACE_IAR (*(volatile uint32_t *)(GIC_CPU_BASE + 0x0C))
+#define GIC_CPU_REG(offset) \
+    (*(volatile uint32_t *)((uintptr_t)GIC_CPU_BASE + (offset)))
 
-// 인터럽트 종료 알림 레지스터
-#define GIC_INTERFACE_EOI (*(volatile uint32_t *)(GIC_CPU_BASE + 0x10))
+// Distributor registers
+#define GIC_DIST_CTRL GIC_DIST_REG(0x000)
+#define GIC_DIST_IGROUPR0 GIC_DIST_REG(0x080)
+#define GIC_DIST_ENABLE0 GIC_DIST_REG(0x100)
+#define GIC_DIST_PRIORITY 0x400
 
+// CPU Interface registers
+#define GIC_CPU_CTRL GIC_CPU_REG(0x000)
+#define GIC_CPU_PMR GIC_CPU_REG(0x004)
+#define GIC_CPU_IAR GIC_CPU_REG(0x00C)
+#define GIC_CPU_EOI GIC_CPU_REG(0x010)
 #pragma endregion
 
 #pragma region virtq
