@@ -34,7 +34,7 @@ extern uint8_t _task_shell_size[];
 // 커널 함수
 void master(void)
 {
-    debug_main();
+    kernel_main();
 }
 
 void kernel_main(void)

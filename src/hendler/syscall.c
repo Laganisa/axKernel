@@ -135,7 +135,6 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     {
         // 플레그를 사용한 파일 열기
         fcb_t *fil = fm_find(fm_record, path);
-
         if (fil == NULL)
         {
             return 0;
