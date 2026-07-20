@@ -1,5 +1,5 @@
-#include "../include/defs.h"
-#include "../include/types.h"
+#include "_defs.h"
+#include "_types.h"
 
 #ifndef __MM_H__
 #define __MM_H__
@@ -23,9 +23,6 @@ void mm_init(MMv5_stack *stack, uint64_t addr);
 uint8_t MMv5_regu_push(MMv5_stack *stack, uint8_t val);
 uint8_t MMv5_regu_substack_push(MMv5_stack *stack, uint8_t val);
 uint8_t MMv5_regu_pop(MMv5_stack *stack, uint16_t val);
-
-// 분리함
-// void *mm_run(MMv5_stack *stack, MMv5_stack *substack, int8_t cmd, uint16_t val16, uint16_t indi_addr);
 
 // 할당 공간 할당 -> uint16_t 의 스택 포인터 주소 리턴
 uint16_t mm_creat(MMv5_stack *stack, uint16_t val16);

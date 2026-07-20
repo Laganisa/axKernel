@@ -1,5 +1,5 @@
-#include "debug.h"
-#include "io.h"
+#include "global/_debug.h"
+#include "global/_io.h"
 
 #define toggle TRUE
 
@@ -179,6 +179,11 @@ void check_el0_irq(void)
     log("el0_IRQ");
 }
 
+void check_loop(void)
+{
+    log("A loop");
+}
+
 void check_inf_loop(void)
 {
     log("inf loop");
@@ -243,11 +248,6 @@ void file_dump(const char *name, fcb_t *file)
         puts(name);
         puts(" size : ");
         put_hex(file->lens);
-        puts("\n");
-        puts("[Debug] ");
-        puts(name);
-        puts(" auth : ");
-        put_hex(file->me_auth);
         puts("\n");
     }
 }

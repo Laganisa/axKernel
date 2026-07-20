@@ -1,33 +1,39 @@
-#include "../include/defs.h"
-#include "types.h"
+#include "manage/_dm.h"
 
 #ifndef __PM_H__
 #define __PM_H__
 
-// pcb 104B
-// 나중에 프로세스가 생성되고 레지스터 공간 따로 할당
+// ! 구조체 수정할 예정
 typedef struct pcb_t
 {
+    // 건들면 안됨
     uint64_t reg_x[31]; // x0 ~ x30
     uint64_t sp;        // 스택 포인터
     uint64_t spsr;      // SPSR_EL1
     uint64_t elr_el1;   // ELR_EL1 프로그램 카운터
+    // 여기까지
 
-    uint8_t id;         // 프로세스 id
-    uint8_t p_id;       // 부모의 id
-    uint8_t b_id;       // 죽을때 쓸 id
-    uint16_t proc_info; // 프로세스 정보
-    uint16_t mm_addr;   // 메모리 주소
+    uint8_t id;       // 프로세스 id
+    uint8_t p_id;     // 부모의 id
+    uint8_t b_id;     // 죽을때 쓸 id, 근데 왜 있지?
+    uint16_t mm_addr; // 메모리 주소
 
     uint8_t is_msgbox : 1; // 메시지 박스가 차있는지
     uint8_t is_call : 1;   // 자신에게 읽으라고 했는지
+    uint8_t is_file : 1;   // 파일이 열려 있는지
     uint8_t state : 2;     // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
-    uint8_t padding : 4;   // 패딩값
-    uint8_t from;          // 누구에게 왔는지
-    uint8_t msgbox[64];    // 메세지
+    uint8_t padding : 3;   // 패딩값
+
+    uint8_t from;       // 누구에게 왔는지
+    uint8_t msgbox[64]; // 메세지
+
+    uint32_t file_offset;   // 파일 오프셋
+    struct dcb_t *use_dev;  // 사용하는 디바이스
+    struct fcb_t *use_file; // 사용하는 파일
 
 } __attribute__((aligned(8))) pcb_t;
 
+// ! 전체적으로 개편이 필요함
 typedef struct PMv1_object
 {
     uint64_t temp_x[31];   // 임시 레지스터
@@ -37,14 +43,18 @@ typedef struct PMv1_object
     // 총 공간이 24KB 정도
     uint8_t proc_comocc : 4; // 그중에서 어떤 proc_occ 이 사용되지 않았는지
     uint8_t proc_comscj : 4; // 프로세서 pm_rum에 들어가는 관리하는
-    uint8_t lownum;          // low에 들어있는 프로세스 수
-    uint8_t highnum;         // high에 들어있는 프로세스 수
-    uint8_t lowhead;         // 원형큐 머리
-    uint8_t lowtail;         // 원형큐 꼬리
-    uint8_t highhead;        // 원형큐 머리
-    uint8_t hightail;        // 원형큐 꼬리
 
-    pcb_t PMv1_mem[MAX_PCB_SIZE];         // 최대 프로세스 수 만큼 만들기 8KB 정도 pcb의 배열
+    // ? 이 큐 데이터들 제거 해야할듯 너무 많은 공간을 차지함
+    // ! 아니면 객체 지향으로 만들던가
+    uint8_t lownum;   // low에 들어있는 프로세스 수
+    uint8_t highnum;  // high에 들어있는 프로세스 수
+    uint8_t lowhead;  // 원형큐 머리
+    uint8_t lowtail;  // 원형큐 꼬리
+    uint8_t highhead; // 원형큐 머리
+    uint8_t hightail; // 원형큐 꼬리
+
+    // 동적 배열로 바꾸기
+    struct pcb_t PMv1_mem[MAX_PCB_SIZE];  // 최대 프로세스 수 만큼 만들기 8KB 정도 pcb의 배열
     uint8_t PMv1_lowqueue[MAX_PCB_SIZE];  // 프로세스 low q
     uint8_t PMv1_highqueue[MAX_PCB_SIZE]; // 프로세스 high q
 

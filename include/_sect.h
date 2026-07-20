@@ -1,33 +1,5 @@
-#include "../include/types.h"
-
 #ifndef __SECT_H__
 #define __SECT_H__
-
-#pragma region QEMU_
-// QEMU virt 머신의 PL011 UART 주소
-#define UART0_BASE 0x09000000
-#define UART0_DR ((volatile uint32_t *)(UART0_BASE + 0x00))
-#define UART0_FR ((volatile uint32_t *)(UART0_BASE + 0x18))
-#define UART0_CR ((volatile uint32_t *)(UART0_BASE + 0x30))
-
-// 인터럽트 해석 QEMU virt machine GIC V2 주소
-#define GIC_DIST_BASE 0x08000000 // Distributor
-#define GIC_CPU_BASE 0x08010000  // CPU Interface
-
-// 인터럽트 제어 레지스터
-#define GICC_IAR ((volatile uint32_t *)(GIC_CPU_BASE + 0x0C))
-#define GICC_EOI ((volatile uint32_t *)(GIC_CPU_BASE + 0x10))
-#define GICC_CTLR ((volatile uint32_t *)(GIC_CPU_BASE + 0x00))
-#define GICD_CTLR ((volatile uint32_t *)(GIC_DIST_BASE + 0x00))
-#define GICD_ISENABLER ((volatile uint32_t *)(GIC_DIST_BASE + 0x100))
-
-// 인터럽트 확인 레지스터
-#define GIC_INTERFACE_IAR (*(volatile uint32_t *)(GIC_CPU_BASE + 0x0C))
-
-// 인터럽트 종료 알림 레지스터
-#define GIC_INTERFACE_EOI (*(volatile uint32_t *)(GIC_CPU_BASE + 0x10))
-
-#pragma endregion
 
 #define ALIGN_16(addr) (((addr) + 15) & ~15)
 
@@ -45,6 +17,8 @@
 #define MM_ADDR_SIZE 0x5000
 #define PM_ADDR_SIZE 0x7000
 #define FM_ADDR_SIZE 0x50000
+#define DM_ADDR_SIZE 0x5000
+#define NM_ADDR_SIZE 0x5000
 
 #define MM_ADDR_START ALIGN_16(KERNEL_TEXT_END)
 #define MM_ADDR_END ALIGN_16(MM_ADDR_START + MM_ADDR_SIZE)
@@ -55,13 +29,19 @@
 #define FM_ADDR_START ALIGN_16(PM_ADDR_END)
 #define FM_ADDR_END ALIGN_16(FM_ADDR_START + FM_ADDR_SIZE)
 
+#define DM_ADDR_START ALIGN_16(FM_ADDR_END)
+#define DM_ADDR_END ALIGN_16(DM_ADDR_START + DM_ADDR_SIZE)
+
+#define NM_ADDR_START ALIGN_16(DM_ADDR_END)
+#define NM_ADDR_END ALIGN_16(NM_ADDR_START + NM_ADDR_SIZE)
+
 // KERNEl_DATA_END
 
 #define KERNEL_BSS_SIZE 0x10000   // bss 크기
 #define KERNEL_STACK_SIZE 0x10000 // 스택 크기 64KB
 #define KERNEL_HEAP_SIZE 0x1      // 힙 크기 128KB
 
-#define KERNEL_DATA_END FM_ADDR_END
+#define KERNEL_DATA_END NM_ADDR_END
 
 #define KERNEL_BSS_START KERNEL_DATA_END
 #define KERNEL_BSS_END ALIGN_16(KERNEL_BSS_START + KERNEL_BSS_SIZE)

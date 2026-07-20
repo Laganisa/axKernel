@@ -1,7 +1,7 @@
-#include "meta.h"
-#include "mm.h"
-#include "debug.h"
-#include "asm.h"
+#include "global/_meta.h"
+#include "manage/_mm.h"
+#include "global/_debug.h"
+#include "tools/_asm.h"
 
 extern pcb_t *current_proc;
 
@@ -10,7 +10,7 @@ extern pcb_t *current_proc;
     ! 나중에 바꾸기
     만약 모드값이 1이라면 loader 함수를 호출하기
 */
-pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod)
+pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod)
 {
     // 헤더 설정
     fm_exec_hdr_t task;
@@ -22,6 +22,7 @@ pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod
     // IMAGE 모드일 때 바이너리 파일 기록
     if (mod == 1)
     {
+
         extern uint8_t _task_shell_start[];
         extern uint8_t _task_shell_size[];
 
@@ -33,24 +34,22 @@ pcb_t *proc_turn(FMv2_record *reco, int8_t *name, void *entry_point, uint8_t mod
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + shell_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
 
-            fm_create(reco, name, alloc_size, 0);
+            fcb_t *fil = fm_create(reco, name, alloc_size, 0);
+
             task.image_size = shell_size;
-            fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
-            fm_write(reco, name, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
+            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+
+            fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
 
             return mata_exec_file(reco, &pm_object, name, 0);
         }
     }
 
     // 기본 동작
-    fm_create(reco, name, 1024, 0);
-    fm_write(reco, name, &task, sizeof(fm_exec_hdr_t), 0);
+    fcb_t *fil = fm_create(reco, name, 1024, 0);
+    fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
     return mata_exec_file(reco, &pm_object, name, 0);
 }
-
-/*
-    ELF loader helper functions
-*/
 
 static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
 {
@@ -174,15 +173,15 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
 }
 
 // 파일 실행
-pcb_t *mata_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
+pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
 {
 
     fcb_t *file = fm_find(reco, path);
+
     fm_exec_hdr_t *hdr;
 
-    if (file == 0 || file->is_dir)
+    if (file == 0)
     {
-
         return 0;
     }
 
@@ -190,19 +189,16 @@ pcb_t *mata_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint
 
     if (hdr->magic != FM_EXEC_MAGIC)
     {
-
         return 0;
     }
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
-
         return creat_proc_entry(obj, hdr->entry, parid);
     }
 
     if (hdr->mode == FM_EXEC_MODE_IMAGE)
     {
-
         pcb_t *proc = creat_proc_entry(obj, 0, parid);
 
         if (proc == 0)
@@ -217,7 +213,6 @@ pcb_t *mata_exec_file(FMv2_record *reco, PMv1_object *obj, int8_t path[27], uint
 
         return proc;
     }
-
     return 0;
 }
 

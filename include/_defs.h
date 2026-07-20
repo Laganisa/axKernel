@@ -7,6 +7,7 @@
 
 // 산수 관련
 
+// 절댓값 함수
 #define abs(x) ((x) < 0 ? -(x) : (x))
 
 // 계산 관련
@@ -15,6 +16,8 @@
 
 #define BIT_ODD64_t 0x5555555555555555  // 64비트 홀수 비트 검정
 #define BIT_EVEN64_t 0xAAAAAAAAAAAAAAAA // 64비트 짝수 비트 검정
+
+// 메모리 관리자 관련
 
 // 프로세스 관련
 #pragma region Proc
@@ -36,7 +39,7 @@
 // 파일 관리자 관련
 #pragma region file
 
-#define MAX_FILE_NAME 8 // 최대 파일 이름 길이
+#define MAX_FILE_NAME 32 // 최대 파일 이름 길이
 
 // V2 파일 관리자 - 1MB 파일 지원
 #define MAX_FILE_SIZE 0x100000 // 최대 파일 크기: 1MB
@@ -44,6 +47,34 @@
 #define MAX_FCB_file 0x10      // FCB 최대 수 (16개)
 #define MAX_FCB_dir 0x04       // 디렉토리 최대 수 4개
 
+// V3 파일 관리자
+#define MAX_FILE_NUM 0x1000                 // 최대 파일 수
+#define FM_EXEC_MAGIC 0x415853504144453BULL // "AXSPADE;"라는 매직넘버
+#define FM_EXEC_MODE_DIRECT 0ULL
+#define FM_EXEC_MODE_IMAGE 1ULL
+#define MAX_BPT_NODE_NUM 4
+
 #pragma endregion
+
+// 장치 관리자 관련
+
+#define MAX_DEVI_NUM 32 // 최대 디바이스 개수
+#define NSPTI 30        // Non-Secure Physical Timer Interrupt
+
+#define TIMER_TICK 0x1000000 // 타이머 틱 관련
+
+// 네트워크 관리자 관련
+
+// 아직 개발중인 부분 관련
+#define VIRTIO_MMIO_STATUS 0x00C
+#define VIRTIO_STATUS_ACKNOWLEDGE 1
+#define VIRTIO_STATUS_DRIVER 2
+
+#define VIRTIO_MMIO_BASE 0x0A000000
+#define VIRTIO_MMIO_MAGIC 0x000 // Magic Value 레지스터 오프셋
+
+#define VIRTIO_MMIO_QUEUE_SEL 0x030 // 어떤 큐를 고를지 (0: RX, 1: TX)
+#define VIRTIO_MMIO_QUEUE_NUM 0x038 // 큐의 크기 설정
+#define VIRTIO_MMIO_QUEUE_PFN 0x040 // 큐의 물리 메모리 주소(PFN) 등록
 
 #endif

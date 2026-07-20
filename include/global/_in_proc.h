@@ -1,7 +1,7 @@
 #ifndef __IN_PROC_H__
 #define __IN_PROC_H__
 
-#include "types.h"
+#include "_types.h"
 
 void ROOT(void);
 void INIT(void);
