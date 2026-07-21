@@ -1,8 +1,8 @@
+#ifndef __KERNEL_ASM_H__
+#define __KERNEL_ASM_H__
+
 #include "_types.h"
 #include "manage/_fm.h"
-
-#ifndef __ASM_H__
-#define __ASM_H__
 
 // 입력된 값의 1의 개수를 카운트
 static inline uint8_t cnt(uint64_t val)

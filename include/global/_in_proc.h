@@ -1,5 +1,5 @@
-#ifndef __IN_PROC_H__
-#define __IN_PROC_H__
+#ifndef __KERNEL_IN_PROC_H__
+#define __KERNEL_IN_PROC_H__
 
 #include "_types.h"
 

@@ -1,5 +1,5 @@
-#ifndef __HASH_H__
-#define __HASH_H__
+#ifndef __KERNEL_HASH_H__
+#define __KERNEL_HASH_H__
 
 #include "_types.h"
 

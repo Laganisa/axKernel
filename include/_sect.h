@@ -1,5 +1,5 @@
-#ifndef __SECT_H__
-#define __SECT_H__
+#ifndef __KERNEL_SECT_H__
+#define __KERNEL_SECT_H__
 
 #define ALIGN_16(addr) (((addr) + 15) & ~15)
 

@@ -1,7 +1,7 @@
-#include "_types.h"
+#ifndef __KERNEL_SYSCALL_H__
+#define __KERNEL_SYSCALL_H__
 
-#ifndef __SYSCALL_H__
-#define __SYSCALL_H__
+#include "_types.h"
 
 // 시스템 콜 슷자
 

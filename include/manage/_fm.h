@@ -1,9 +1,9 @@
+#ifndef __KERNEL_FM_H__
+#define __KERNEL_FM_H__
+
 #include "manage/_pm.h"
 #include "_sect.h"
 #include "_defs.h"
-
-#ifndef __FM_H__
-#define __FM_H__
 
 typedef struct fcb_t
 {

@@ -1,26 +1,29 @@
-#pragma region include_Header
+#pragma region include_GOD_Header
 
-// 타입 헤더
+// 기초 헤더
 #include "_types.h"
+#include "_defs.h" // 정의 헤더
+#include "_sect.h" // 메모리 매핑 헤더
+#include "_macro.h"
 
 // 분리 파일
-#include "tools/_asm.h" // 어셈블리 함수가 있는 헤더
-#include "_defs.h"      // 정의 헤더
-#include "_sect.h"      // 메모리 매핑 헤더
-
-#include "global/_io.h"    // 입출력 헤더
-#include "handler/_irq.h"  // 인터럽트 헤더 추가
-#include "handler/_sync.h" // Exception handlers
-
-#include "manage/_mm.h" // 메모리 관리자가 있는 헤더
-#include "manage/_pm.h" // 프로세스 관리자 헤더
-#include "manage/_fm.h" // 파일 관리자 헤더
-
+#include "global/_io.h" // 입출력 헤더
 #include "global/_meta.h"
 #include "global/_debug.h"
 #include "global/_in_proc.h"
 #include "global/_alloc.h"
-#include "manage/_nm.h"
+
+#include "manage/_mm.h" // 메모리 관리자가 있는 헤더
+#include "manage/_pm.h" // 프로세스 관리자 헤더
+#include "manage/_fm.h" // 파일 관리자 헤더
+#include "manage/_nm.h" // 네트워크 관리자 헤더
+#include "manage/_gm.h" // 그래픽 관리자 헤더
+
+#include "handler/_irq.h"     // 인터럽트 헤더 추가
+#include "handler/_sync.h"    // 예외 핸들러 sync
+#include "handler/_syscall.h" // 시스템 콜 헨들러
+
+#include "tools/_asm.h" // 어셈블리 함수가 있는 헤더
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);
@@ -29,12 +32,15 @@ extern void vector_table(void);
 extern uint8_t _task_shell_start[];
 extern uint8_t _task_shell_size[];
 
+extern dcb_t nic_device;
+
 #pragma endregion
 
 // 커널 함수
 void master(void)
 {
-    kernel_main();
+    // 디버깅 하기
+    debug_main();
 }
 
 void kernel_main(void)
@@ -78,85 +84,49 @@ void kernel_main(void)
     _proc(shell_proc);
 }
 
-void init_nic(uint64_t base)
-{
-    // 1. 장치 리셋
-    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = 0;
-
-    // 2. ACKNOWLEDGE 설정
-    uint32_t status = 0;
-    status |= VIRTIO_STATUS_ACKNOWLEDGE;
-    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
-
-    // 3. DRIVER 설정
-    status |= VIRTIO_STATUS_DRIVER;
-    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
-
-    puts("NIC Status Initialized!\n");
-}
-
-static unsigned char virtio_ring_buffer[4096] __attribute__((aligned(4096)));
-
-void *get_ring_buffer_addr(void)
-{
-    return (void *)virtio_ring_buffer;
-}
-
-void setup_virtqueue(uint64_t base, int queue_index)
-{
-    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_SEL) = queue_index;
-
-    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_NUM) = 128;
-
-    uint32_t pfn = (uint32_t)(((uint64_t)get_ring_buffer_addr() >> 12));
-    *(volatile uint32_t *)(base + VIRTIO_MMIO_QUEUE_PFN) = pfn;
-
-    puts("Queue setup done!\n");
-}
-#define VIRTIO_STATUS_DRIVER_OK 4
-
-struct virtio_mmio_regs
-{
-    volatile uint32_t magic;          // 0x000
-    volatile uint32_t version;        // 0x004
-    volatile uint32_t device_id;      // 0x008
-    volatile uint32_t vendor_id;      // 0x00C
-    volatile uint32_t host_features;  // 0x010
-    uint32_t _reserved1[3];           // 0x014-0x01C
-    volatile uint32_t guest_features; // 0x020
-    uint32_t _reserved2[3];           // 0x024-0x02C
-    volatile uint32_t queue_sel;      // 0x030
-    uint32_t _reserved3;              // 0x034
-    volatile uint32_t queue_num;      // 0x038
-    uint32_t _reserved4;              // 0x03C
-    volatile uint32_t queue_pfn;      // 0x040
-    uint32_t _reserved5[3];           // 0x044-0x04C
-    volatile uint32_t queue_notify;   // 0x050
-    uint32_t _reserved6[3];           // 0x054-0x05C
-    volatile uint32_t status;         // 0x060
-};
-
-// 사용 예시
-#define VIRTIO0 ((struct virtio_mmio_regs *)0x0A000000)
-
-void debug_main(void)
+void devo_main(void)
 {
 
-    uint32_t ver = VIRTIO0->version;
-    // 이제는 직관적으로 ver를 찍어볼 수 있습니다.
-    put_hex(ver);
+#define VIRTIO_MMIO_BASE 0x0a000000UL
+#define VIRTIO_SLOT_SIZE 0x200 // 슬롯 간격
+#define MAX_VIRTIO_SLOTS 32    // 검사할 슬롯 개수
 
-    uint64_t base = 0x0A000000;
+#define VIRTIO_MMIO_MAGIC_VALUE 0x00
+#define VIRTIO_MMIO_DEVICE_ID 0x08
 
-    init_nic(base);
+    puts("[axOS] Scanning Virtio MMIO slots...\n");
 
-    // RX 큐(0번)와 TX 큐(1번)를 각각 등록
-    setup_virtqueue(base, 0);
-    setup_virtqueue(base, 1);
+    for (int i = 0; i < MAX_VIRTIO_SLOTS; i++)
+    {
+        uint64_t addr = VIRTIO_MMIO_BASE + (i * VIRTIO_SLOT_SIZE);
 
-    uint32_t status = *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS);
-    status |= VIRTIO_STATUS_DRIVER_OK;
-    *(volatile uint32_t *)(base + VIRTIO_MMIO_STATUS) = status;
+        // 1. Magic Value 확인 ("virt" -> 0x74726976)
+        uint32_t magic = *(volatile uint32_t *)(addr + VIRTIO_MMIO_MAGIC_VALUE);
+        if (magic != 0x74726976)
+        {
+            continue;
+        }
 
-    puts("NIC is fully ready and running!\n");
+        // 2. Device ID 확인
+        uint32_t device_id = *(volatile uint32_t *)(addr + VIRTIO_MMIO_DEVICE_ID);
+        if (device_id == 0)
+        {
+            continue;
+        }
+
+        // 3. 주소랑 디바이스 ID 출력
+        puts("Found Device at Addr: ");
+        put_hex(addr);
+        puts(" | Device ID: ");
+        put_hex(device_id);
+        puts("\n");
+
+        // Virtio-GPU의 Device ID는 16이야!
+        if (device_id == 16)
+        {
+            puts(" -> [Bingo!] Virtio-GPU found here!\n");
+            // TODO: 여기서 이 addr를 GPU 베이스 주소로 저장하면 됨!
+        }
+    }
+    puts("[axOS] Scan finished.\n");
 }
