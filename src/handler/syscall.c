@@ -59,11 +59,10 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     // arg3: length
 
     /*
-    dump("arg1", arg1);
-    dump("arg2", arg2);
-    dump("arg3", arg3);
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
     */
-
     // 장치에 쓰기
     if (current_proc->is_file == 0)
     {
@@ -101,6 +100,8 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     // 어디를 어떻게 열지
     char *path = (char *)arg1;
     int flags = (int)arg2;
+
+    log("1");
 
     /*
         나중에 다른곳으로 옮길거
@@ -142,17 +143,19 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     {
         // 플레그를 사용한 파일 열기
         fcb_t *fil = fm_find(fm_record, path);
+
         if (fil == NULL)
         {
             return 0;
         }
+
         current_proc->use_file = fil;
         current_proc->is_file = TRUE; // 파일을 열었다고 설정
 
         // 오프셋 설정
 
         // 새로 작업
-        if ((flags >> 3) & 1 == 0)
+        if ((flags >> 3) & 1 != 0)
         {
             current_proc->file_offset = 0;
         }
@@ -186,50 +189,41 @@ int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return 1;
 }
 
-// ! DS 이식하기
 int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
-    /*
-    dump("arg1", arg1);
-    dump("arg2", arg2);
-    dump("arg3", arg3);
-    */
 
     int fd = (int)arg1;
     char *buf = (char *)arg2;
     size_t count = (size_t)arg3;
 
-    if (fd != 0)
-        return -1;
-
     if (count == 0)
-        return 0;
-
-    char c = getchar();
-
-    putchar(c);
-
-    buf[0] = c;
-    return 1;
-
-    // ! 아직 VDS 로 바꾸지 않음
-    // ! 이후 이어진 수정 사항에서 수정할 예정
-    /*
-    if (fd == 0 && current_proc->use_dev != NULL)
     {
-        // 장치에서 1바이트 읽기
-        int bytes_read = current_proc->use_dev->read(buf);
-
-        // 에코는 커널의 약속된 stdout(putchar)을 사용
-        if (bytes_read > 0)
-        {
-            putchar(*(char *)buf);
-        }
-
-        return bytes_read;
+        return 0;
     }
-    return -1;
-    */
+
+    // 장치 읽기일 경우
+
+    if (current_proc->is_file == 0)
+    {
+        char c = getchar();
+
+        putchar(c);
+
+        buf[0] = c;
+        return 1;
+    }
+    // 파일 읽기일 경우
+    else
+    {
+        uint32_t read_bytes = fm_read(fm_record, current_proc->use_file, (void *)buf, 1, current_proc->file_offset);
+
+        if (read_bytes > 0)
+        {
+            current_proc->file_offset += 1;
+            return 0;
+        }
+        return -1;
+    }
 }
 
 int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)

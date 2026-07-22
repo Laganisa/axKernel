@@ -37,9 +37,12 @@ typedef struct FMv3_record
     // bp tree의 루트 노드
     struct bpt_node *root;
 
-    // 메타데이터 배열
-    // 동적할당을 생각중이긴 함
+    /*
+        meta data arr
+        동적할당을 생각중이긴 함s
+    */
     struct fcb_t FMv3_mem[MAX_FILE_NUM];
+
 } FMv3_record;
 
 typedef struct fm_exec_hdr_t
@@ -53,13 +56,23 @@ typedef struct fm_exec_hdr_t
 #define fm_record ((FMv3_record *)FM_ADDR_START)
 
 void fm_init(uint64_t *addr);
+void fm_execute(FMv3_record *reco);
+void *fm_data_addr(FMv3_record *reco, fcb_t *file);
+
+fcb_t *fm_find(FMv3_record *reco, char *name);
+void fm_list(FMv3_record *reco, int8_t *path);
+
+// 파일 생성 & 삭제
 fcb_t *fm_create(FMv3_record *reco, char *path, uint32_t size, uint16_t auth);
 fcb_t *fm_delete(FMv3_record *reco, char *path);
-fcb_t *fm_find(FMv3_record *reco, char *name);
-void *fm_data_addr(FMv3_record *reco, fcb_t *file);
-uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset);
-void fm_list(FMv3_record *reco, int8_t *path);
-void fm_execute(FMv3_record *reco);
+
+// 파일 쓰기 & 읽기
+uint32_t fm_write(
+    FMv3_record *reco, fcb_t *file,
+    void *buf, uint32_t size, uint32_t offset);
+uint32_t fm_read(
+    FMv3_record *reco, fcb_t *file,
+    void *buf, uint32_t size, uint32_t offset);
 
 // 파일 열기
 fcb_t *fm_open(void);

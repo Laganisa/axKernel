@@ -74,43 +74,40 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
 
 void fm_execute(FMv3_record *reco)
 {
-    // 1. 파일 관리자 초기화 상태 확인
     if (reco == NULL)
     {
-        return; // 파일 관리자 미초기화
+        return NULL; // 파일 관리자 미초기화
     }
 
     if (reco->base == NULL)
     {
-        return; // 베이스 주소 미설정
+        return NULL; // 베이스 주소 미설정
     }
 
-    // 2. 메모리 일관성 검증
     // 파일 개수와 마지막 주소 검증
-    if (reco->all_num > (MAX_FCB_dir * MAX_FCB_file * MAX_FCB_file))
+    if (reco->all_num > MAX_FILE_NUM)
     {
         reco->all_num = 0; // 비정상적인 파일 개수 초기화
     }
 
-    if (reco->cur_ptr > (MAX_FCB_dir * MAX_FCB_file * MAX_FCB_file))
+    if (reco->cur_ptr > MAX_FILE_NUM)
     {
         reco->cur_ptr = 0; // 현재 포인터 초기화
     }
 
     // ! 시스템 동기화 (향후 구현)
+    // ! 구현 까지 시간이 좀 걸릴 듯
     // ! fm_sync(reco);
 }
 
 uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset)
 {
-    uint32_t file_size;
-
     if (file == 0)
     {
         return 0;
     }
 
-    file_size = (uint32_t)file->lens << 10;
+    uint32_t file_size = (uint32_t)file->lens << 10;
     if (offset >= file_size)
     {
         return 0;
@@ -122,6 +119,27 @@ uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint
     }
 
     memcpy((uint8_t *)fm_data_addr(reco, file) + offset, (uint8_t *)buf, size);
+    return size;
+}
+
+uint32_t fm_read(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset)
+{
+    if (file == NULL)
+    {
+        return 0;
+    }
+
+    uint32_t file_size = (uint32_t)file->lens << 10;
+    if (offset >= file_size)
+    {
+        return 0;
+    }
+    if (size > (file_size - offset))
+    {
+        size = file_size - offset;
+    }
+
+    memcpy((uint8_t *)buf, (uint8_t *)fm_data_addr(reco, file) + offset, size);
     return size;
 }
 
@@ -147,5 +165,3 @@ void *fm_data_addr(FMv3_record *reco, fcb_t *file)
 {
     return (void *)(reco->base + (file->fid * MAX_FILE_SIZE));
 }
-
-fcb_t *fm_open(void) {}

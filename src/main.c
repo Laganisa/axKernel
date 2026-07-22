@@ -40,7 +40,7 @@ extern dcb_t nic_device;
 void master(void)
 {
     // 디버깅 하기
-    debug_main();
+    kernel_main();
 }
 
 void kernel_main(void)
