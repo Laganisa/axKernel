@@ -4,7 +4,7 @@
     장치들을 적어두기
 */
 
-#pragma uart
+#pragma region uart
 
 // uart 장치 등록
 dcb_t uart_device = {
@@ -50,7 +50,7 @@ void uart_dev_init()
 
 #pragma endregion
 
-#pragma NIC
+#pragma region NIC
 
 dcb_t nic_device = {
     .name = "vritQ0",
@@ -62,30 +62,28 @@ dcb_t nic_device = {
 
 void nic_dev_init(void)
 {
-    volatile uint32_t host_features;
+    uint32_t host_features;
 
     // 1. 장치 리셋
     VIRTIO_STATUS = 0;
 
     // 2. ACKNOWLEDGE + DRIVER
-    VIRTIO_STATUS = VIRTIO_STATUS_ACKNOWLEDGE | VIRTIO_STATUS_DRIVER;
+    VIRTIO_STATUS = VIRTIO_STATUS_ACKNOWLEDGE;
+    VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER;
 
-    // 3. 피처 협상
+    // Version 1 is the legacy MMIO interface: features are single 32-bit fields.
     host_features = VIRTIO_HOST_FEATURES;
-    VIRTIO_GUEST_FEATURES = host_features & 0x00000001U;
 
-    // 4. FEATURES_OK 설정
-    VIRTIO_STATUS |= VIRTIO_STATUS_FEATURES_OK;
+    puts("Host features: ");
+    put_hex(host_features);
+    puts("\n");
 
-    // (선택 사항) 장치가 FEATURES_OK를 잘 먹었는지 확인
-    if (!(VIRTIO_STATUS & VIRTIO_STATUS_FEATURES_OK))
-    {
-        puts("Error: Virtio device rejected features!\n");
-        return;
-    }
+    // Request no optional features until the individual virtio-net features
+    // are implemented by the driver.
+    VIRTIO_GUEST_FEATURES = 0;
 
-    // 💡 주의: 여기서는 아직 DRIVER_OK를 켜지 않습니다!
-    // 큐 주소 세팅이 끝난 뒤에 켤 겁니다.
+    VIRTIO_GUEST_PAGE_SIZE = 4096;
+
     puts("NIC Features Negotiated Successfully!\n");
 }
 

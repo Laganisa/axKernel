@@ -6,8 +6,6 @@
 #include "manage/_dm.h"
 #include "global/_debug.h"
 
-// 여기도 수정해야함
-// ? 무었을?
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
 extern void _proc(pcb_t *);
@@ -23,10 +21,6 @@ int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
 
 /*
     시스템 콜을 연결하는 파일
-    현재 추가된 시스템 콜
-        나가기, 쓰기, 읽기, 파일 생성, 파일 및 장치 열기, 파일 닫기
-    앞으로 추가될 시스템 콜
-        소켓 관련, 프로세스 관련
 */
 
 uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
@@ -46,9 +40,11 @@ uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
         full_stop();
 
-        return -1ULL;
+        return 0ULL;
     }
 }
+
+#pragma region general_call
 
 int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
@@ -63,6 +59,7 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
         dump("arg2", arg2);
         dump("arg3", arg3);
     */
+
     // 장치에 쓰기
     if (current_proc->is_file == 0)
     {
@@ -90,6 +87,43 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     }
 }
 
+int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+
+    int fd = (int)arg1;
+    char *buf = (char *)arg2;
+    size_t count = (size_t)arg3;
+
+    if (count == 0)
+    {
+        return 0;
+    }
+
+    // 장치 읽기일 경우
+
+    if (current_proc->is_file == 0)
+    {
+        char c = getchar();
+
+        putchar(c);
+
+        buf[0] = c;
+        return 1;
+    }
+    // 파일 읽기일 경우
+    else
+    {
+        uint32_t read_bytes = fm_read(fm_record, current_proc->use_file, (void *)buf, 1, current_proc->file_offset);
+
+        if (read_bytes > 0)
+        {
+            current_proc->file_offset += 1;
+            return 0;
+        }
+        return -1;
+    }
+}
+
 int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     /*
@@ -100,8 +134,6 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     // 어디를 어떻게 열지
     char *path = (char *)arg1;
     int flags = (int)arg2;
-
-    log("1");
 
     /*
         나중에 다른곳으로 옮길거
@@ -164,66 +196,11 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     }
 }
 
-int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
-{
-    /*
-    dump("arg1", arg1);
-    dump("arg2", arg2);
-    */
-
-    // 어디를 어떤 식으로 만들지
-    char *path = (char *)arg1;
-    int mode = (int)arg2;
-    uint32_t size = (uint32_t)arg3;
-
-    // ? 뭐 별도의 로직이 없는게 허전하긴함
-    fm_create(fm_record, path, size, mode);
-
-    return 1;
-}
-
 int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     current_proc->use_dev = &uart_device;
     current_proc->is_file = FALSE;
     return 1;
-}
-
-int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
-{
-
-    int fd = (int)arg1;
-    char *buf = (char *)arg2;
-    size_t count = (size_t)arg3;
-
-    if (count == 0)
-    {
-        return 0;
-    }
-
-    // 장치 읽기일 경우
-
-    if (current_proc->is_file == 0)
-    {
-        char c = getchar();
-
-        putchar(c);
-
-        buf[0] = c;
-        return 1;
-    }
-    // 파일 읽기일 경우
-    else
-    {
-        uint32_t read_bytes = fm_read(fm_record, current_proc->use_file, (void *)buf, 1, current_proc->file_offset);
-
-        if (read_bytes > 0)
-        {
-            current_proc->file_offset += 1;
-            return 0;
-        }
-        return -1;
-    }
 }
 
 int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
@@ -254,3 +231,36 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     }
     return 0;
 }
+
+#pragma endregion
+
+#pragma region file_call
+
+int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+    */
+
+    // 어디를 어떤 식으로 만들지
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
+
+    // ? 뭐 별도의 로직이 없는게 허전하긴함
+    fm_create(fm_record, path, size, mode);
+
+    return 1;
+}
+
+int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+}
+
+#pragma endregion
