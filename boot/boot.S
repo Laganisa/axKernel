@@ -53,13 +53,11 @@ el2_entry:
 
     eret
 
-
-
 // EL1 KERNEL ENTRY
 el1_entry:
     // 스택 설정
     // = stack_top으로 바꾸기
-    ldr x0, =0x4000D7B0
+    ldr x0, =stack_top
     mov sp, x0
 
     msr DAIFClr, #0xf

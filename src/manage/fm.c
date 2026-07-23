@@ -56,7 +56,6 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
         return 0;
     }
 
-    // 메타데이터 채우기 (기존 fm_create와 유사)
     for (int i = 0; i < MAX_FILE_NAME; i++)
     {
         new_file->alias[i] = name[i];
