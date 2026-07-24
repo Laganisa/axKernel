@@ -16,4 +16,7 @@ void check_nic_completion(void);
 
 void debug_main(void);
 
+// 수신용도
+void net_main(void);
+
 #endif

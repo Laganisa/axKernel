@@ -47,7 +47,7 @@
 
 #pragma region virtq
 
-#define VIRTIO_MMIO_BASE 0x0A000000U
+#define VIRTIO_MMIO_BASE 0x0A003E00U
 #define VIRTIO_REG(offset) (*(volatile uint32_t *)((uintptr_t)VIRTIO_MMIO_BASE + (offset)))
 
 /* Identification */

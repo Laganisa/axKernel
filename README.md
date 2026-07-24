@@ -12,6 +12,50 @@ laganisa가 kernel을 공부하기 위해 만드는
 
 목적 아키텍처 : AArch64 기반의 CPU (cortex-a72)
 
+## 폴더 구조
+
+```txt
+AxKernel
+asssets/
+
+boot/
+    boot.S
+    proc.S
+    IRV/
+
+include/
+    global/
+    handler/
+    manage/
+    tools/
+    _defs.h
+    _macro.h
+    _sect.h
+    _types.h
+
+init/
+    init_binary.S
+
+src/
+    main.c
+    frm/
+    global/
+    handler/
+    manage/
+    tools/
+
+usr/
+    axLib/
+    axShell/
+    axCompil/
+    axBridge/
+    
+linker.ld
+Makefile
+README.md
+reference.md
+```
+
 ## 실행법
 
 ## 현재 구현되어 있는 기능

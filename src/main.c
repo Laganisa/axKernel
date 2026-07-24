@@ -37,10 +37,15 @@ extern dcb_t nic_device;
 #pragma endregion
 
 // 커널 함수
-void master(void)
+void master(uint64_t DTB_addr)
 {
-    // 디버깅 하기
+    dump("DTB_addr", DTB_addr);
+
+#ifdef DEVO_TEST
+    net_main();
+#else
     debug_main();
+#endif
 }
 
 void kernel_main(void)
@@ -60,11 +65,12 @@ void kernel_main(void)
 
     /*
         파일 생성 후 프로세스로 만든뒤 대기 큐에 넣기
+        나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
 
-    // pcb_t *proc1 = proc_turn(reco, "TA.BIN", &task_inf_A, 0);
+    // pcb_t *proc1 = proc_turn(fm_record, "TA.BIN", &task_wfi, 0);
 
-    // pcb_t *proc2 = proc_turn(reco, "TB.BIN", &task_inf_B, 0);
+    // pcb_t *proc2 = proc_turn(fm_record, "TB.BIN", &task_inf_B, 0);
     // pm_awake(&pm_object, 0, proc2);
 
     pcb_t *shell_proc = proc_turn(fm_record, "SHEL.BIN", _task_shell_start, 1);
@@ -72,7 +78,7 @@ void kernel_main(void)
 
     // proc_dump("proc1", proc1);
     // proc_dump("proc2", proc2);
-    proc_dump("shell proc", shell_proc);
+    // proc_dump("shell proc", shell_proc);
 
     /*
         프로세스 전환

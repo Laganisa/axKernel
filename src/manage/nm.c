@@ -1,5 +1,7 @@
 #include "manage/_nm.h"
 #include "_macro.h"
+#include "global/_debug.h"
+#include "global/_io.h"
 
 /*
     네트워크 관련 함수가 있는 파일
@@ -66,7 +68,7 @@ void *get_ring_buffer_addr(void)
     return (void *)tx_queue.storage;
 }
 
-static unsigned char rx_packet_buffer[12 + 2048];
+static unsigned char rx_packet_buffer[10 + 2048];
 
 static uint16_t last_rx_used_idx = 0;
 static uint16_t last_tx_used_idx = 0;
@@ -141,7 +143,7 @@ void check_nic_completion(void)
     {
         puts("NIC finished a receive job!\n");
 
-        unsigned char *eth_frame = rx_packet_buffer + 12;
+        unsigned char *eth_frame = rx_packet_buffer + 10;
 
         // EtherType 확인 예시 (IPv4면 0x0800)
         uint16_t ethertype = (eth_frame[12] << 8) | eth_frame[13];
@@ -161,6 +163,7 @@ void check_nic_completion(void)
         puts("Waiting for NIC response...\n");
     }
 }
+
 void net_send_test(void)
 {
     static unsigned char packet[] = {
@@ -215,52 +218,110 @@ void prepare_rx_buffer(void)
 
 void debug_main(void)
 {
-    puts("Magic: ");
-    put_hex(VIRTIO_MAGIC_VALUE);
-    puts("\n");
-    puts("Version: ");
-    put_hex(VIRTIO_VERSION);
-    puts("\n");
-    puts("Device ID: ");
-    put_hex(VIRTIO_DEVICE_ID);
-    puts("\n");
-    puts("Vendor ID: ");
-    put_hex(VIRTIO_VENDOR_ID);
-    puts("\n");
-
-    // 1. 장치 초기화 및 피처 협상
     nic_device.init();
 
-    // 2. 큐 주소 세팅 (RX, TX)
-    setup_virtqueue(0);
-    setup_virtqueue(1);
+    setup_virtqueue(1); // TX만
 
-    // 3. 수신 버퍼 미리 걸어두기
-    prepare_rx_buffer();
-
-    // 4. 모든 큐 세팅 완료 후 DRIVER_OK 점화
     VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
-    puts("NIC is fully ready and DRIVER_OK set!\n");
 
-    // 5. 패킷 송신 테스트!
+    puts("TX Driver Ready\n");
+
     net_send_test();
 
-    puts("Waiting for TX completion...\n");
+    puts("Waiting TX...\n");
+
     int timeout = 10000000;
+
     while (timeout--)
     {
-        check_nic_completion();
-
         if (tx_queue.used->idx != last_tx_used_idx)
         {
-            puts("SUCCESS: TX packet successfully processed by hardware!\n");
+            puts("TX SUCCESS\n");
             last_tx_used_idx++;
-            break;
+            return;
         }
     }
 
-    if (timeout <= 0)
+    puts("TX TIMEOUT\n");
+}
+
+// 나중에 따로 뺄 예정
+void net_main(void)
+{
+    nic_device.init();
+
+    setup_virtqueue(0); // RX만
+
+    prepare_rx_buffer();
+
+    puts("RX buffer addr = ");
+    put_hex((uint64_t)rx_packet_buffer);
+    puts("\n");
+
+    puts("Descriptor addr = ");
+    put_hex(rx_queue.desc[0].addr);
+    puts("\n");
+
+    VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
+
+    puts("RX Driver Ready\n");
+
+    while (1)
     {
-        puts("TIMEOUT: Hardware did not respond to TX queue.\n");
+        if (rx_queue.used->idx != last_rx_used_idx)
+        {
+            puts("RX SUCCESS\n");
+
+            struct virtq_used_elem *elem =
+                &rx_queue.used->ring[last_rx_used_idx % VIRTIO_QUEUE_SIZE];
+
+            puts("Descriptor : ");
+            put_hex(elem->id);
+            puts("\n");
+
+            puts("Length : ");
+            put_hex(elem->len);
+            puts("\n");
+
+            unsigned char *frame = rx_packet_buffer + 12;
+
+            puts("RX BUFFER:\n");
+
+            for (uint32_t i = 0; i < elem->len; i++)
+            {
+                put_hex2(rx_packet_buffer[i]);
+                puts(" ");
+
+                if ((i & 15) == 15)
+                {
+                    puts("\n");
+                }
+            }
+
+            puts("\nPayload:\n");
+
+            unsigned char *payload = frame + 14;
+            uint32_t payload_len = elem->len - 12 - 14;
+
+            puts("\nPayload:\n");
+
+            for (uint32_t i = 0; i < payload_len; i++)
+            {
+                put_hex2(payload[i]);
+                puts(" ");
+            }
+            puts("\n");
+
+            puts("\nPayload ASCII:\n");
+
+            for (uint32_t i = 0; i < payload_len; i++)
+            {
+                putchar((char)payload[i]);
+            }
+
+            puts("\n");
+
+            last_rx_used_idx++;
+        }
     }
 }
