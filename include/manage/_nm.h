@@ -6,10 +6,6 @@
 #include "_macro.h"
 #include "manage/_dm.h"
 
-void *get_ring_buffer_addr(void);
-
-void setup_virtqueue(int queue_index);
-
 void net_send_test(void);
 void setup_virtqueue(int queue_index);
 void check_nic_completion(void);
