@@ -135,30 +135,11 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 
     // 어디를 어떻게 열지
     char *path = (char *)arg1;
-    int flags = (int)arg2;
-
-    /*
-        나중에 다른곳으로 옮길거
-        플레그에 대해
-        일단 지금 예정된 플레그는
-        장치인지
-            하위 1비트
-        파일인지
-            파일 중에서도
-            읽기로 여는건지
-
-            쓰기로 여는건지
-
-            읽기 쓰기 혼용인지
-
-            그것도 아니면
-            이어서 작업하는건지
-    */
+    uint8_t flags = (uint8_t)arg2;
 
     // 플레그의 하위 1비트의 값이 0이면 장치라고 생각
     if ((flags & 1) == 0)
     {
-        // ? 여기서도 플레그 쓰겠지 아마도
 
         // 장치를 바꿔주기
         dcb_t *dev = dm_find(dm_driver, path);
