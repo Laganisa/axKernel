@@ -1,9 +1,9 @@
+#ifndef __KERNEL_DEBUG_H__
+#define __KERNEL_DEBUG_H__
+
 #include "_types.h"
 #include "manage/_pm.h"
 #include "manage/_fm.h"
-
-#ifndef __DEBUG_H__
-#define __DEBUG_H__
 
 void dump(const char *name, uint64_t val);
 void full_stop(void);

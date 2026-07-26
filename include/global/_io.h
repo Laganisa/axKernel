@@ -1,9 +1,9 @@
+#ifndef __KERNEL_IO_H__
+#define __KERNEL_IO_H__
+
 #include "_defs.h"
 #include "_sect.h"
 #include "_types.h"
-
-#ifndef __IO_H__
-#define __IO_H__
 
 void uart_init(void);
 void putchar(int8_t c);

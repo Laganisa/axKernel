@@ -31,6 +31,7 @@ uint64_t handle_data_abort(uint64_t arg8, uint64_t arg1, uint64_t arg2, uint64_t
         _proc(next);
     }
 
+    // 절대 오면 안되는 구역
     full_stop();
     return 0;
 }

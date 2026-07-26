@@ -1,8 +1,8 @@
+#ifndef __KERNEL_MM_H__
+#define __KERNEL_MM_H__
+
 #include "_defs.h"
 #include "_types.h"
-
-#ifndef __MM_H__
-#define __MM_H__
 
 // 메모리 관리자가 담당하는 메모리 선언
 typedef struct MMv5_stack

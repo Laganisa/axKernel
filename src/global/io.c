@@ -97,6 +97,14 @@ void put_uint(uint64_t n)
     puts(&buf[i + 1]);
 }
 
+void put_hex2(uint64_t d)
+{
+    char *hex = "0123456789ABCDEF";
+    uint8_t val = d & 0xFF;         // 하위 8비트(2자리)만 추출
+    putchar(hex[(val >> 4) & 0xF]); // 16의 자리 (첫 번째 자릿수)
+    putchar(hex[val & 0xF]);        // 1의 자리 (두 번째 자릿수)
+}
+
 // 16진수 출력 함수
 void put_hex(uint64_t d)
 {

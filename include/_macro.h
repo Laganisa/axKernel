@@ -1,5 +1,5 @@
-#ifndef __MACRO_H__
-#define __MACRO_H__
+#ifndef __KERNEL_MACRO_H__
+#define __KERNEL_MACRO_H__
 
 /*
     장치들의 주소를 적어두는 헤더
@@ -47,7 +47,46 @@
 
 #pragma region virtq
 
-#define VIRTQ_BASE 0x08000000
+#define VIRTIO_MMIO_BASE 0x0A003E00U
+#define VIRTIO_REG(offset) (*(volatile uint32_t *)((uintptr_t)VIRTIO_MMIO_BASE + (offset)))
+
+/* Identification */
+#define VIRTIO_MAGIC_VALUE VIRTIO_REG(0x000)
+#define VIRTIO_VERSION VIRTIO_REG(0x004)
+#define VIRTIO_DEVICE_ID VIRTIO_REG(0x008)
+#define VIRTIO_VENDOR_ID VIRTIO_REG(0x00C)
+
+/* Features */
+#define VIRTIO_HOST_FEATURES VIRTIO_REG(0x010)
+#define VIRTIO_HOST_FEATURES_SEL VIRTIO_REG(0x014)
+#define VIRTIO_GUEST_FEATURES VIRTIO_REG(0x020)
+#define VIRTIO_GUEST_FEATURES_SEL VIRTIO_REG(0x024)
+
+/* Legacy Queue Configuration */
+#define VIRTIO_GUEST_PAGE_SIZE VIRTIO_REG(0x028)
+#define VIRTIO_QUEUE_SEL VIRTIO_REG(0x030)
+#define VIRTIO_QUEUE_NUM_MAX VIRTIO_REG(0x034)
+#define VIRTIO_QUEUE_NUM VIRTIO_REG(0x038)
+#define VIRTIO_QUEUE_ALIGN VIRTIO_REG(0x03C)
+#define VIRTIO_QUEUE_PFN VIRTIO_REG(0x040)
+#define VIRTIO_QUEUE_NOTIFY VIRTIO_REG(0x050)
+
+/* Interrupt */
+#define VIRTIO_INTERRUPT_STATUS VIRTIO_REG(0x060)
+#define VIRTIO_INTERRUPT_ACK VIRTIO_REG(0x064)
+
+/* Device Status */
+#define VIRTIO_STATUS VIRTIO_REG(0x070)
+
+/* Status Flags */
+#define VIRTIO_STATUS_ACKNOWLEDGE 0x01U
+#define VIRTIO_STATUS_DRIVER 0x02U
+#define VIRTIO_STATUS_DRIVER_OK 0x04U
+#define VIRTIO_STATUS_FEATURES_OK 0x08U
+
+/* Virtqueue Descriptor Flags */
+#define VIRTQ_DESC_F_NEXT 0x01U
+#define VIRTQ_DESC_F_WRITE 0x02U
 
 #pragma endregion
 

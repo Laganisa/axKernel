@@ -1,7 +1,7 @@
-#include "manage/_fm.h"
+#ifndef __KERNEL_META_H__
+#define __KERNEL_META_H__
 
-#ifndef __META_H__
-#define __META_H__
+#include "manage/_fm.h"
 
 // ELF 헤더 구조체
 typedef struct elf_ehdr

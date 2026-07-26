@@ -5,12 +5,12 @@
 #include "manage/_pm.h"
 #include "manage/_dm.h"
 #include "global/_debug.h"
+#include "manage/_nm.h"
 
-// 여기도 수정해야함
-// ? 무었을?
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
 extern void _proc(pcb_t *);
+
 extern dcb_t uart_device;
 
 int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
@@ -23,10 +23,6 @@ int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
 
 /*
     시스템 콜을 연결하는 파일
-    현재 추가된 시스템 콜
-        나가기, 쓰기, 읽기, 파일 생성, 파일 및 장치 열기, 파일 닫기
-    앞으로 추가될 시스템 콜
-        소켓 관련, 프로세스 관련
 */
 
 uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
@@ -46,9 +42,11 @@ uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
         full_stop();
 
-        return -1ULL;
+        return 0ULL;
     }
 }
+
+#pragma region general_call
 
 int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
@@ -59,9 +57,9 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     // arg3: length
 
     /*
-    dump("arg1", arg1);
-    dump("arg2", arg2);
-    dump("arg3", arg3);
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
     */
 
     // 장치에 쓰기
@@ -88,6 +86,43 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
             current_proc->file_offset);
         current_proc->file_offset += written;
         return (int32_t)written;
+    }
+}
+
+int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+
+    int fd = (int)arg1;
+    char *buf = (char *)arg2;
+    size_t count = (size_t)arg3;
+
+    if (count == 0)
+    {
+        return 0;
+    }
+
+    // 장치 읽기일 경우
+
+    if (current_proc->is_file == 0)
+    {
+        char c = getchar();
+
+        putchar(c);
+
+        buf[0] = c;
+        return 1;
+    }
+    // 파일 읽기일 경우
+    else
+    {
+        uint32_t read_bytes = fm_read(fm_record, current_proc->use_file, (void *)buf, 1, current_proc->file_offset);
+
+        if (read_bytes > 0)
+        {
+            current_proc->file_offset += 1;
+            return 0;
+        }
+        return -1;
     }
 }
 
@@ -142,17 +177,19 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     {
         // 플레그를 사용한 파일 열기
         fcb_t *fil = fm_find(fm_record, path);
+
         if (fil == NULL)
         {
             return 0;
         }
+
         current_proc->use_file = fil;
         current_proc->is_file = TRUE; // 파일을 열었다고 설정
 
         // 오프셋 설정
 
         // 새로 작업
-        if ((flags >> 3) & 1 == 0)
+        if ((flags >> 3) & 1 != 0)
         {
             current_proc->file_offset = 0;
         }
@@ -161,75 +198,11 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     }
 }
 
-int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
-{
-    /*
-    dump("arg1", arg1);
-    dump("arg2", arg2);
-    */
-
-    // 어디를 어떤 식으로 만들지
-    char *path = (char *)arg1;
-    int mode = (int)arg2;
-    uint32_t size = (uint32_t)arg3;
-
-    // ? 뭐 별도의 로직이 없는게 허전하긴함
-    fm_create(fm_record, path, size, mode);
-
-    return 1;
-}
-
 int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     current_proc->use_dev = &uart_device;
     current_proc->is_file = FALSE;
     return 1;
-}
-
-// ! DS 이식하기
-int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
-{
-    /*
-    dump("arg1", arg1);
-    dump("arg2", arg2);
-    dump("arg3", arg3);
-    */
-
-    int fd = (int)arg1;
-    char *buf = (char *)arg2;
-    size_t count = (size_t)arg3;
-
-    if (fd != 0)
-        return -1;
-
-    if (count == 0)
-        return 0;
-
-    char c = getchar();
-
-    putchar(c);
-
-    buf[0] = c;
-    return 1;
-
-    // ! 아직 VDS 로 바꾸지 않음
-    // ! 이후 이어진 수정 사항에서 수정할 예정
-    /*
-    if (fd == 0 && current_proc->use_dev != NULL)
-    {
-        // 장치에서 1바이트 읽기
-        int bytes_read = current_proc->use_dev->read(buf);
-
-        // 에코는 커널의 약속된 stdout(putchar)을 사용
-        if (bytes_read > 0)
-        {
-            putchar(*(char *)buf);
-        }
-
-        return bytes_read;
-    }
-    return -1;
-    */
 }
 
 int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
@@ -260,3 +233,86 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     }
     return 0;
 }
+
+#pragma endregion
+
+#pragma region file_call
+
+int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+    */
+
+    // 어디를 어떤 식으로 만들지
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
+
+    // ? 뭐 별도의 로직이 없는게 허전하긴함
+    fm_create(fm_record, path, size, mode);
+
+    return 1;
+}
+
+int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+}
+
+#pragma endregion
+
+#pragma region proc_call
+
+int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+}
+
+#pragma endregion
+
+#pragma region L2toL3
+
+int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        송신 시스템 콜
+        버퍼에 있는걸 복사후 전송
+    */
+
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
+
+    net_TX_main();
+}
+
+int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        1. nm_connet을 둘러본다
+        2. 없으면 타임아웃이 될 때까지 수신 준비
+    */
+
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
+    net_RX_main();
+}
+
+int32_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        ARP 요청 보네고 인덱스를 리턴하기
+    */
+
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
+}
+
+#pragma endregion

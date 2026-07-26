@@ -1,8 +1,8 @@
+#ifndef __KERNEL_FS_H__
+#define __KERNEL_FS_H__
+
 #include "_defs.h"
 #include "_types.h"
-
-#ifndef __FS_H__
-#define __FS_H__
 
 typedef struct bpt_node
 {
