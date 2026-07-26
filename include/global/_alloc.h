@@ -1,5 +1,5 @@
-#ifndef __ALLOC_H__
-#define __ALLOC_H__
+#ifndef __KERNEL_ALLOC_H__
+#define __KERNEL_ALLOC_H__
 
 #include "_types.h"
 

@@ -1,7 +1,7 @@
-#include "manage/_pm.h"
+#ifndef __KERNEL_EXCEPTION_H__
+#define __KERNEL_EXCEPTION_H__
 
-#ifndef __EXCEPTION_H__
-#define __EXCEPTION_H__
+#include "manage/_pm.h"
 
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);

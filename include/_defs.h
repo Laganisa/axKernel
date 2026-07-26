@@ -1,5 +1,5 @@
-#ifndef __DEFS_H__
-#define __DEFS_H__
+#ifndef __KERNEL_DEFS_H__
+#define __KERNEL_DEFS_H__
 
 // 인터럽트 관련
 #define enable_irq() asm volatile("msr daifclr, #2")
@@ -64,17 +64,5 @@
 #define TIMER_TICK 0x1000000 // 타이머 틱 관련
 
 // 네트워크 관리자 관련
-
-// 아직 개발중인 부분 관련
-#define VIRTIO_MMIO_STATUS 0x00C
-#define VIRTIO_STATUS_ACKNOWLEDGE 1
-#define VIRTIO_STATUS_DRIVER 2
-
-#define VIRTIO_MMIO_BASE 0x0A000000
-#define VIRTIO_MMIO_MAGIC 0x000 // Magic Value 레지스터 오프셋
-
-#define VIRTIO_MMIO_QUEUE_SEL 0x030 // 어떤 큐를 고를지 (0: RX, 1: TX)
-#define VIRTIO_MMIO_QUEUE_NUM 0x038 // 큐의 크기 설정
-#define VIRTIO_MMIO_QUEUE_PFN 0x040 // 큐의 물리 메모리 주소(PFN) 등록
 
 #endif

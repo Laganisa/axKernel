@@ -1,10 +1,10 @@
+#ifndef __KERNEL_DM_H__
+#define __KERNEL_DM_H__
+
 #include "_types.h"
 #include "_sect.h"
 #include "_defs.h"
 #include "_macro.h"
-
-#ifndef __DM_H__
-#define __DM_H__
 
 // 드라이버 구조체
 typedef struct dcb_t
@@ -54,8 +54,8 @@ static inline void reset_timer(void)
 dcb_t *dm_creat(DMv1_driver *driv, uint32_t irq_nr, dcb_t dev);
 dcb_t *dm_find(DMv1_driver *devi, const char *name);
 
-int uart_dev_write(void *buf);
-int uart_dev_read(void *buf);
-void uart_dev_init();
+// 나중에 만들 함수들
+// 장치 삭제
+// 또 다른 장치 관리자 관련 함수
 
 #endif

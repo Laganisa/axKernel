@@ -1,7 +1,7 @@
-#include "manage/_pm.h"
+#ifndef __KERNEL_IRQ_H__
+#define __KERNEL_IRQ_H__
 
-#ifndef __IRQ_H__
-#define __IRQ_H__
+#include "manage/_pm.h"
 
 pcb_t *irq_handler_main(pcb_t *proc);
 

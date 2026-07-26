@@ -1,7 +1,7 @@
-#include "manage/_dm.h"
+#ifndef __KERNEL_PM_H__
+#define __KERNEL_PM_H__
 
-#ifndef __PM_H__
-#define __PM_H__
+#include "manage/_dm.h"
 
 // ! 구조체 수정할 예정
 typedef struct pcb_t
