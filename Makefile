@@ -50,7 +50,7 @@ $(KERNEL_BUILD)/%.o: %
 
 $(DEVO_BUILD)/%.o: %
 	@mkdir -p $(dir $@)
-	$(CC) $(BASE_CFLAGS) -DDEVO_TEST -c $< -o $@
+	$(CC) $(BASE_CFLAGS) -DNET -c $< -o $@
 
 
 $(KERNEL_BUILD)/kernel8.elf: $(KERNEL_OBJS)

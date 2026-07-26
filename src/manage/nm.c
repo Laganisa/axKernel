@@ -1,34 +1,51 @@
 #include "manage/_nm.h"
-#include "_macro.h"
 #include "global/_debug.h"
 #include "global/_io.h"
 
-#include "_vritio.h"
+#include "tools/_virtio.h"
 
 /*
-    네트워크 관련 함수가 있는 파일
+    네트워크 송신 및 관리 함수가 있는 파일
 */
 
 extern dcb_t nic_device;
 
-void net_send_test(void)
+// 전송 로직 짜기
+// 지금 단계는 패킷의 캡슐화가 가능한 상태
+void nm_cap()
 {
-    static unsigned char packet[] = {
-        // virtio_net_hdr (12 bytes)
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    static packet_buf_t pkt = {
+        .vhdr = {0},
+        .eth = {
+            .dst_mac = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+            .src_mac = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01},
+            .ethertype = 0x0008},
+        .payload = "Hello Kernel!"};
 
-        // Ethernet frame
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0x02, 0x00, 0x00, 0x00, 0x00, 0x01,
-        0x08, 0x00,
+    /*
+// 데이터 삽입
+for (int i = 0; i < 6; i++)
+{
+    pkt.eth.dst_mac[i] = dst[i];
+    pkt.eth.src_mac[i] = src[i];
+}
 
-        'H', 'e', 'l', 'l', 'o', ' ',
-        'K', 'e', 'r', 'n', 'e', 'l', '!'};
+// 이더넷 타입 넣기
+pkt.eth.ethertype = type;
 
+// 데이터 넣기
+// ! 26이라고 하드코딩된 값 수정할 예정
+for (int i = 0; i < 26; i++)
+{
+    pkt.payload[i] = data[i];
+}
+    */
+
+    // 전송하는 부분
     VIRTIO_QUEUE_SEL = 1;
 
-    tx_queue.desc[0].addr = (uint64_t)packet;
-    tx_queue.desc[0].len = sizeof(packet);
+    tx_queue.desc[0].addr = (uint64_t)&pkt;
+    tx_queue.desc[0].len = sizeof(pkt);
     tx_queue.desc[0].flags = 0;
     tx_queue.desc[0].next = 0;
 
@@ -44,18 +61,19 @@ void net_send_test(void)
     puts("Packet sent to TX queue, notified hardware!\n");
 }
 
-void debug_main(void)
+void net_TX_main(void)
 {
     nic_device.init();
 
     setup_virtqueue(1);
 
-    // ? 무슨 뜻이지
     VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
 
     puts("TX Driver Ready\n");
 
-    net_send_test();
+    // 입력 받기
+
+    nm_cap();
 
     puts("Waiting TX...\n");
 

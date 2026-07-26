@@ -1,12 +1,11 @@
 #include "manage/_nm.h"
-#include "_macro.h"
 #include "global/_debug.h"
 #include "global/_io.h"
 
-#include "_vritio.h"
+#include "tools/_virtio.h"
 
 /*
-    네트워크 관련 함수가 있는 파일
+    네트워크 수신 함수가 있는 파일
 */
 
 extern dcb_t nic_device;
@@ -32,7 +31,7 @@ void prepare_rx_buffer(void)
     VIRTIO_QUEUE_NOTIFY = 0;
 }
 
-void net_main(void)
+void net_RX_main(void)
 {
     nic_device.init();
 
@@ -40,8 +39,8 @@ void net_main(void)
 
     prepare_rx_buffer();
 
-    dump("RX buffer addr = ", rx_packet_buffer);
-    dump("Descriptor addr = ", rx_queue.desc[0].addr);
+    dump("RX buffer addr", rx_packet_buffer);
+    dump("Descriptor addr", rx_queue.desc[0].addr);
 
     VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
 
@@ -49,21 +48,14 @@ void net_main(void)
 
     while (1)
     {
-        // 단순 출력부
         if (rx_queue.used->idx != last_rx_used_idx)
         {
             puts("RX SUCCESS\n");
 
-            struct virtq_used_elem *elem =
-                &rx_queue.used->ring[last_rx_used_idx % VIRTIO_QUEUE_SIZE];
+            struct virtq_used_elem *elem = &rx_queue.used->ring[last_rx_used_idx % VIRTIO_QUEUE_SIZE];
 
-            puts("Descriptor : ");
-            put_hex(elem->id);
-            puts("\n");
-
-            puts("Length : ");
-            put_hex(elem->len);
-            puts("\n");
+            dump("Descriptor", elem->id);
+            dump("Length", elem->len);
 
             unsigned char *frame = rx_packet_buffer + 12;
 
@@ -84,17 +76,6 @@ void net_main(void)
 
             unsigned char *payload = frame + 14;
             uint32_t payload_len = elem->len - 12 - 14;
-
-            puts("\nPayload:\n");
-
-            for (uint32_t i = 0; i < payload_len; i++)
-            {
-                put_hex2(payload[i]);
-                puts(" ");
-            }
-            puts("\n");
-
-            puts("\nPayload ASCII:\n");
 
             for (uint32_t i = 0; i < payload_len; i++)
             {

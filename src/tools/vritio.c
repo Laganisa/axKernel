@@ -3,10 +3,10 @@
 #include "global/_debug.h"
 #include "global/_io.h"
 
-#include "_vritio.h"
+#include "tools/_virtio.h"
 
 /*
-    네트워크 관련 함수가 있는 파일
+    가상 큐 관련 파일
 */
 
 static unsigned char rx_queue_storage[VIRTIO_QUEUE_STORAGE]
@@ -25,8 +25,7 @@ struct virtio_queue_state tx_queue;
 uint16_t last_rx_used_idx = 0;
 uint16_t last_tx_used_idx = 0;
 
-static void setup_queue_state(int queue_index,
-                              struct virtio_queue_state *queue)
+static void setup_queue_state(int queue_index, struct virtio_queue_state *queue)
 {
     VIRTIO_QUEUE_SEL = queue_index;
 

@@ -5,10 +5,12 @@
 #include "manage/_pm.h"
 #include "manage/_dm.h"
 #include "global/_debug.h"
+#include "manage/_nm.h"
 
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
 extern void _proc(pcb_t *);
+
 extern dcb_t uart_device;
 
 int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
@@ -261,6 +263,56 @@ int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
         dump("arg2", arg2);
         dump("arg3", arg3);
     */
+}
+
+#pragma endregion
+
+#pragma region proc_call
+
+int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+}
+
+#pragma endregion
+
+#pragma region L2toL3
+
+int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        송신 시스템 콜
+        버퍼에 있는걸 복사후 전송
+    */
+
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
+
+    net_TX_main();
+}
+
+int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        1. nm_connet을 둘러본다
+        2. 없으면 타임아웃이 될 때까지 수신 준비
+    */
+
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
+    net_RX_main();
+}
+
+int32_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    /*
+        ARP 요청 보네고 인덱스를 리턴하기
+    */
+
+    char *path = (char *)arg1;
+    int mode = (int)arg2;
+    uint32_t size = (uint32_t)arg3;
 }
 
 #pragma endregion

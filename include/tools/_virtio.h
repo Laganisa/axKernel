@@ -1,6 +1,6 @@
 
-#ifndef __KERNEL_VRITIO_H__
-#define __KERNEL_VRITIO_H__
+#ifndef __KERNEL_VIRTIO_H__
+#define __KERNEL_VIRTIO_H__
 
 #include "_types.h"
 

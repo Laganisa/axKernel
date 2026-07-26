@@ -36,20 +36,27 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
+#define B_SHELL 0
+
 // 커널 함수
 void master(uint64_t DTB_addr)
 {
     dump("DTB_addr", DTB_addr);
 
-#ifdef DEVO_TEST
-    net_main();
+#if defined(NET)
+    net_RX_main();
+#elif B_SHELL == 1
+    kernel_main();
+#elif B_SHELL == 0
+    net_TX_main();
 #else
-    debug_main();
+    kernel_main();
 #endif
 }
 
 void kernel_main(void)
-{ // 하드웨어 초기화
+{
+    // 하드웨어 초기화
     uart_init();
     // 인터럽트 초기화
     init_irq();
