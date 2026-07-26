@@ -49,7 +49,6 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
     pcb_t *new_proc = &obj->PMv1_mem[temp_id];
 
     new_proc->id = temp_id;           // 프로세스의 id를 할당된 pid로 변경
-    new_proc->b_id = pid;             // 죽을때 쓸 id를 저장
     new_proc->p_id = parid;           // 부모 id를 수정함
     new_proc->use_dev = &uart_device; // 정보를 0으로 수정
     new_proc->file_offset = 0;        // 파일 오프셋
@@ -66,12 +65,12 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 
     for (int i = 0; i < 31; i++)
     {
-        new_proc->reg_x[i] = 0; // x0~x30 초기화
+        new_proc->regs.reg_x[i] = 0; // x0~x30 초기화
     }
 
-    new_proc->elr_el1 = entry;                            // (ELR_EL1)
-    new_proc->sp = real_addr + (INITIAL_PROC_SIZE << 10); // sp
-    new_proc->spsr = (entry == 0) ? 0x3c0 : 0x3c5;        // 인셉션 레벨 분기
+    new_proc->regs.elr_el1 = entry;                            // (ELR_EL1)
+    new_proc->regs.sp = real_addr + (INITIAL_PROC_SIZE << 10); // sp
+    new_proc->regs.spsr = (entry == 0) ? 0x3c0 : 0x3c5;        // 인셉션 레벨 분기
 
     return new_proc;
 }

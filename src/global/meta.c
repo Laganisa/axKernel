@@ -168,7 +168,7 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
         return 0;
     }
 
-    proc->elr_el1 = load_base + (ehdr->e_entry - min_vaddr);
+    proc->regs.elr_el1 = load_base + (ehdr->e_entry - min_vaddr);
     return proc;
 }
 

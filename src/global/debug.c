@@ -220,12 +220,12 @@ void proc_dump(const char *name, pcb_t *proc)
         puts("[Debug] ");
         puts(name);
         puts(" sp : ");
-        put_hex(proc->sp);
+        put_hex(proc->regs.sp);
         puts("\n");
         puts("[Debug] ");
         puts(name);
         puts(" elr_el1 : ");
-        put_hex(proc->elr_el1);
+        put_hex(proc->regs.elr_el1);
         puts("\n");
     }
 }

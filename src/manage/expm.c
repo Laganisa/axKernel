@@ -128,7 +128,6 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
             id는 유지해서 식별을 보존
             종료 시 원래 pid를 기록
         */
-        proc->b_id = proc->id;
 
         // ? 이거 왜 있음?
         uint8_t *ptr = (uint8_t *)proc;
