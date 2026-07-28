@@ -41,7 +41,8 @@ typedef struct __attribute__((packed)) packet_buf_t
 typedef struct NMv1_connect
 {
     // 최근 목적지를 기억하는 캐시
-    uint64_t dst_buf[DST_CACHE_SIZE];
+    uint8_t is_dst[DST_CACHE_SIZE];
+    uint64_t dst_buf[DST_CACHE_SIZE][6];
 
     // ! 나중에 동적할당으로 바꾸기
     packet_buf_t payload_buf[NETWORK_CACHE_SIZE];
@@ -49,7 +50,7 @@ typedef struct NMv1_connect
 
 #define nm_connect ((NMv1_connect *)NM_ADDR_START)
 
-void nm_cap(void);
+void nm_cap(uint8_t *dst, char *data, uint16_t type);
 void setup_virtqueue(int queue_index);
 void check_nic_completion(void);
 

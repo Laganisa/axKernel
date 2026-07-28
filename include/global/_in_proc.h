@@ -6,7 +6,10 @@
 void ROOT(void);
 void INIT(void);
 
-void temp_posi(void);
+void temp_posi0(void);
+void temp_posi1(void);
+void temp_posi2(void);
+
 void task_wfi(void);
 void task_hang(void);
 

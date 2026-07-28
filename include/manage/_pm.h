@@ -6,10 +6,11 @@
 // 나중에 넣을 예정
 typedef struct proc_info_t
 {
-    uint8_t is_msgbox : 1; // 메시지 박스가 차있는지
-    uint8_t is_call : 1;   // 자신에게 읽으라고 했는지
-    uint8_t state : 2;     // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
-    uint8_t padding : 4;   // 패딩값
+    uint8_t id;       // 프로세스 id
+    uint8_t p_id;     // 부모의 id
+    uint16_t mm_addr; // 메모리 주소
+    uint8_t state;    // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
+
 } proc_info_t;
 
 typedef struct proc_regs_t
@@ -20,25 +21,29 @@ typedef struct proc_regs_t
     uint64_t elr_el1;   // ELR_EL1 프로그램 카운터
 } proc_regs_t;
 
-// ! 구조체 수정할 예정
+typedef struct proc_msg_t
+{
+    uint8_t from;      // 누구에게 왔는지
+    uint8_t is_call;   // 자신에게 읽으라고 했는지
+    uint8_t is_msgbox; // 메시지 박스가 차있는지
+    char *msgbox;      // 메세지
+} proc_msg_t;
+
 typedef struct pcb_t
 {
     struct proc_regs_t regs;
 
+    // 정보 관련
     uint8_t id;       // 프로세스 id
     uint8_t p_id;     // 부모의 id
     uint16_t mm_addr; // 메모리 주소
+    uint8_t state;    // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
 
-    uint8_t is_msgbox : 1; // 메시지 박스가 차있는지
-    uint8_t is_call : 1;   // 자신에게 읽으라고 했는지
-    uint8_t state : 2;     // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
-    uint8_t is_file : 1;   // 파일이 열려 있는지
-    uint8_t padding : 3;   // 패딩값
-
-    uint8_t from;       // 누구에게 왔는지
-    uint8_t msgbox[64]; // 메세지
+    // 메시지 관련
+    struct proc_msg_t msgs;
 
     // 장치 관련
+    uint8_t is_file;        // 파일이 열려 있는지
     uint32_t file_offset;   // 파일 오프셋
     struct dcb_t *use_dev;  // 사용하는 디바이스
     struct fcb_t *use_file; // 사용하는 파일

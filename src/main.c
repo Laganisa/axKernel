@@ -36,23 +36,27 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_SHELL 1
+#define B_MASTER_FLAG 1
 
 // 커널 함수
 void master(uint64_t DTB_addr)
 {
-    dump("DTB_addr", DTB_addr);
+    // dump("DTB_addr", DTB_addr);
 
 #if defined(NET)
     net_RX_main();
-#elif B_SHELL == 1
-    kernel_main();
-#elif B_SHELL == 0
+#elif B_MASTER_FLAG == 0
     net_TX_main();
+#elif B_MASTER_FLAG == 1
+    kernel_main();
+#elif B_MASTER_FLAG == 2
+    devo_main();
 #else
     kernel_main();
 #endif
 }
+
+#define B_MAIN_FLAG 2
 
 void kernel_main(void)
 {
@@ -68,6 +72,8 @@ void kernel_main(void)
     // pm_init(&pm_object, PM_ADDR_START);
     fm_init((uint64_t *)USER_FILE_START);
 
+    nm_init();
+
     puts("Booting AxKernel!\n");
 
     /*
@@ -75,17 +81,12 @@ void kernel_main(void)
         나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
 
-    // pcb_t *proc1 = proc_turn(fm_record, "TA.BIN", &task_wfi, 0);
-
-    // pcb_t *proc2 = proc_turn(fm_record, "TB.BIN", &task_inf_B, 0);
-    // pm_awake(&pm_object, 0, proc2);
-
+#ifdef defined(B_MAIN_FLAG) && (B_MAIN_FLAG == 0)
+    // 쉘 테스트 로직
     pcb_t *shell_proc = proc_turn(fm_record, "SHEL.BIN", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
 
-    // proc_dump("proc1", proc1);
-    // proc_dump("proc2", proc2);
-    // proc_dump("shell proc", shell_proc);
+    proc_dump("shell proc", shell_proc);
 
     /*
         프로세스 전환
@@ -93,6 +94,35 @@ void kernel_main(void)
 
     current_proc = shell_proc;
     _proc(shell_proc);
+
+#elif B_MAIN_FLAG == 1
+    // IPC 테스트 로직
+    pcb_t *proc1 = proc_turn(fm_record, "TA.BIN", &temp_posi1, 0);
+
+    pcb_t *proc2 = proc_turn(fm_record, "TB.BIN", &temp_posi2, 0);
+    pm_awake(&pm_object, 0, proc2);
+
+    proc_dump("proc1", proc1);
+    proc_dump("proc2", proc2);
+
+    current_proc = proc1;
+    _proc(proc1);
+
+#elif B_MAIN_FLAG == 2
+    // 네트워크 시스템 콜 테스트 로직
+    pcb_t *shell_proc = proc_turn(fm_record, "SHEL.BIN", _task_shell_start, 1);
+    pm_awake(&pm_object, 0, shell_proc);
+
+    proc_dump("shell proc", shell_proc);
+
+    /*
+        프로세스 전환
+    */
+
+    current_proc = shell_proc;
+    _proc(shell_proc);
+
+#endif
 }
 
 void devo_main(void)

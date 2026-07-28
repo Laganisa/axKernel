@@ -11,6 +11,7 @@ void enter(const char *name);
 void log(const char *name);
 void flow(const char type);
 void exit(const char *name);
+void for_dump(const char *name, uint64_t *val, uint8_t num);
 
 void reg_x8(void);
 void reg_elr_el1(void);

@@ -7,19 +7,39 @@
 #include "global/_debug.h"
 #include "manage/_nm.h"
 
+#include "tools/_virtio.h"
+
 extern pcb_t *current_proc;
 extern pcb_t *get_current_proc_addr(void);
 extern void _proc(pcb_t *);
 
 extern dcb_t uart_device;
 
-int32_t (*call_table[16])(uint64_t, uint64_t, uint64_t) = {
-    [1] = &exit_call,
-    [6] = &write_call,
-    [7] = &read_call,
-    [8] = &creat_file_call,
-    [10] = &open_call,
-    [11] = &close_call};
+int32_t (*call_table[40])(uint64_t, uint64_t, uint64_t) = {
+    /* General */
+    [SYS_EXIT] = exit_call,
+    /*[SYS_ABORT] = abort_call,
+    [SYS_LOAD] = load_call,
+    [SYS_YIELD] = yield_call,*/
+    [SYS_WRITE] = write_call,
+    [SYS_READ] = read_call,
+
+    /* File */
+    [SYS_FILE_CREAT] = creat_file_call,
+    [SYS_FILE_DEL] = del_file_call,
+    [SYS_OPEN] = open_call,
+    [SYS_CLOSE] = close_call, /*
+     [SYS_DIR_CREAT] = creat_dir_call,
+     [SYS_DIR_DEL] = del_dir_call,
+     */
+
+    /* Process */
+    [SYS_PROC_CREAT] = creat_proc_call,
+    /*[SYS_PROC_DEL] = del_proc_call,
+     */
+
+    /* Network */
+    [SYS_SEND_L2] = send_L2_call};
 
 /*
     시스템 콜을 연결하는 파일
@@ -264,12 +284,40 @@ int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
         송신 시스템 콜
         버퍼에 있는걸 복사후 전송
     */
+    enter("send_L2_call");
 
-    char *path = (char *)arg1;
-    int mode = (int)arg2;
-    uint32_t size = (uint32_t)arg3;
+    char *data = (char *)arg1;
+    uint8_t id = (uint8_t)arg2;
+    uint16_t type = (uint16_t)arg3;
 
-    net_TX_main();
+    /*
+        id로 찾는 로직
+    */
+
+    uint8_t *dst = nm_connect->dst_buf[id];
+
+    if (dst == NULL || nm_connect->is_dst[id] == 0)
+    {
+        return -1;
+    }
+
+    dump("type", type);
+
+    for_dump("dst", dst, 6);
+
+    nm_cap(dst, data, type);
+
+    int timeout = 10000000;
+    while (timeout--)
+    {
+        if (tx_queue.used->idx != last_tx_used_idx)
+        {
+            puts("TX SUCCESS\n");
+            last_tx_used_idx++;
+            return 0;
+        }
+    }
+    return -1; // 타임아웃
 }
 
 int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
@@ -279,10 +327,22 @@ int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
         2. 없으면 타임아웃이 될 때까지 수신 준비
     */
 
-    char *path = (char *)arg1;
-    int mode = (int)arg2;
-    uint32_t size = (uint32_t)arg3;
-    net_RX_main();
+    char *data = (char *)arg1;
+    uint8_t *dst = (uint8_t *)arg2;
+    uint16_t type = (uint16_t)arg3;
+
+    nm_cap(dst, data, type);
+
+    int timeout = 10000000;
+    while (timeout--)
+    {
+        if (tx_queue.used->idx != last_tx_used_idx)
+        {
+            last_tx_used_idx++;
+            return 0;
+        }
+    }
+    return -1; // 타임아웃
 }
 
 int32_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)

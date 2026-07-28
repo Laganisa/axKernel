@@ -23,9 +23,61 @@ void INIT(void)
 /*
     임시로 자리를 맡은 프로세스
 */
-void temp_posi(void)
+void temp_posi0(void)
 {
-    puts("\ntemp position\n");
+    puts("\ntemp position 0\n");
+
+    proc_exit();
+
+    while (1)
+    {
+        puts("Error\n");
+    }
+}
+
+void temp_posi1(void)
+{
+    enable_irq();
+
+    puts("\ntemp position 1\n");
+
+    char msg[64] = "hello";
+
+    ptp(&pm_object, 2, 1, msg);
+
+    while (1)
+    {
+        for (volatile int i = 0; i < 1000000; i++)
+            ;
+    }
+
+    proc_exit();
+
+    while (1)
+    {
+        puts("Error\n");
+    }
+}
+
+void temp_posi2(void)
+{
+    enable_irq();
+
+    puts("\ntemp position 2\n");
+    char msg[64] = {0};
+
+    pm_object.PMv1_mem[2].msgs.msgbox = msg;
+    pm_object.PMv1_mem[2].msgs.is_msgbox = 0;
+
+    while (pm_object.PMv1_mem[2].msgs.is_msgbox == 0)
+    {
+        asm volatile("wfi");
+    }
+
+    puts("Message arrived: ");
+    puts(msg);
+
+    pm_object.PMv1_mem[2].msgs.is_msgbox = 0;
 
     proc_exit();
 
