@@ -54,6 +54,8 @@ void nm_cap(uint8_t *dst, char *data, uint16_t type);
 void setup_virtqueue(int queue_index);
 void check_nic_completion(void);
 
+void nm_init();
+
 // 송신용도
 void net_TX_main(void);
 

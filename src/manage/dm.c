@@ -39,13 +39,14 @@ void dm_init(void)
     // 메니저 구조체를 초기화 하면 되겠지
 }
 
+/*
 uint8_t timer_init(void)
 {
     // 타이머 초기화
     asm volatile("msr cntp_tval_el0, %0" : : "r"(TIMER_TICK));
     return 0;
 }
-
+*/
 dcb_t *dm_find(DMv1_driver *driv, const char *name)
 {
     for (int i = 0; i < MAX_DEVI_NUM; i++)

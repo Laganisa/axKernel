@@ -11,7 +11,7 @@
 #define SYS_ABORT 2
 #define SYS_LOAD 3
 #define SYS_YIELD 4
-#define SYS_RESERVED5 5
+#define SYS_SETUP 5
 #define SYS_WRITE 6
 #define SYS_READ 7
 
@@ -62,10 +62,11 @@
 // Syscall handler
 uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3);
 
-/* 일반 적인 시스템 콜 */
+/* 일반적인 시스템 콜 */
 int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
 
 /* 파일 시스템 콜 */
 int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);

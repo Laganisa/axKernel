@@ -21,6 +21,7 @@ int32_t (*call_table[40])(uint64_t, uint64_t, uint64_t) = {
     /*[SYS_ABORT] = abort_call,
     [SYS_LOAD] = load_call,
     [SYS_YIELD] = yield_call,*/
+    [SYS_SETUP] = setup_call,
     [SYS_WRITE] = write_call,
     [SYS_READ] = read_call,
 
@@ -68,6 +69,10 @@ uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
 #pragma region general_call
 
+int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+{
+    uint8_t *addr = (uint8_t *)arg1;
+}
 int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     // enter("sys_write");

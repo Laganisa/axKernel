@@ -32,6 +32,14 @@ extern void vector_table(void);
 extern uint8_t _task_shell_start[];
 extern uint8_t _task_shell_size[];
 
+// 컴파일러 코드
+extern uint8_t _task_compiler_start[];
+extern uint64_t _task_compiler_size[];
+
+// 브릿지 코드
+extern uint8_t _task_bridge_start[];
+extern uint64_t _task_bridge_size[];
+
 extern dcb_t nic_device;
 
 #pragma endregion
@@ -63,7 +71,7 @@ void kernel_main(void)
     // 하드웨어 초기화
     uart_init();
     // 인터럽트 초기화
-    init_irq();
+    irq_init();
     // 동적할당 초기화
     heap_init();
 
@@ -97,16 +105,20 @@ void kernel_main(void)
 
 #elif B_MAIN_FLAG == 1
     // IPC 테스트 로직
-    pcb_t *proc1 = proc_turn(fm_record, "TA.BIN", &temp_posi1, 0);
 
-    pcb_t *proc2 = proc_turn(fm_record, "TB.BIN", &temp_posi2, 0);
-    pm_awake(&pm_object, 0, proc2);
+    /*
+        쉘이랑 브릿지 2개를 띄워서 테스트
+    */
+    pcb_t *shell_proc = proc_turn(fm_record, "SHELL.BIN", _task_shell_start, 0);
 
-    proc_dump("proc1", proc1);
-    proc_dump("proc2", proc2);
+    pcb_t *brdge_proc = proc_turn(fm_record, "BRDGE.BIN", _task_bridge_start, 0);
+    pm_awake(&pm_object, 0, brdge_proc);
 
-    current_proc = proc1;
-    _proc(proc1);
+    proc_dump("proc1", shell_proc);
+    proc_dump("proc2", brdge_proc);
+
+    current_proc = shell_proc;
+    _proc(shell_proc);
 
 #elif B_MAIN_FLAG == 2
     // 네트워크 시스템 콜 테스트 로직
@@ -122,6 +134,19 @@ void kernel_main(void)
     current_proc = shell_proc;
     _proc(shell_proc);
 
+#elif B_MAIN_FLAG == 3
+    // 프로세스 전환 테스트 로직
+
+    pcb_t *proc1 = proc_turn(fm_record, "SHELL.BIN", task_inf_A, 0);
+
+    pcb_t *proc2 = proc_turn(fm_record, "BRDGE.BIN", task_inf_B, 0);
+    pm_awake(&pm_object, 0, proc2);
+
+    proc_dump("proc1", proc1);
+    proc_dump("proc2", proc2);
+
+    current_proc = proc1;
+    _proc(proc1);
 #endif
 }
 

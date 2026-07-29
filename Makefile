@@ -2,8 +2,10 @@ CC      = aarch64-linux-gnu-gcc
 LD      = aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 
-LIB_DIR   = usr/axLib
-SHELL_DIR = usr/axShell
+LIB_DIR        = usr/axLib
+SHELL_DIR      = usr/axShell
+COMPILER_DIR   = usr/axCompiler
+BRIDGE_DIR     = usr/axBridge
 
 KERNEL_BUILD = build/kernel
 DEVO_BUILD   = build/devo
@@ -40,8 +42,12 @@ user_modules:
 	@echo "Building User Modules..."
 	@$(MAKE) -C $(LIB_DIR) --no-print-directory
 	@$(MAKE) -C $(SHELL_DIR) --no-print-directory
+	@$(MAKE) -C $(COMPILER_DIR) --no-print-directory
+	@$(MAKE) -C $(BRIDGE_DIR) --no-print-directory
 	@mkdir -p init
 	@cp -f $(SHELL_DIR)/build/SHELL.elf init/
+	@cp -f $(COMPILER_DIR)/build/COMPILER.elf init/
+	@cp -f $(BRIDGE_DIR)/build/BRIDGE.elf init/
 
 
 $(KERNEL_BUILD)/%.o: %
@@ -72,7 +78,11 @@ $(DEVO_BUILD)/net8.img: $(DEVO_BUILD)/net8.elf
 	@echo "---------------------------------------"
 
 clean:
-	rm -rf build
+	rm -rf build/kernel
 	rm -f init/SHELL.elf
+	rm -f init/COMPILER.elf
+	rm -f init/BRIDGE.elf
 	@$(MAKE) -C $(LIB_DIR) clean --no-print-directory 2>/dev/null || true
 	@$(MAKE) -C $(SHELL_DIR) clean --no-print-directory 2>/dev/null || true
+	@$(MAKE) -C $(COMPILER_DIR) clean --no-print-directory 2>/dev/null || true
+	@$(MAKE) -C $(BRIDGE_DIR) clean --no-print-directory 2>/dev/null || true
