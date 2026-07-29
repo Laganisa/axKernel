@@ -136,3 +136,15 @@ int32_t strcmp(const int8_t *s1, const int8_t *s2)
     }
     return *(uint8_t *)s1 - *(uint8_t *)s2;
 }
+
+void *memset(void *ptr, int value, size_t num)
+{
+    unsigned char *p = (unsigned char *)ptr;
+
+    for (size_t i = 0; i < num; i++)
+    {
+        p[i] = (unsigned char)value;
+    }
+
+    return ptr;
+}

@@ -72,7 +72,12 @@ uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     uint8_t *addr = (uint8_t *)arg1;
+    uint8_t rule = (uint8_t)arg2;
+    pm_object.proto_arr[current_proc->id].rule = rule;
+    pm_object.proto_arr[current_proc->id].addr = addr;
+    return 1;
 }
+
 int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     // enter("sys_write");
@@ -96,9 +101,9 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
             {
                 puts("[debug]");
             }
-            return current_proc->use_dev->write(arg2);
+            return current_proc->use_dev->write(arg2, arg3);
         }
-        return arg3;
+        return 1;
     }
     // 파일에 쓰기
     else
@@ -325,6 +330,12 @@ int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return -1; // 타임아웃
 }
 
+// 나중에 프로토콜을 통한 소통으로 만들기
+/*
+    이 시스템 콜이 들어오면
+    1. 일단 관리자 구조체에서 온 신호가 있는지 확인한다.
+    2. 만약 없다면 이 프로세스를 재우고 나중에 인터럽트로 올때 자신을 깨우라고 한다.
+*/
 int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 {
     /*
@@ -336,17 +347,8 @@ int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     uint8_t *dst = (uint8_t *)arg2;
     uint16_t type = (uint16_t)arg3;
 
-    nm_cap(dst, data, type);
+    // nm_discap(dst, data, type);
 
-    int timeout = 10000000;
-    while (timeout--)
-    {
-        if (tx_queue.used->idx != last_tx_used_idx)
-        {
-            last_tx_used_idx++;
-            return 0;
-        }
-    }
     return -1; // 타임아웃
 }
 
