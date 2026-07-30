@@ -296,7 +296,7 @@ int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     */
     enter("send_L2_call");
 
-    char *data = (char *)arg1;
+    uint8_t *data = (uint8_t *)arg1;
     uint8_t id = (uint8_t)arg2;
     uint16_t type = (uint16_t)arg3;
 
