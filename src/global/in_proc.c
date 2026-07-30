@@ -41,9 +41,9 @@ void temp_posi1(void)
 
     puts("\ntemp position 1\n");
 
-    char msg[64] = "hello";
+    char msg_arr[64] = "hello";
 
-    ptp(&pm_object, 2, 1, msg);
+    ptp(&pm_object, 2, 1, msg_arr);
 
     while (1)
     {
@@ -64,9 +64,9 @@ void temp_posi2(void)
     enable_irq();
 
     puts("\ntemp position 2\n");
-    char msg[64] = {0};
+    char msg_arr[64] = {0};
 
-    pm_object.PMv1_mem[2].msgs.msgbox = msg;
+    pm_object.PMv1_mem[2].msgs.msgbox = msg_arr;
     pm_object.PMv1_mem[2].msgs.is_msgbox = 0;
 
     while (pm_object.PMv1_mem[2].msgs.is_msgbox == 0)
@@ -75,7 +75,7 @@ void temp_posi2(void)
     }
 
     puts("Message arrived: ");
-    puts(msg);
+    puts(msg_arr);
 
     pm_object.PMv1_mem[2].msgs.is_msgbox = 0;
 
