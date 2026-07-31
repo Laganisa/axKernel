@@ -40,8 +40,8 @@ el0_a64_sync:
     ldr x2, [x9, #8]
     ldr x3, [x9, #16]
 
-    mrs x4, esr_el1
-    lsr x4, x4, #26
+    mrs x6, esr_el1
+    lsr x6, x6, #26
 
     bl sync_handler_main
     

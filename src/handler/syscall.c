@@ -15,7 +15,7 @@ extern void _proc(pcb_t *);
 
 extern dcb_t uart_device;
 
-int32_t (*call_table[40])(uint64_t, uint64_t, uint64_t) = {
+int32_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = {
     /* General */
     [SYS_EXIT] = exit_call,
     /*[SYS_ABORT] = abort_call,
@@ -46,13 +46,19 @@ int32_t (*call_table[40])(uint64_t, uint64_t, uint64_t) = {
     시스템 콜을 연결하는 파일
 */
 
-uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3)
+uint64_t handle_svc_a64(
+    uint64_t syscall_num,
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     // reg_x8();
 
     if (call_table[syscall_num] != NULL)
     {
-        int32_t ret = call_table[syscall_num](arg1, arg2, arg3);
+        int32_t ret = call_table[syscall_num](arg1, arg2, arg3, arg4, arg5);
         return ret;
     }
     else
@@ -69,7 +75,7 @@ uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint
 
 #pragma region general_call
 
-int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     uint8_t *addr = (uint8_t *)arg1;
     uint8_t rule = (uint8_t)arg2;
@@ -78,7 +84,7 @@ int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return 1;
 }
 
-int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     // enter("sys_write");
 
@@ -119,7 +125,7 @@ int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     }
 }
 
-int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
 
     int fd = (int)arg1;
@@ -156,7 +162,7 @@ int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     }
 }
 
-int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
     dump("arg1", arg1);
@@ -209,14 +215,14 @@ int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     }
 }
 
-int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     current_proc->use_dev = &uart_device;
     current_proc->is_file = FALSE;
     return 1;
 }
 
-int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     enter("sys_exit");
     // arg1: exit code
@@ -249,7 +255,7 @@ int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 
 #pragma region file_call
 
-int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         dump("arg1", arg1);
@@ -267,7 +273,7 @@ int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return 1;
 }
 
-int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         dump("arg1", arg1);
@@ -280,7 +286,7 @@ int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 
 #pragma region proc_call
 
-int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
 }
 
@@ -288,17 +294,17 @@ int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
 
 #pragma region L2toL3
 
-int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         송신 시스템 콜
         버퍼에 있는걸 복사후 전송
     */
-    enter("send_L2_call");
 
     uint8_t *data = (uint8_t *)arg1;
     uint8_t id = (uint8_t)arg2;
-    uint16_t type = (uint16_t)arg3;
+    uint8_t len = (uint8_t)arg3;
+    uint16_t type = (uint16_t)arg4;
 
     /*
         id로 찾는 로직
@@ -311,11 +317,7 @@ int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
         return -1;
     }
 
-    dump("type", type);
-
-    for_dump("dst", dst, 6);
-
-    nm_cap(dst, data, type);
+    nm_cap(dst, data, len, type);
 
     int timeout = 10000000;
     while (timeout--)
@@ -336,7 +338,7 @@ int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     1. 일단 관리자 구조체에서 온 신호가 있는지 확인한다.
     2. 만약 없다면 이 프로세스를 재우고 나중에 인터럽트로 올때 자신을 깨우라고 한다.
 */
-int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         1. nm_connet을 둘러본다
@@ -352,7 +354,7 @@ int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
     return -1; // 타임아웃
 }
 
-int32_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3)
+int32_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         ARP 요청 보네고 인덱스를 리턴하기
