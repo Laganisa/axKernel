@@ -44,12 +44,12 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_MASTER_FLAG 1
+#define B_MASTER_FLAG 2
 
 // 커널 함수
-void master(uint64_t DTB_addr)
+void master(uint64_t dtb_addr)
 {
-    // dump("DTB_addr", DTB_addr);
+    dump("Passed_DTB_addr", dtb_addr);
 
 #if defined(NET)
     net_RX_main();
@@ -58,7 +58,7 @@ void master(uint64_t DTB_addr)
 #elif B_MASTER_FLAG == 1
     kernel_main();
 #elif B_MASTER_FLAG == 2
-    devo_main();
+    // parse_dtb(dtb_addr);
 #else
     kernel_main();
 #endif
@@ -147,10 +147,6 @@ void kernel_main(void)
 
     proc_dump("shell proc", bridge_proc);
     proc_dump("shell proc", shell_proc);
-
-    /*
-        프로세스 전환
-    */
 
     current_proc = shell_proc;
     _proc(shell_proc);
