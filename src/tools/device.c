@@ -17,17 +17,17 @@ dcb_t uart_device = {
     .handler = NULL // ? 인터럽트 용 헨들러 아직 미정
 };
 
-int uart_dev_write(void *buf)
+int uart_dev_write(const void *buf, int len)
 {
-    char *str = (char *)buf;
-    while (*str)
+    const char *str = (const char *)buf;
+    for (int i = 0; i < len; i++)
     {
         while (*UART0_FR & (1 << 5))
         {
         }
-        *UART0_DR = *str++;
+        *UART0_DR = str[i];
     }
-    return 0; // 성공
+    return len;
 }
 
 int uart_dev_read(void *buf)

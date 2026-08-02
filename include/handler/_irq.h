@@ -2,16 +2,14 @@
 #define __KERNEL_IRQ_H__
 
 #include "manage/_pm.h"
+#include "handler/_gic.h"
 
 pcb_t *irq_handler_main(pcb_t *proc);
 
-void handle_timer_tick();
-void init_vectors();
+void vector_init(void);
 
-void init_timer();
+void timer_init(void);
 
-void init_gic();
-
-void init_irq();
+void irq_init(void);
 
 #endif

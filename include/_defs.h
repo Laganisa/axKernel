@@ -34,6 +34,8 @@
 #define INIT_PROC_SECT 1       // 큐에서 아무 것도 없을때 꺼내는 값을 정하는거
 #define ROOT_PROC_SECT 1
 
+#define MAX_CONTROL_NUM 3 // 최대 컨트롤 하는 장치 수
+
 #pragma endregion
 
 // 파일 관리자 관련

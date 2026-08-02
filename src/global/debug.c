@@ -15,6 +15,21 @@ void dump(const char *name, uint64_t val)
     }
 }
 
+void for_dump(const char *name, uint64_t *val, uint8_t num)
+{
+    if (toggle)
+    {
+        for (int i = 0; i < num; i++)
+        {
+            puts("[Debug] ");
+            puts(name);
+            puts(" : ");
+            put_hex(val[i]);
+            puts("\n");
+        }
+    }
+}
+
 void full_stop(void)
 {
     puts("\ninf loop\n");
@@ -220,12 +235,12 @@ void proc_dump(const char *name, pcb_t *proc)
         puts("[Debug] ");
         puts(name);
         puts(" sp : ");
-        put_hex(proc->sp);
+        put_hex(proc->regs.sp);
         puts("\n");
         puts("[Debug] ");
         puts(name);
         puts(" elr_el1 : ");
-        put_hex(proc->elr_el1);
+        put_hex(proc->regs.elr_el1);
         puts("\n");
     }
 }

@@ -128,7 +128,6 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
             id는 유지해서 식별을 보존
             종료 시 원래 pid를 기록
         */
-        proc->b_id = proc->id;
 
         // ? 이거 왜 있음?
         uint8_t *ptr = (uint8_t *)proc;
@@ -152,14 +151,15 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
 void ptp(PMv1_object *obj, uint8_t who, uint8_t towho, int8_t msg[64])
 {
     pcb_t *rece = &obj->PMv1_mem[towho];
-    if (rece->is_msgbox == FALSE)
+    if (rece->msgs.is_msgbox == FALSE)
     {
+        log("who");
         // 메시지 넣는 로직
-        rece->is_msgbox = TRUE;
-        rece->from = who;
+        rece->msgs.is_msgbox = TRUE;
+        rece->msgs.from = who;
         for (int i = 0; i < 64; i++)
         {
-            rece->msgbox[i] = msg[i];
+            rece->msgs.msgbox[i] = msg[i];
         }
 
         // towho의 우선순위를 증가시켜 바로 입력 받을 수 있도록
@@ -168,6 +168,7 @@ void ptp(PMv1_object *obj, uint8_t who, uint8_t towho, int8_t msg[64])
     }
     else
     {
+        log("WHY");
         // ! 예외 처리
     }
 }

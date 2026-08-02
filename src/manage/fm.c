@@ -6,19 +6,6 @@
 #include "global/_alloc.h"
 #include "tools/_hash.h"
 
-// ! 이 함수 다른 곳으로 옮기기
-void *memset(void *ptr, int value, size_t num)
-{
-    unsigned char *p = (unsigned char *)ptr;
-
-    for (size_t i = 0; i < num; i++)
-    {
-        p[i] = (unsigned char)value;
-    }
-
-    return ptr;
-}
-
 void fm_init(uint64_t *addr)
 {
     fm_record->base = addr;

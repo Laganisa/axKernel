@@ -3,44 +3,67 @@
 
 #include "manage/_dm.h"
 
-// ! 구조체 수정할 예정
-typedef struct pcb_t
+// 나중에 넣을 예정
+typedef struct proc_info_t
 {
-    // 건들면 안됨
+    uint8_t id;       // 프로세스 id
+    uint8_t p_id;     // 부모의 id
+    uint16_t mm_addr; // 메모리 주소
+    uint8_t state;    // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
+
+} proc_info_t;
+
+typedef struct proc_regs_t
+{
     uint64_t reg_x[31]; // x0 ~ x30
     uint64_t sp;        // 스택 포인터
     uint64_t spsr;      // SPSR_EL1
     uint64_t elr_el1;   // ELR_EL1 프로그램 카운터
-    // 여기까지
+} proc_regs_t;
 
+typedef struct proc_msg_t
+{
+    uint8_t from;      // 누구에게 왔는지
+    uint8_t is_call;   // 자신에게 읽으라고 했는지
+    uint8_t is_msgbox; // 메시지 박스가 차있는지
+    char *msgbox;      // 메세지
+} proc_msg_t;
+
+typedef struct pcb_t
+{
+    struct proc_regs_t regs;
+
+    // 정보 관련
     uint8_t id;       // 프로세스 id
     uint8_t p_id;     // 부모의 id
-    uint8_t b_id;     // 죽을때 쓸 id, 근데 왜 있지?
     uint16_t mm_addr; // 메모리 주소
+    uint8_t state;    // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
 
-    uint8_t is_msgbox : 1; // 메시지 박스가 차있는지
-    uint8_t is_call : 1;   // 자신에게 읽으라고 했는지
-    uint8_t is_file : 1;   // 파일이 열려 있는지
-    uint8_t state : 2;     // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
-    uint8_t padding : 3;   // 패딩값
+    // 메시지 관련
+    struct proc_msg_t msgs;
 
-    uint8_t from;       // 누구에게 왔는지
-    uint8_t msgbox[64]; // 메세지
-
+    // 장치 관련
+    uint8_t is_file;        // 파일이 열려 있는지
     uint32_t file_offset;   // 파일 오프셋
     struct dcb_t *use_dev;  // 사용하는 디바이스
     struct fcb_t *use_file; // 사용하는 파일
 
 } __attribute__((aligned(8))) pcb_t;
 
+typedef struct proto_t
+{
+    uint8_t rule;
+    uint8_t *addr;
+
+} proto_t;
+
 // ! 전체적으로 개편이 필요함
 typedef struct PMv1_object
 {
-    uint64_t temp_x[31];   // 임시 레지스터
-    uint64_t temp_exce[8]; // irq에 사용하는 임시 레지스터
-
     uint64_t *base; // 바닥 주소
     // 총 공간이 24KB 정도
+
+    // ! 이름 수정 필요
     uint8_t proc_comocc : 4; // 그중에서 어떤 proc_occ 이 사용되지 않았는지
     uint8_t proc_comscj : 4; // 프로세서 pm_rum에 들어가는 관리하는
 
@@ -62,6 +85,10 @@ typedef struct PMv1_object
     uint64_t occ_num;                      // occ 숫자 넣기 레지스터에 넣기 좋도록 64bit를 씀
     uint64_t proc_scj[MAX_PCB_BITSIZE];    // 스케줄러에 들어갈 task들의 우선순위를 계산하기 위한 배열 순환돌때 여기다가 적는다
     uint64_t proc_priscj[MAX_PCB_BITSIZE]; // 스캐줄러에 들어갈 task들의 우선순위가 적힌 배열
+
+    // 프로토콜 관련
+    struct proto_t proto_arr[MAX_PCB_SIZE];
+
 } PMv1_object;
 
 // 함수 선언
@@ -69,7 +96,7 @@ typedef struct PMv1_object
 // init 만들기
 
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid);
-pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid);
+pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid);
 uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);

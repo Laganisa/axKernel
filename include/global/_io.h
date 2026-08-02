@@ -15,5 +15,6 @@ void put_hex(uint64_t d);
 void put_uint(uint64_t n);
 
 int32_t strcmp(const int8_t *s1, const int8_t *s2);
+void *memset(void *ptr, int value, size_t num);
 
 #endif

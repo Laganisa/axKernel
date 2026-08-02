@@ -3,7 +3,7 @@ ENTRY(_start)
 SECTIONS
 {
     /* 커널 로드 주소 (RAM 시작 지점) */
-    . = 0x40000000;
+    . = 0x40080000;
     
     .text : {
         KEEP(*(.text.boot))
