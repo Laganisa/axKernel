@@ -11,28 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code with submodules
-      uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
+      - name: Checkout code with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Install Toolchain
-      run: |
-        sudo apt-get update
-        # 도구 쓰기 위해 패키지 설치
-        sudo apt-get install -y gcc-aarch64-linux-gnu make binutils-aarch64-linux-gnu
+      - name: Install Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            make \
+            binutils-aarch64-linux-gnu
 
-    - name: Build Kernel
-      run: |
-        make all
+      - name: Build Kernel
+        run: |
+          make all
 
-    - name: Verify Build Output
-      run: |
-        # kernel8.img 생성확인
-        if [ -f build/kernel8.img ]; then
-          echo "Build Success: build/kernel8.img exists."
-          ls -l build/kernel8.img
-        else
-          echo "Build Failed: Output file not found."
-          exit 1
-        fi
+      - name: Verify Build Output
+        run: |
+          if [ -f build/kernel/kernel8.elf ]; then
+            echo "Build Success"
+            ls -l build/kernel/kernel8.elf
+          else
+            echo "Build Failed"
+            exit 1
+          fi
