@@ -26,6 +26,9 @@ pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod
         extern uint8_t _task_shell_start[];
         extern uint8_t _task_shell_size[];
 
+        extern uint8_t _task_bridge_start[];
+        extern uint8_t _task_bridge_size[];
+
         if (entry_point == (void *)_task_shell_start)
         {
             uint64_t shell_size = *((uint64_t *)_task_shell_size);
@@ -40,6 +43,23 @@ pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod
             fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
+
+            return mata_exec_file(reco, &pm_object, name, 0);
+        }
+        if (entry_point == (void *)_task_bridge_start)
+        {
+            uint64_t bridge_size = *((uint64_t *)_task_bridge_size);
+
+            // ELF 이미지와 FM 헤더를 함께 저장
+            uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + bridge_size);
+            uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
+
+            fcb_t *fil = fm_create(reco, name, alloc_size, 0);
+
+            task.image_size = bridge_size;
+            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+
+            fm_write(reco, fil, _task_bridge_start, (uint32_t)bridge_size, sizeof(fm_exec_hdr_t));
 
             return mata_exec_file(reco, &pm_object, name, 0);
         }
@@ -194,12 +214,12 @@ pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
-        return creat_proc_entry(obj, hdr->entry, parid);
+        return pm_creat(obj, hdr->entry, parid);
     }
 
     if (hdr->mode == FM_EXEC_MODE_IMAGE)
     {
-        pcb_t *proc = creat_proc_entry(obj, 0, parid);
+        pcb_t *proc = pm_creat(obj, 0, parid);
 
         if (proc == 0)
         {

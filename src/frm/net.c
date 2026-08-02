@@ -48,43 +48,70 @@ void net_RX_main(void)
 
     while (1)
     {
-        if (rx_queue.used->idx != last_rx_used_idx)
+        if (rx_queue.used->idx == last_rx_used_idx)
+            continue;
+
+        puts("RX SUCCESS\n");
+
+        struct virtq_used_elem *elem =
+            &rx_queue.used->ring[last_rx_used_idx % VIRTIO_QUEUE_SIZE];
+
+        packet_buf_t *pkt =
+            (packet_buf_t *)rx_packet_buffer;
+
+        dump("Descriptor", elem->id);
+        dump("Length", elem->len);
+
+        puts("\nDestination MAC : ");
+
+        for (int i = 0; i < 6; i++)
         {
-            puts("RX SUCCESS\n");
-
-            struct virtq_used_elem *elem = &rx_queue.used->ring[last_rx_used_idx % VIRTIO_QUEUE_SIZE];
-
-            dump("Descriptor", elem->id);
-            dump("Length", elem->len);
-
-            unsigned char *frame = rx_packet_buffer + 12;
-
-            puts("RX BUFFER:\n");
-
-            for (uint32_t i = 0; i < elem->len; i++)
-            {
-                put_hex2(rx_packet_buffer[i]);
-                puts(" ");
-
-                if ((i & 15) == 15)
-                {
-                    puts("\n");
-                }
-            }
-
-            puts("\nPayload:\n");
-
-            unsigned char *payload = frame + 14;
-            uint32_t payload_len = elem->len - 12 - 14;
-
-            for (uint32_t i = 0; i < payload_len; i++)
-            {
-                putchar((char)payload[i]);
-            }
-
-            puts("\n");
-
-            last_rx_used_idx++;
+            put_hex2(pkt->eth.dst_mac[i]);
+            puts(" ");
         }
+
+        puts("\nSource MAC      : ");
+
+        for (int i = 0; i < 6; i++)
+        {
+            put_hex2(pkt->eth.src_mac[i]);
+            puts(" ");
+        }
+
+        puts("\n");
+
+        dump("EtherType", pkt->eth.ethertype);
+
+        uint32_t payload_len =
+            elem->len -
+            sizeof(virtio_net_hdr_t) -
+            sizeof(eth_frame_t);
+
+        puts("Payload : ");
+
+        for (uint32_t i = 0; i < payload_len; i++)
+        {
+            putchar(pkt->payload[i]);
+        }
+
+        for_dump("pkt->payload", pkt->payload, payload_len);
+
+        puts("\n");
+
+        /*
+         * 다음 수신을 위해 Descriptor 재사용
+         */
+
+        rx_queue.avail->ring[rx_queue.avail->idx % VIRTIO_QUEUE_SIZE] = 0;
+
+        virtio_mb();
+
+        rx_queue.avail->idx++;
+
+        virtio_mb();
+
+        VIRTIO_QUEUE_NOTIFY = 0;
+
+        last_rx_used_idx++;
     }
 }

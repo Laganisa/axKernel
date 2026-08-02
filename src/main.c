@@ -32,16 +32,24 @@ extern void vector_table(void);
 extern uint8_t _task_shell_start[];
 extern uint8_t _task_shell_size[];
 
+// 컴파일러 코드
+extern uint8_t _task_compiler_start[];
+extern uint64_t _task_compiler_size[];
+
+// 브릿지 코드
+extern uint8_t _task_bridge_start[];
+extern uint64_t _task_bridge_size[];
+
 extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_MASTER_FLAG 1
+#define B_MASTER_FLAG 2
 
 // 커널 함수
-void master(uint64_t DTB_addr)
+void master(uint64_t dtb_addr)
 {
-    // dump("DTB_addr", DTB_addr);
+    dump("Passed_DTB_addr", dtb_addr);
 
 #if defined(NET)
     net_RX_main();
@@ -50,22 +58,24 @@ void master(uint64_t DTB_addr)
 #elif B_MASTER_FLAG == 1
     kernel_main();
 #elif B_MASTER_FLAG == 2
-    devo_main();
+    // parse_dtb(dtb_addr);
 #else
     kernel_main();
 #endif
 }
 
-#define B_MAIN_FLAG 2
+#define B_MAIN_FLAG 1
 
 void kernel_main(void)
 {
     // 하드웨어 초기화
     uart_init();
     // 인터럽트 초기화
-    init_irq();
+    irq_init();
     // 동적할당 초기화
     heap_init();
+
+    // 자료구조 초기화
 
     // 관리자 초기화
     mm_init(&mm_stack, USER_PROC_START);
@@ -81,50 +91,67 @@ void kernel_main(void)
         나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
 
-#ifdef defined(B_MAIN_FLAG) && (B_MAIN_FLAG == 0)
-    // 쉘 테스트 로직
-    pcb_t *shell_proc = proc_turn(fm_record, "SHEL.BIN", _task_shell_start, 1);
-    pm_awake(&pm_object, 0, shell_proc);
+#ifdef defined(B_MAIN_FLAG) && B_MAIN_FLAG == 0
+    // 프로세스 전환 테스트 로직
 
-    proc_dump("shell proc", shell_proc);
+    pcb_t *proc1 = proc_turn(fm_record, "SHELL.BIN", task_inf_A, 0);
 
-    /*
-        프로세스 전환
-    */
-
-    current_proc = shell_proc;
-    _proc(shell_proc);
-
-#elif B_MAIN_FLAG == 1
-    // IPC 테스트 로직
-    pcb_t *proc1 = proc_turn(fm_record, "TA.BIN", &temp_posi1, 0);
-
-    pcb_t *proc2 = proc_turn(fm_record, "TB.BIN", &temp_posi2, 0);
+    pcb_t *proc2 = proc_turn(fm_record, "BRDGE.BIN", task_inf_B, 0);
     pm_awake(&pm_object, 0, proc2);
 
     proc_dump("proc1", proc1);
     proc_dump("proc2", proc2);
 
+    /*
+    프로세스 전환
+    */
+
     current_proc = proc1;
     _proc(proc1);
 
-#elif B_MAIN_FLAG == 2
-    // 네트워크 시스템 콜 테스트 로직
-    pcb_t *shell_proc = proc_turn(fm_record, "SHEL.BIN", _task_shell_start, 1);
+#elif B_MAIN_FLAG == 1
+    // 쉘 테스트 로직
+    pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
 
     proc_dump("shell proc", shell_proc);
 
-    /*
-        프로세스 전환
-    */
-
     current_proc = shell_proc;
     _proc(shell_proc);
 
+#elif b_main_flag == 2
+    // 브릿지 테스트 로직
+
+    /*
+        쉘이랑 브릿지 2개를 띄워서 테스트
+    */
+    pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
+    pm_awake(&pm_object, 0, brdge_proc);
+
+    proc_dump("proc1", brdge_proc);
+
+    current_proc = brdge_proc;
+    _proc(brdge_proc);
+
+#elif b_main_flag == 3
+    // ipc 테스트 로직
+
+    /*
+        쉘이랑 브릿지 2개를 띄워서 테스트
+    */
+    pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
+    pm_awake(&pm_object, 0, bridge_proc);
+
+    pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
+    pm_awake(&pm_object, 0, shell_proc);
+
+    proc_dump("shell proc", bridge_proc);
+    proc_dump("shell proc", shell_proc);
+
+    current_proc = shell_proc;
+    _proc(shell_proc);
 #endif
 }
 
-void devo_main(void)
-{
-}
+// 임시 함수로 빼기전 개발용 매인
+void devo_main(void) {}

@@ -44,9 +44,11 @@ el1_spx_sync:
     ldr x1, [x9, #0]
     ldr x2, [x9, #8]
     ldr x3, [x9, #16]
+    ldr x4, [x9, #24]
+    ldr x5, [x9, #32]
 
-    mrs x4, esr_el1
-    lsr x4, x4, #26
+    mrs x6, esr_el1
+    lsr x6, x6, #26
 
     bl sync_handler_main
     

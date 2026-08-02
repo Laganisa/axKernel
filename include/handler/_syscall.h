@@ -11,7 +11,7 @@
 #define SYS_ABORT 2
 #define SYS_LOAD 3
 #define SYS_YIELD 4
-#define SYS_RESERVED5 5
+#define SYS_SETUP 5
 #define SYS_WRITE 6
 #define SYS_READ 7
 
@@ -60,24 +60,25 @@
 #define SYS_RESERVED39 39
 
 // Syscall handler
-uint64_t handle_svc_a64(uint64_t syscall_num, uint64_t arg1, uint64_t arg2, uint64_t arg3);
 
-/* 일반 적인 시스템 콜 */
-int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
-int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
-int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+/* 일반적인 시스템 콜 */
+int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
+int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
+int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
+int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
 
 /* 파일 시스템 콜 */
-int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
-int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
-int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
-int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
+int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
+int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
+int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
+
 /* 프로세스 시스템 콜 */
 
-int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
 /* 프로세스 간 정보 시스템 콜 */
 
 /* 네트워크 시스템 콜 */
-int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3);
+int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
 
 #endif

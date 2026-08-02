@@ -16,7 +16,7 @@ extern dcb_t uart_device;
     이 프로세스를 생성한 부모 프로세스의 id 값을 받고
     생성함
 */
-pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
+pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
 {
     // id 로직
     uint64_t target_chunk;
@@ -80,5 +80,5 @@ pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid)
 */
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
 {
-    return creat_proc_entry(obj, (uint64_t)task, parid);
+    return pm_creat(obj, (uint64_t)task, parid);
 }

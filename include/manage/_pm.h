@@ -50,15 +50,16 @@ typedef struct pcb_t
 
 } __attribute__((aligned(8))) pcb_t;
 
+typedef struct proto_t
+{
+    uint8_t rule;
+    uint8_t *addr;
+
+} proto_t;
+
 // ! 전체적으로 개편이 필요함
 typedef struct PMv1_object
 {
-    /*
-    // 이거 안쓰는거 같은데
-    uint64_t temp_x[31];   // 임시 레지스터
-    uint64_t temp_exce[8]; // irq에 사용하는 임시 레지스터
-    */
-
     uint64_t *base; // 바닥 주소
     // 총 공간이 24KB 정도
 
@@ -84,6 +85,10 @@ typedef struct PMv1_object
     uint64_t occ_num;                      // occ 숫자 넣기 레지스터에 넣기 좋도록 64bit를 씀
     uint64_t proc_scj[MAX_PCB_BITSIZE];    // 스케줄러에 들어갈 task들의 우선순위를 계산하기 위한 배열 순환돌때 여기다가 적는다
     uint64_t proc_priscj[MAX_PCB_BITSIZE]; // 스캐줄러에 들어갈 task들의 우선순위가 적힌 배열
+
+    // 프로토콜 관련
+    struct proto_t proto_arr[MAX_PCB_SIZE];
+
 } PMv1_object;
 
 // 함수 선언
@@ -91,7 +96,7 @@ typedef struct PMv1_object
 // init 만들기
 
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid);
-pcb_t *creat_proc_entry(PMv1_object *obj, uint64_t entry, uint8_t parid);
+pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid);
 uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);
