@@ -75,6 +75,8 @@ void kernel_main(void)
     // 동적할당 초기화
     heap_init();
 
+    // 자료구조 초기화
+
     // 관리자 초기화
     mm_init(&mm_stack, USER_PROC_START);
     // pm_init(&pm_object, PM_ADDR_START);
@@ -109,30 +111,33 @@ void kernel_main(void)
     /*
         쉘이랑 브릿지 2개를 띄워서 테스트
     */
-    pcb_t *shell_proc = proc_turn(fm_record, "SHELL.BIN", _task_shell_start, 0);
+    // pcb_t *shell_proc = proc_turn(fm_record, "SHELL.BIN", _task_shell_start, 0);
 
     pcb_t *brdge_proc = proc_turn(fm_record, "BRDGE.BIN", _task_bridge_start, 0);
     pm_awake(&pm_object, 0, brdge_proc);
 
-    proc_dump("proc1", shell_proc);
+    // proc_dump("proc1", shell_proc);
     proc_dump("proc2", brdge_proc);
 
-    current_proc = shell_proc;
-    _proc(shell_proc);
+    current_proc = brdge_proc;
+    _proc(brdge_proc);
 
 #elif B_MAIN_FLAG == 2
     // 네트워크 시스템 콜 테스트 로직
+    pcb_t *proc1 = proc_turn(fm_record, "SHELL.BIN", task_inf_A, 0);
+
+    pcb_t *proc2 = proc_turn(fm_record, "BRDGE.BIN", task_inf_B, 0);
+    pm_awake(&pm_object, 0, proc2);
+
     pcb_t *shell_proc = proc_turn(fm_record, "SHEL.BIN", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
 
+    proc_dump("proc1", proc1);
+    proc_dump("proc2", proc2);
     proc_dump("shell proc", shell_proc);
 
-    /*
-        프로세스 전환
-    */
-
-    current_proc = shell_proc;
-    _proc(shell_proc);
+    current_proc = proc1;
+    _proc(proc1);
 
 #elif B_MAIN_FLAG == 3
     // 프로세스 전환 테스트 로직

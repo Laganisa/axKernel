@@ -341,15 +341,23 @@ int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4,
 int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
-        1. nm_connet을 둘러본다
-        2. 없으면 타임아웃이 될 때까지 수신 준비
+        일단 스캘레톤으로 만듬
     */
-
     char *data = (char *)arg1;
     uint8_t *dst = (uint8_t *)arg2;
     uint16_t type = (uint16_t)arg3;
 
     // nm_discap(dst, data, type);
+    uint8_t ret = nm_queue(nm_connect, 1, 0);
+
+    // ! 수정이 필요
+    if (ret == 0)
+    {
+        // 없다면 그냥 리턴하고 나중에 주는걸로
+    }
+
+    // 복사 로직
+    nm_connect->payload_buf[ret];
 
     return -1; // 타임아웃
 }

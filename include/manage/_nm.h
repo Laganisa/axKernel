@@ -47,6 +47,13 @@ typedef struct NMv1_connect
     uint8_t dst_buf[DST_CACHE_SIZE][6];
 
     // ! 나중에 동적할당으로 바꾸기
+    /*
+        나중에 큐 자료 구조를 이용하기
+    */
+    uint8_t head;
+    uint8_t tail;
+    uint8_t num;
+    uint8_t queue_buf[NETWORK_CACHE_SIZE];
     packet_buf_t payload_buf[NETWORK_CACHE_SIZE];
 } NMv1_connect;
 
@@ -61,7 +68,7 @@ void check_nic_completion(void);
 
 void nm_init();
 
-// 송신용도
+uint8_t nm_queue(NMv1_connect *queue, uint8_t cmd, uint8_t val); // 송신용도
 void net_TX_main(void);
 
 // 수신용도

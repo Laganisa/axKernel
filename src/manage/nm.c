@@ -22,18 +22,9 @@ void nm_init()
 
     for (int i = 0; i < 6; i++)
     {
-        dump("bef", nm_connect->dst_buf[0][i]);
-    }
-
-    for (int i = 0; i < 6; i++)
-    {
         nm_connect->dst_buf[0][i] = 0xFF;
     }
 
-    for (int i = 0; i < 6; i++)
-    {
-        dump("aft", nm_connect->dst_buf[0][i]);
-    }
     nm_connect->is_dst[0] = 1;
 }
 
@@ -90,6 +81,35 @@ void nm_cap(uint8_t *dst, const void *data, uint16_t len, uint16_t type)
     VIRTIO_QUEUE_NOTIFY = 1;
 
     puts("TX COMPLETE\n");
+}
+
+uint64_t nm_discap()
+{
+    /*네트워크에서 받는 함수*/
+}
+
+/*
+    0 : 집어 넣기
+    1 : 빼기
+*/
+uint8_t nm_queue(NMv1_connect *queue, uint8_t cmd, uint8_t val)
+{
+    if (cmd == 0)
+    {
+        queue->queue_buf[queue->head] = val;
+        queue->head = (queue->head + 1) & 255;
+        queue->num++;
+        return 0;
+    }
+
+    if (queue->num == 0)
+    {
+        return 0;
+    }
+    uint8_t ret = queue->queue_buf[queue->tail];
+    queue->tail = (queue->tail + 1) & 255;
+    queue->num--;
+    return ret;
 }
 
 void net_TX_main(void)
