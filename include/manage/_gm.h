@@ -39,7 +39,7 @@ typedef struct __attribute__((packed)) virtio_gpu_resource_attach_backing
     virtio_gpu_ctrl_hdr_t hdr;
     uint32_t resource_id;
     uint32_t num_entries;
-    uint32_t padding;
+
 } virtio_gpu_resource_attach_backing_t;
 
 typedef struct __attribute__((packed)) virtio_gpu_mem_entry
@@ -70,12 +70,9 @@ typedef struct __attribute__((packed)) virtio_gpu_rect
 typedef struct __attribute__((packed))
 {
     virtio_gpu_ctrl_hdr_t hdr;
-
-    virtio_gpu_rect_t r;
-
     uint32_t scanout_id;
     uint32_t resource_id;
-
+    virtio_gpu_rect_t r;
 } virtio_gpu_set_scanout_t;
 
 typedef struct __attribute__((packed)) virtio_gpu_display_one

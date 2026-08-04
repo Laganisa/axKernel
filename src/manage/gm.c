@@ -140,9 +140,14 @@ static int gpu_create_resource(void)
 static int gpu_attach_backing(void)
 {
     enter("gpu_attach_backing");
-    uint32_t total_bytes = gpu_display_width * gpu_display_height * sizeof(uint32_t);
-    uint32_t page_count = (total_bytes + 4095) / 4096;
-    uint32_t command_size = sizeof(virtio_gpu_resource_attach_backing_t) + page_count * sizeof(virtio_gpu_mem_entry_t);
+
+    uint64_t total_bytes = (uint64_t)gpu_display_width * gpu_display_height * sizeof(uint32_t);
+    uint32_t page_count = (uint32_t)((total_bytes + 4095ULL) >> 12);
+    uint32_t command_size = sizeof(virtio_gpu_resource_attach_backing_t) +
+                            page_count * sizeof(virtio_gpu_mem_entry_t);
+
+    memset(gpu_cmd_buf, 0, sizeof(gpu_cmd_buf));
+    memset(gpu_resp_buf, 0, sizeof(gpu_resp_buf));
 
     virtio_gpu_resource_attach_backing_t *cmd = (virtio_gpu_resource_attach_backing_t *)gpu_cmd_buf;
     cmd->hdr.type = VIRTIO_GPU_CMD_RESOURCE_ATTACH_BACKING;
@@ -152,23 +157,36 @@ static int gpu_attach_backing(void)
     cmd->hdr.padding = 0;
     cmd->resource_id = GPU_RESOURCE_ID;
     cmd->num_entries = page_count;
-    cmd->padding = 0;
 
     virtio_gpu_mem_entry_t *entry = (virtio_gpu_mem_entry_t *)(gpu_cmd_buf + sizeof(*cmd));
     uintptr_t base_addr = (uintptr_t)gpu_framebuffer;
-    uint32_t remaining = total_bytes;
+    uint64_t remaining = total_bytes;
 
     for (uint32_t i = 0; i < page_count; ++i)
     {
-        entry[i].addr = (uint64_t)(base_addr + i * 4096);
-        entry[i].length = (remaining > 4096) ? 4096 : remaining;
+        uintptr_t va = base_addr + (uintptr_t)(i * 4096);
+
+        entry[i].addr = (uint64_t)va;
+        entry[i].length = (remaining > 4096) ? 4096 : (uint32_t)remaining;
         entry[i].padding = 0;
         remaining -= entry[i].length;
     }
 
-    dump("resp type", ((virtio_gpu_ctrl_hdr_t *)gpu_resp_buf)->type);
-    memset(gpu_resp_buf, 0, sizeof(gpu_resp_buf));
-    return gpu_submit_control(command_size, sizeof(gpu_resp_buf));
+    dump("framebuffer bytes", total_bytes);
+    dump("num_entries", page_count);
+    dump("attach command size", command_size);
+
+    int ret = gpu_submit_control(command_size, sizeof(gpu_resp_buf));
+    if (ret < 0)
+    {
+        puts("gpu_submit_control failed\n");
+        return ret;
+    }
+
+    virtio_gpu_ctrl_hdr_t *resp = (virtio_gpu_ctrl_hdr_t *)gpu_resp_buf;
+    dump("resp type", resp->type);
+
+    return 0;
 }
 
 static int gpu_set_scanout(void)
@@ -181,30 +199,42 @@ static int gpu_set_scanout(void)
     memset(gpu_cmd_buf, 0, sizeof(gpu_cmd_buf));
     memset(gpu_resp_buf, 0, sizeof(gpu_resp_buf));
 
+    // 1. 헤더 설정
     cmd->hdr.type = VIRTIO_GPU_CMD_SET_SCANOUT;
     cmd->hdr.flags = 0;
     cmd->hdr.fence_id = 0;
     cmd->hdr.ctx_id = 0;
     cmd->hdr.padding = 0;
 
+    // 2. 구조체 선언 순서대로 값 대입 (가장 중요!)
+    cmd->scanout_id = GPU_SCANOUT_ID;
+    cmd->resource_id = GPU_RESOURCE_ID;
+
     cmd->r.x = 0;
     cmd->r.y = 0;
     cmd->r.width = gpu_display_width;
     cmd->r.height = gpu_display_height;
 
-    cmd->scanout_id = GPU_SCANOUT_ID;
-    cmd->resource_id = GPU_RESOURCE_ID;
+    dump("SET_SCANOUT cmd size", sizeof(*cmd));
 
-    int ret = gpu_submit_control(sizeof(*cmd),
-                                 sizeof(gpu_resp_buf));
+    // 바이트 덤프 출력 로직은 그대로 유지...
+    for (size_t i = 0; i < sizeof(*cmd); i++)
+    {
+        uint8_t byte = ((uint8_t *)gpu_cmd_buf)[i];
+        put_hex2(byte);
+        if ((i + 1) % 4 == 0)
+        {
+            putchar('\n');
+        }
+        else
+        {
+            putchar(' ');
+        }
+    }
 
-    dump("scanout_id", cmd->scanout_id);
-    dump("resource_id", cmd->resource_id);
-    dump("rect w", cmd->r.width);
-    dump("rect h", cmd->r.height);
+    int ret = gpu_submit_control(sizeof(*cmd), sizeof(gpu_resp_buf));
 
-    dump("scanout response",
-         ((virtio_gpu_ctrl_hdr_t *)gpu_resp_buf)->type);
+    dump("scanout response", ((virtio_gpu_ctrl_hdr_t *)gpu_resp_buf)->type);
 
     return ret;
 }
