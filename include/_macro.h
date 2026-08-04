@@ -47,8 +47,27 @@
 
 #pragma region virtq
 
-#define VIRTIO_MMIO_BASE 0x0A003E00U
-#define VIRTIO_REG(offset) (*(volatile uint32_t *)((uintptr_t)VIRTIO_MMIO_BASE + (offset)))
+// 1. DTB 파싱으로 얻은 주소를 저장할 전역 변수 선언 (extern)
+extern uint64_t g_virtio_net_base;
+extern uint64_t g_virtio_gpu_base;
+
+// 2. 런타임 변수 주소 계산을 위한 인라인 함수 정의
+static inline volatile uint32_t *virtio_net_reg_ptr(uint32_t offset)
+{
+    return (volatile uint32_t *)(uintptr_t)(g_virtio_net_base + offset);
+}
+
+static inline volatile uint32_t *virtio_gpu_reg_ptr(uint32_t offset)
+{
+    return (volatile uint32_t *)(uintptr_t)(g_virtio_gpu_base + offset);
+}
+
+// 3. 인라인 함수를 활용하도록 매크로 변경
+#define VIRTIO_NET_REG(offset) (*virtio_net_reg_ptr(offset))
+#define VIRTIO_GPU_REG(offset) (*virtio_gpu_reg_ptr(offset))
+
+// 기존에 쓰던 레거시 호환용 (기본적으로 네트워크 베이스를 바라보게 처리)
+#define VIRTIO_REG(offset) VIRTIO_NET_REG(offset)
 
 /* Identification */
 #define VIRTIO_MAGIC_VALUE VIRTIO_REG(0x000)
@@ -62,6 +81,11 @@
 #define VIRTIO_GUEST_FEATURES VIRTIO_REG(0x020)
 #define VIRTIO_GUEST_FEATURES_SEL VIRTIO_REG(0x024)
 
+#define VIRTIO_GPU_HOST_FEATURES VIRTIO_GPU_REG(0x010)
+#define VIRTIO_GPU_HOST_FEATURES_SEL VIRTIO_GPU_REG(0x014)
+#define VIRTIO_GPU_GUEST_FEATURES VIRTIO_GPU_REG(0x020)
+#define VIRTIO_GPU_GUEST_FEATURES_SEL VIRTIO_GPU_REG(0x024)
+
 /* Legacy Queue Configuration */
 #define VIRTIO_GUEST_PAGE_SIZE VIRTIO_REG(0x028)
 #define VIRTIO_QUEUE_SEL VIRTIO_REG(0x030)
@@ -71,12 +95,21 @@
 #define VIRTIO_QUEUE_PFN VIRTIO_REG(0x040)
 #define VIRTIO_QUEUE_NOTIFY VIRTIO_REG(0x050)
 
+#define VIRTIO_GPU_GUEST_PAGE_SIZE VIRTIO_GPU_REG(0x028)
+#define VIRTIO_GPU_QUEUE_SEL VIRTIO_GPU_REG(0x030)
+#define VIRTIO_GPU_QUEUE_NUM_MAX VIRTIO_GPU_REG(0x034)
+#define VIRTIO_GPU_QUEUE_NUM VIRTIO_GPU_REG(0x038)
+#define VIRTIO_GPU_QUEUE_ALIGN VIRTIO_GPU_REG(0x03C)
+#define VIRTIO_GPU_QUEUE_PFN VIRTIO_GPU_REG(0x040)
+#define VIRTIO_GPU_QUEUE_NOTIFY VIRTIO_GPU_REG(0x050)
+
 /* Interrupt */
 #define VIRTIO_INTERRUPT_STATUS VIRTIO_REG(0x060)
 #define VIRTIO_INTERRUPT_ACK VIRTIO_REG(0x064)
 
 /* Device Status */
 #define VIRTIO_STATUS VIRTIO_REG(0x070)
+#define VIRTIO_GPU_STATUS VIRTIO_GPU_REG(0x070)
 
 /* Status Flags */
 #define VIRTIO_STATUS_ACKNOWLEDGE 0x01U

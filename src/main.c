@@ -12,8 +12,9 @@
 #include "global/_debug.h"
 #include "global/_in_proc.h"
 #include "global/_alloc.h"
+#include "global/_dtb.h"
 
-#include "manage/_mm.h" // 메모리 관리자가 있는 헤더
+#include "manage/_mm.h" // 메모리 관리자 헤더
 #include "manage/_pm.h" // 프로세스 관리자 헤더
 #include "manage/_fm.h" // 파일 관리자 헤더
 #include "manage/_nm.h" // 네트워크 관리자 헤더
@@ -51,6 +52,9 @@ void master(uint64_t dtb_addr)
 {
     dump("Passed_DTB_addr", dtb_addr);
 
+    // dtb 파싱 후 연동
+    parse_dtb(dtb_addr);
+
 #if defined(NET)
     net_RX_main();
 #elif B_MASTER_FLAG == 0
@@ -58,7 +62,7 @@ void master(uint64_t dtb_addr)
 #elif B_MASTER_FLAG == 1
     kernel_main();
 #elif B_MASTER_FLAG == 2
-    // parse_dtb(dtb_addr);
+    devo_main();
 #else
     kernel_main();
 #endif
@@ -83,6 +87,8 @@ void kernel_main(void)
     fm_init((uint64_t *)USER_FILE_START);
 
     nm_init();
+    gpu_init();
+    gpu_test();
 
     puts("Booting AxKernel!\n");
 
@@ -94,16 +100,16 @@ void kernel_main(void)
 #ifdef defined(B_MAIN_FLAG) && B_MAIN_FLAG == 0
     // 프로세스 전환 테스트 로직
 
-    pcb_t *proc1 = proc_turn(fm_record, "SHELL.BIN", task_inf_A, 0);
+    pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
 
-    pcb_t *proc2 = proc_turn(fm_record, "BRDGE.BIN", task_inf_B, 0);
+    pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
     pm_awake(&pm_object, 0, proc2);
 
     proc_dump("proc1", proc1);
     proc_dump("proc2", proc2);
 
     /*
-    프로세스 전환
+        프로세스 전환
     */
 
     current_proc = proc1;
@@ -122,9 +128,6 @@ void kernel_main(void)
 #elif b_main_flag == 2
     // 브릿지 테스트 로직
 
-    /*
-        쉘이랑 브릿지 2개를 띄워서 테스트
-    */
     pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
     pm_awake(&pm_object, 0, brdge_proc);
 
@@ -154,4 +157,13 @@ void kernel_main(void)
 }
 
 // 임시 함수로 빼기전 개발용 매인
-void devo_main(void) {}
+void devo_main(void)
+{
+    puts("devo_main: GPU fill demo start\n");
+    gpu_init();
+    gpu_fill_screen(0xFF112233);
+    puts("devo_main: GPU screen fill complete\n");
+    while (1)
+    {
+    }
+}
