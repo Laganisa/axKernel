@@ -161,9 +161,13 @@ void devo_main(void)
 {
     puts("devo_main: GPU fill demo start\n");
     gpu_init();
-    gpu_fill_screen(0xFF112233);
-    puts("devo_main: GPU screen fill complete\n");
+
     while (1)
     {
+        for (int i = 0; i < 10000000000; i++)
+        {
+            ;
+        }
+        gpu_fill_screen(0xFFFF0000);
     }
 }

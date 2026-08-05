@@ -59,6 +59,18 @@ typedef struct __attribute__((packed)) virtio_gpu_resource_flush
     uint32_t height;
 } virtio_gpu_resource_flush_t;
 
+typedef struct __attribute__((packed)) virtio_gpu_transfer_to_host_2d
+{
+    virtio_gpu_ctrl_hdr_t hdr;
+    uint32_t x;
+    uint32_t y;
+    uint32_t width;
+    uint32_t height;
+    uint64_t offset;
+    uint32_t resource_id;
+    uint32_t padding;
+} virtio_gpu_transfer_to_host_2d_t;
+
 typedef struct __attribute__((packed)) virtio_gpu_rect
 {
     uint32_t x;
@@ -67,12 +79,25 @@ typedef struct __attribute__((packed)) virtio_gpu_rect
     uint32_t height;
 } virtio_gpu_rect_t;
 
+/*
 typedef struct __attribute__((packed))
 {
     virtio_gpu_ctrl_hdr_t hdr;
     uint32_t scanout_id;
     uint32_t resource_id;
     virtio_gpu_rect_t r;
+} virtio_gpu_set_scanout_t;
+*/
+
+typedef struct __attribute__((packed))
+{
+    virtio_gpu_ctrl_hdr_t hdr;
+    uint32_t scanout_id;
+    uint32_t resource_id;
+    uint32_t x;
+    uint32_t y;
+    uint32_t width;
+    uint32_t height;
 } virtio_gpu_set_scanout_t;
 
 typedef struct __attribute__((packed)) virtio_gpu_display_one
