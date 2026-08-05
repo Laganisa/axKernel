@@ -8,10 +8,14 @@
 #define GPU_DISPLAY_WIDTH 1280
 #define GPU_DISPLAY_HEIGHT 720
 
+#define GPU_CMD_SLOT_SIZE 4096
+#define GPU_CMD_SLOT_COUNT 8
+
 static unsigned char gpu_queue_storage[VIRTIO_QUEUE_STORAGE]
     __attribute__((aligned(4096)));
 static virtio_queue_state gpu_queue;
 static uint16_t gpu_used_idx = 0;
+static uint32_t gpu_queue_size = 0;
 
 static uint32_t gpu_display_width = GPU_DISPLAY_WIDTH;
 static uint32_t gpu_display_height = GPU_DISPLAY_HEIGHT;
@@ -19,13 +23,23 @@ static uint32_t gpu_display_height = GPU_DISPLAY_HEIGHT;
 static uint32_t gpu_framebuffer[GPU_DISPLAY_WIDTH * GPU_DISPLAY_HEIGHT]
     __attribute__((aligned(4096)));
 static unsigned char gpu_cmd_buf[65536] __attribute__((aligned(4096)));
+// Separate per-request slot buffers to avoid races between driver and device
+static unsigned char gpu_cmd_slots[GPU_CMD_SLOT_COUNT * GPU_CMD_SLOT_SIZE] __attribute__((aligned(4096)));
+static unsigned char gpu_resp_slots[GPU_CMD_SLOT_COUNT * GPU_CMD_SLOT_SIZE] __attribute__((aligned(4096)));
+// Main response buffer that driver reads after copying from slot
 static unsigned char gpu_resp_buf[4096] __attribute__((aligned(4096)));
+// Command/response slot configuration to avoid reusing same physical addr
+
+static uint16_t gpu_next_desc_index = 0;
 
 static int gpu_wait_used(void)
 {
     int timeout = 10000000;
-    while (gpu_queue.used->idx == gpu_used_idx)
+    while (1)
     {
+        virtio_mb();
+        if (gpu_queue.used->idx != gpu_used_idx)
+            break;
         if (--timeout == 0)
         {
             puts("GPU queue timed out\n");
@@ -40,8 +54,26 @@ static int gpu_wait_used(void)
         VIRTIO_GPU_INTERRUPT_ACK = irq_status;
     }
 
-    gpu_used_idx = gpu_queue.used->idx;
+    uint16_t new_used_idx = gpu_queue.used->idx;
+    for (uint16_t i = gpu_used_idx; i < new_used_idx; ++i)
+    {
+        uint16_t used_ring_index = i % VIRTIO_QUEUE_SIZE;
+        virtio_mb();
+        struct virtq_used_elem used_elem = gpu_queue.used->ring[used_ring_index];
+        dump("used elem id", used_elem.id);
+        dump("used elem len", used_elem.len);
+    }
+
+    gpu_used_idx = new_used_idx;
     return 0;
+}
+
+static void gpu_dump_status(const char *stage)
+{
+    dump("GPU stage", (uint64_t)stage);
+    dump("GPU status", VIRTIO_GPU_STATUS);
+    dump("GPU host features", VIRTIO_GPU_HOST_FEATURES);
+    dump("GPU queue size", gpu_queue_size);
 }
 
 static void gpu_setup_queue(void)
@@ -57,15 +89,17 @@ static void gpu_setup_queue(void)
         return;
     }
 
-    if (max < VIRTIO_QUEUE_SIZE)
+    if (max < 2)
     {
         puts("GPU queue too small\n");
         return;
     }
 
+    gpu_queue_size = (max < VIRTIO_QUEUE_SIZE) ? max : VIRTIO_QUEUE_SIZE;
+
     VIRTIO_GPU_GUEST_PAGE_SIZE = 4096;
     VIRTIO_GPU_QUEUE_ALIGN = 4096;
-    VIRTIO_GPU_QUEUE_NUM = VIRTIO_QUEUE_SIZE;
+    VIRTIO_GPU_QUEUE_NUM = gpu_queue_size;
 
     gpu_queue.storage = gpu_queue_storage;
     gpu_queue.desc = (struct virtq_desc *)gpu_queue.storage;
@@ -77,8 +111,14 @@ static void gpu_setup_queue(void)
         gpu_queue.storage[i] = 0;
     }
 
+    gpu_queue.avail->flags = 0;
+    gpu_queue.avail->idx = 0;
+    gpu_queue.used->flags = 0;
+    gpu_queue.used->idx = 0;
+
     VIRTIO_GPU_QUEUE_PFN = ((uint64_t)gpu_queue.storage) >> 12;
     dump("GPU queue PFN set", VIRTIO_GPU_QUEUE_PFN);
+    dump("GPU queue size", gpu_queue_size);
 }
 
 static int gpu_submit_control(uint32_t cmd_size, uint32_t resp_size)
@@ -86,35 +126,84 @@ static int gpu_submit_control(uint32_t cmd_size, uint32_t resp_size)
     enter("gpu_submit_control");
     VIRTIO_GPU_QUEUE_SEL = 0;
 
-    // avail_idx를 기반으로 디스크립터 슬롯을 순환하며 할당
-    // (보통 제어 요청은 명령(Read) + 응답(Write) 2개의 디스크립터를 한 쌍으로 묶어 사용)
     uint16_t avail_idx = gpu_queue.avail->idx;
-    uint16_t ring_index = avail_idx % VIRTIO_QUEUE_SIZE;
+    uint16_t ring_index = avail_idx % gpu_queue_size;
 
-    // 디스크립터 테이블에서 2개씩 쌍을 지어 순환하도록 계산 (0-1, 2-3, 4-5 ...)
-    uint16_t head = (avail_idx * 2) % VIRTIO_QUEUE_SIZE;
-    uint16_t next_desc = (head + 1) % VIRTIO_QUEUE_SIZE;
+    dump("gpu_submit_control used idx before", gpu_queue.used->idx);
+    dump("gpu_submit_control gpu_used_idx", gpu_used_idx);
 
-    // 첫 번째 디스크립터 설정 (Command - Read Only)
-    gpu_queue.desc[head].addr = (uint64_t)gpu_cmd_buf;
+    // Ensure we have free descriptor pairs; limit outstanding requests
+    uint16_t outstanding = (uint16_t)(avail_idx - gpu_used_idx);
+    if (outstanding >= (gpu_queue_size - 2))
+    {
+        if (gpu_wait_used() < 0)
+        {
+            return -1;
+        }
+        avail_idx = gpu_queue.avail->idx;
+        ring_index = avail_idx % gpu_queue_size;
+    }
+
+    uint16_t head = 0;
+    uint16_t next_desc = 1;
+
+    uint16_t slot = 0;
+    uint8_t *cmd_slot_ptr = gpu_cmd_slots;
+    uint8_t *resp_slot_ptr = gpu_resp_slots;
+    uint64_t cmd_phys = (uint64_t)(uintptr_t)cmd_slot_ptr;
+    uint64_t resp_phys = (uint64_t)(uintptr_t)resp_slot_ptr;
+
+    // zero whole command slot to remove leftover bytes, then copy payload
+    for (uint32_t i = 0; i < GPU_CMD_SLOT_SIZE; ++i)
+        cmd_slot_ptr[i] = 0;
+    for (uint32_t i = 0; i < cmd_size; ++i)
+        cmd_slot_ptr[i] = ((uint8_t *)gpu_cmd_buf)[i];
+
+    // zero full response slot area
+    for (uint32_t i = 0; i < GPU_CMD_SLOT_SIZE; ++i)
+        resp_slot_ptr[i] = 0;
+
+    gpu_queue.desc[head].addr = cmd_phys;
     gpu_queue.desc[head].len = cmd_size;
     gpu_queue.desc[head].flags = VIRTQ_DESC_F_NEXT;
     gpu_queue.desc[head].next = next_desc;
 
     // 두 번째 디스크립터 설정 (Response - Write Only)
-    gpu_queue.desc[next_desc].addr = (uint64_t)gpu_resp_buf;
+    gpu_queue.desc[next_desc].addr = resp_phys;
     gpu_queue.desc[next_desc].len = resp_size;
     gpu_queue.desc[next_desc].flags = VIRTQ_DESC_F_WRITE;
     gpu_queue.desc[next_desc].next = 0;
+
+    /* Debug: dump descriptor contents and slot pointers so we can verify
+       what the device will read from guest memory. */
+    dump("desc[head].addr", gpu_queue.desc[head].addr);
+    dump("desc[head].len", gpu_queue.desc[head].len);
+    dump("desc[head].flags", gpu_queue.desc[head].flags);
+    dump("desc[head].next", gpu_queue.desc[head].next);
+
+    dump("desc[next].addr", gpu_queue.desc[next_desc].addr);
+    dump("desc[next].len", gpu_queue.desc[next_desc].len);
+    dump("desc[next].flags", gpu_queue.desc[next_desc].flags);
+    dump("desc[next].next", gpu_queue.desc[next_desc].next);
+
+    dump("cmd_phys", cmd_phys);
+    dump("resp_phys", resp_phys);
+
+    /* Dump first 4 64-bit words from the slot that will be read by device */
+    {
+        uint64_t *cw = (uint64_t *)cmd_slot_ptr;
+        for (int i = 0; i < 4; ++i)
+            dump("cmd slot word", cw[i]);
+    }
 
     // Avail 링에 이번 요청의 헤드 번호 등록
     gpu_queue.avail->ring[ring_index] = head;
 
     dump("ring_index", (uint64_t)ring_index);
-    dump("ring_value_written", (uint64_t)head); // 이제 0, 2, 4, 6... 순으로 다이내믹하게 찍혀야 함!
+    dump("ring_value_written", (uint64_t)head);
 
     virtio_mb();
-    gpu_queue.avail->idx++;
+    gpu_queue.avail->idx = avail_idx + 1;
     virtio_mb();
 
     dump("avail_idx_after", (uint64_t)gpu_queue.avail->idx);
@@ -126,6 +215,29 @@ static int gpu_submit_control(uint32_t cmd_size, uint32_t resp_size)
     {
         dump("gpu_wait_used_error", 1);
         return -1;
+    }
+
+    // Debug: dump first few 64-bit words of the response slot buffer
+    {
+        uint16_t used_ring_index = (gpu_used_idx - 1) % VIRTIO_QUEUE_SIZE;
+        uint32_t used_id = gpu_queue.used->ring[used_ring_index].id;
+        uint16_t used_slot = used_id % GPU_CMD_SLOT_COUNT;
+        uint8_t *resp_slot_ptr = gpu_resp_slots + (used_slot * GPU_CMD_SLOT_SIZE);
+        for (int i = 0; i < 4; ++i)
+        {
+            uint64_t *w = (uint64_t *)(resp_slot_ptr + (i * 8));
+            dump("resp buf word", *w);
+        }
+
+        /* Copy response from the slot back to the main response buffer so callers
+           that read `gpu_resp_buf` directly get the data. */
+        uint32_t copy_sz = resp_size;
+        if (copy_sz > sizeof(gpu_resp_buf))
+            copy_sz = sizeof(gpu_resp_buf);
+        for (uint32_t i = 0; i < copy_sz; ++i)
+        {
+            ((uint8_t *)gpu_resp_buf)[i] = resp_slot_ptr[i];
+        }
     }
 
     return 0;
@@ -156,11 +268,21 @@ static int gpu_create_resource(void)
         sizeof(*cmd),
         sizeof(gpu_resp_buf));
 
-    dump(
-        "create response",
-        ((virtio_gpu_ctrl_hdr_t *)gpu_resp_buf)->type);
+    if (ret < 0)
+    {
+        puts("gpu_create_resource command failed\n");
+        return -1;
+    }
 
-    return ret;
+    virtio_gpu_ctrl_hdr_t *resp = (virtio_gpu_ctrl_hdr_t *)gpu_resp_buf;
+    dump("create response", resp->type);
+    if (resp->type != VIRTIO_GPU_RESP_OK_NODATA)
+    {
+        dump("create resource failed type", resp->type);
+        return -1;
+    }
+
+    return 0;
 }
 static int gpu_attach_backing(void)
 {
@@ -170,6 +292,10 @@ static int gpu_attach_backing(void)
     memset(gpu_resp_buf, 0, sizeof(gpu_resp_buf));
 
     uint32_t total_bytes = gpu_display_width * gpu_display_height * sizeof(uint32_t);
+
+    dump("sizeof framebuffer", sizeof(gpu_framebuffer));
+    dump("attach total bytes", total_bytes);
+    dump("fb address", (uint64_t)gpu_framebuffer);
 
     virtio_gpu_resource_attach_backing_t *cmd = (virtio_gpu_resource_attach_backing_t *)gpu_cmd_buf;
     cmd->hdr.type = VIRTIO_GPU_CMD_RESOURCE_ATTACH_BACKING;
@@ -189,16 +315,30 @@ static int gpu_attach_backing(void)
     uint32_t command_size = sizeof(virtio_gpu_resource_attach_backing_t) + sizeof(virtio_gpu_mem_entry_t);
 
     dump("attach command size", command_size);
+    // Debug: dump first few 64-bit words of the command buffer to see exact bytes sent
+    for (int i = 0; i < 8; ++i)
+    {
+        uint64_t *w = (uint64_t *)(gpu_cmd_buf + (i * 8));
+        dump("cmd buf word", *w);
+    }
+
+    dump("attach mem_entry addr", entry[0].addr);
+    dump("attach mem_entry len", entry[0].length);
 
     int ret = gpu_submit_control(command_size, sizeof(gpu_resp_buf));
     if (ret < 0)
     {
         puts("gpu_submit_control failed\n");
-        return ret;
+        return -1;
     }
 
     virtio_gpu_ctrl_hdr_t *resp = (virtio_gpu_ctrl_hdr_t *)gpu_resp_buf;
-    dump("resp type", resp->type);
+    dump("attach backing resp type", resp->type);
+    if (resp->type != VIRTIO_GPU_RESP_OK_NODATA)
+    {
+        dump("attach backing failed type", resp->type);
+        return -1;
+    }
 
     return 0;
 }
@@ -220,22 +360,38 @@ static int gpu_set_scanout(void)
     cmd->hdr.padding = 0;
 
     // 2. 값 대입
+    cmd->r.x = 0;
+    cmd->r.y = 0;
+    cmd->r.width = gpu_display_width;
+    cmd->r.height = gpu_display_height;
     cmd->scanout_id = GPU_SCANOUT_ID;   // 반드시 0인지 확인!
     cmd->resource_id = GPU_RESOURCE_ID; // 반드시 1인지 확인!
-    cmd->x = 0;
-    cmd->y = 0;
-    cmd->width = gpu_display_width;
-    cmd->height = gpu_display_height;
 
+    dump("resource id before submit", cmd->resource_id);
+    dump("scanout id before submit", cmd->scanout_id);
+    dump("rect width before submit", cmd->r.width);
+    dump("rect height before submit", cmd->r.height);
     dump("SET_SCANOUT cmd size", sizeof(*cmd));
+    dump("SET_SCANOUT x", cmd->r.x);
+    dump("SET_SCANOUT y", cmd->r.y);
 
     // ★ 여기서 크기를 정확히 sizeof(*cmd) (즉, 48바이트 = 0x30)로 넘겨야 합니다.
     int ret = gpu_submit_control(sizeof(*cmd), sizeof(gpu_resp_buf));
+    if (ret < 0)
+    {
+        puts("gpu_set_scanout command failed\n");
+        return -1;
+    }
 
     virtio_gpu_ctrl_hdr_t *resp = (virtio_gpu_ctrl_hdr_t *)gpu_resp_buf;
-    dump("scanout response", resp->type); // 이 값이 반드시 0x00(OK)이 되어야 합니다!
-
-    return ret;
+    dump("scanout response", resp->type);
+    if (resp->type != VIRTIO_GPU_RESP_OK_NODATA)
+    {
+        dump("set scanout failed type", resp->type);
+        return -1;
+    }
+    exit("gpu_set_scanout");
+    return 0;
 }
 
 static int gpu_get_display_info(void)
@@ -251,14 +407,27 @@ static int gpu_get_display_info(void)
     memset(gpu_resp_buf, 0, sizeof(gpu_resp_buf));
     if (gpu_submit_control(sizeof(*cmd), sizeof(gpu_resp_buf)) < 0)
     {
+        puts("gpu_get_display_info command failed\n");
         return -1;
     }
 
     virtio_gpu_resp_display_info_t *resp = (virtio_gpu_resp_display_info_t *)gpu_resp_buf;
+    if (resp->hdr.type != VIRTIO_GPU_RESP_OK_DISPLAY_INFO)
+    {
+        dump("get display info failed type", resp->hdr.type);
+        return -1;
+    }
+
+    dump("GET_DISPLAY_INFO resp type", resp->hdr.type);
+    dump("GET_DISPLAY_INFO scanout enabled", resp->scanout[0].enabled);
+    dump("GET_DISPLAY_INFO scanout x", resp->scanout[0].rect.x);
+    dump("GET_DISPLAY_INFO scanout y", resp->scanout[0].rect.y);
+    dump("GET_DISPLAY_INFO scanout width", resp->scanout[0].rect.width);
+    dump("GET_DISPLAY_INFO scanout height", resp->scanout[0].rect.height);
+    dump("GET_DISPLAY_INFO scanout flags", resp->scanout[0].flags);
 
     if (resp->scanout[0].enabled == 0)
     {
-        puts("GPU scanout is not active, using default resolution\n");
         gpu_display_width = GPU_DISPLAY_WIDTH;
         gpu_display_height = GPU_DISPLAY_HEIGHT;
     }
@@ -267,8 +436,6 @@ static int gpu_get_display_info(void)
         gpu_display_width = resp->scanout[0].rect.width;
         gpu_display_height = resp->scanout[0].rect.height;
     }
-
-    dump("resp type", ((virtio_gpu_ctrl_hdr_t *)gpu_resp_buf)->type);
 
     dump("GPU display width", gpu_display_width);
     dump("GPU display height", gpu_display_height);
@@ -291,10 +458,20 @@ static int gpu_resource_flush(uint32_t x, uint32_t y, uint32_t width, uint32_t h
 
     memset(gpu_resp_buf, 0, sizeof(gpu_resp_buf));
     int ret = gpu_submit_control(sizeof(*cmd), sizeof(gpu_resp_buf));
+    if (ret < 0)
+    {
+        puts("gpu_resource_flush command failed\n");
+        return -1;
+    }
 
     virtio_gpu_ctrl_hdr_t *resp = (virtio_gpu_ctrl_hdr_t *)gpu_resp_buf;
     dump("flush response", resp->type);
-    return ret;
+    if (resp->type != VIRTIO_GPU_RESP_OK_NODATA)
+    {
+        dump("flush failed type", resp->type);
+        return -1;
+    }
+    return 0;
 }
 
 static int gpu_transfer_to_host_2d(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
@@ -316,10 +493,20 @@ static int gpu_transfer_to_host_2d(uint32_t x, uint32_t y, uint32_t width, uint3
 
     memset(gpu_resp_buf, 0, sizeof(gpu_resp_buf));
     int ret = gpu_submit_control(sizeof(*cmd), sizeof(gpu_resp_buf));
+    if (ret < 0)
+    {
+        puts("gpu_transfer_to_host_2d command failed\n");
+        return -1;
+    }
 
     virtio_gpu_ctrl_hdr_t *resp = (virtio_gpu_ctrl_hdr_t *)gpu_resp_buf;
     dump("transfer response", resp->type);
-    return ret;
+    if (resp->type != VIRTIO_GPU_RESP_OK_NODATA)
+    {
+        dump("transfer failed type", resp->type);
+        return -1;
+    }
+    return 0;
 }
 
 void gpu_init(void)
@@ -332,18 +519,53 @@ void gpu_init(void)
         return;
     }
 
+    // Device reset
     VIRTIO_GPU_STATUS = 0;
-    VIRTIO_GPU_STATUS = VIRTIO_STATUS_ACKNOWLEDGE;
+
+    // Driver acknowledge
+    VIRTIO_GPU_STATUS |= VIRTIO_STATUS_ACKNOWLEDGE;
     VIRTIO_GPU_STATUS |= VIRTIO_STATUS_DRIVER;
 
+    /*
+     * Legacy VirtIO MMIO
+     *
+     * legacy mode에서는 feature bits 32~63 사용 불가.
+     * FEATURES_SEL = 1 접근하지 않는다.
+     */
+
+    VIRTIO_GPU_HOST_FEATURES_SEL = 0;
+
     uint32_t host_features = VIRTIO_GPU_HOST_FEATURES;
+
     dump("GPU host features", host_features);
 
+    /*
+     * 현재 virtio-gpu에서 사용하는 feature 없음
+     */
+    VIRTIO_GPU_GUEST_FEATURES_SEL = 0;
     VIRTIO_GPU_GUEST_FEATURES = 0;
+
+    // legacy queue 설정용
     VIRTIO_GPU_GUEST_PAGE_SIZE = 4096;
 
+    // Feature negotiation 완료
     VIRTIO_GPU_STATUS |= VIRTIO_STATUS_FEATURES_OK;
+
+    if ((VIRTIO_GPU_STATUS & VIRTIO_STATUS_FEATURES_OK) == 0)
+    {
+        puts("GPU FEATURES_OK rejected\n");
+        return;
+    }
+
+    // Virtqueue 초기화
     gpu_setup_queue();
+
+    // Driver ready
+    VIRTIO_GPU_STATUS |= VIRTIO_STATUS_DRIVER_OK;
+
+    gpu_dump_status("after driver ok");
+
+    puts("GPU driver initialized\n");
 
     if (gpu_get_display_info() < 0)
     {
@@ -351,17 +573,37 @@ void gpu_init(void)
         return;
     }
 
-    VIRTIO_GPU_STATUS |= VIRTIO_STATUS_DRIVER_OK;
-
-    puts("GPU driver initialized\n");
-
     memset(gpu_framebuffer, 0, sizeof(gpu_framebuffer));
-    gpu_create_resource();
 
-    gpu_attach_backing();
+    if (gpu_create_resource() < 0)
+    {
+        puts("GPU create resource failed\n");
+        return;
+    }
 
-    gpu_set_scanout();
-    gpu_resource_flush(0, 0, gpu_display_width, gpu_display_height);
+    if (gpu_attach_backing() < 0)
+    {
+        puts("GPU attach backing failed\n");
+        return;
+    }
+
+    if (gpu_set_scanout() < 0)
+    {
+        puts("GPU set scanout failed\n");
+        return;
+    }
+
+    if (gpu_resource_flush(
+            0,
+            0,
+            gpu_display_width,
+            gpu_display_height) < 0)
+    {
+        puts("GPU resource flush failed\n");
+        return;
+    }
+
+    puts("GPU display ready\n");
 }
 
 void draw_pixel(uint32_t x, uint32_t y, uint32_t color)

@@ -60,7 +60,7 @@ extern uint16_t last_tx_used_idx;
 
 static inline void virtio_mb(void)
 {
-    __asm__ volatile("dmb ishst" ::: "memory");
+    __asm__ volatile("dmb ish" ::: "memory");
 }
 
 void *get_ring_buffer_addr(void);

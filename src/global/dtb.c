@@ -38,6 +38,12 @@ static uint64_t fdt64_to_cpu(uint64_t val)
 // DTB 파싱 메인 진입 함수
 void parse_dtb(uint64_t dtb_addr)
 {
+    if (dtb_addr == 0)
+    {
+        dump("DTB_FallbackAddr", 0x40000000);
+        dtb_addr = 0x40000000;
+    }
+
     struct fdt_header *header = (struct fdt_header *)dtb_addr;
 
     // 1. 매직 넘버 검증
