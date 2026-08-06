@@ -15,6 +15,18 @@ void dump(const char *name, uint64_t val)
     }
 }
 
+void dump_(const char *name, uint64_t val)
+{
+    if (toggle)
+    {
+        puts("\033[34m[Debug] ");
+        puts(name);
+        puts(" : ");
+        put_hex(val);
+        puts("\033[0m\n");
+    }
+}
+
 void for_dump(const char *name, uint64_t *val, uint8_t num)
 {
     if (toggle)
@@ -44,9 +56,9 @@ void enter(const char *name)
     if (toggle)
     {
         puts("\n");
-        puts("[Enter] ");
+        puts("\033[31m[Enter] ");
         puts(name);
-        puts("\n");
+        puts("\033[0m\n");
     }
 }
 

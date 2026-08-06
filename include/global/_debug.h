@@ -13,6 +13,8 @@ void flow(const char type);
 void exit(const char *name);
 void for_dump(const char *name, uint64_t *val, uint8_t num);
 
+void dump_(const char *name, uint64_t val);
+
 void reg_x8(void);
 void reg_elr_el1(void);
 void reg_esr_el1(void);

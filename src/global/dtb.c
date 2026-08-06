@@ -62,10 +62,12 @@ void parse_dtb(uint64_t dtb_addr)
     uint32_t off_mem_rsvmap = fdt32_to_cpu(header->off_mem_rsvmap);
 
     // 디버그 출력으로 헤더 정보가 잘 읽히는지 확인
+    /*
     dump("DTB_Magic", magic);
     dump("DTB_TotalSize", totalsize);
     dump("DTB_StructOffset", off_struct);
     dump("DTB_StringOffset", off_strings);
+    */
 
     // TODO: 다음 단계인 구조체 블록 순회 준비
     parse_dtb_tokens(dtb_addr);
@@ -118,7 +120,7 @@ void parse_dtb_tokens(uint64_t dtb_addr)
 
     uint32_t *p = (uint32_t *)struct_ptr;
 
-    dump("Start_Token_Parsing", (uint64_t)p);
+    // dump("Start_Token_Parsing", (uint64_t)p);
 
     while (1)
     {
