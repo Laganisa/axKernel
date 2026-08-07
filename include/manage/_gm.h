@@ -1,5 +1,5 @@
-#ifndef __KERNEL_GM_H__
-#define __KERNEL_GM_H__
+#ifndef KERNEL_GM_H
+#define KERNEL_GM_H
 
 #include "_defs.h"
 #include "_types.h"
@@ -18,13 +18,14 @@
 
 #define VIRTIO_GPU_RESP_OK_NODATA 0x1100
 #define VIRTIO_GPU_RESP_OK_DISPLAY_INFO 0x1101
+
 #define VIRTIO_GPU_RESP_ERR_UNSPEC 0x1200
 #define VIRTIO_GPU_RESP_ERR_OUT_OF_MEMORY 0x1201
 #define VIRTIO_GPU_RESP_ERR_INVALID_RESOURCE_ID 0x1202
 #define VIRTIO_GPU_RESP_ERR_INVALID_SCANOUT_ID 0x1203
 #define VIRTIO_GPU_RESP_ERR_UNSUPPORTED 0x1204
 
-typedef struct __attribute__((packed)) virtio_gpu_ctrl_hdr
+typedef struct __attribute__((packed))
 {
     uint32_t type;
     uint32_t flags;
@@ -33,53 +34,7 @@ typedef struct __attribute__((packed)) virtio_gpu_ctrl_hdr
     uint32_t padding;
 } virtio_gpu_ctrl_hdr_t;
 
-typedef struct __attribute__((packed)) virtio_gpu_resource_create_2d
-{
-    virtio_gpu_ctrl_hdr_t hdr;
-    uint32_t resource_id;
-    uint32_t format;
-    uint32_t width;
-    uint32_t height;
-} virtio_gpu_resource_create_2d_t;
-
-typedef struct __attribute__((packed)) virtio_gpu_resource_attach_backing
-{
-    virtio_gpu_ctrl_hdr_t hdr;
-    uint32_t resource_id;
-    uint32_t num_entries;
-
-} virtio_gpu_resource_attach_backing_t;
-
-typedef struct __attribute__((packed)) virtio_gpu_mem_entry
-{
-    uint64_t addr;
-    uint32_t length;
-    uint32_t padding;
-} virtio_gpu_mem_entry_t;
-
-typedef struct __attribute__((packed)) virtio_gpu_resource_flush
-{
-    virtio_gpu_ctrl_hdr_t hdr;
-    uint32_t resource_id;
-    uint32_t x;
-    uint32_t y;
-    uint32_t width;
-    uint32_t height;
-} virtio_gpu_resource_flush_t;
-
-typedef struct __attribute__((packed)) virtio_gpu_transfer_to_host_2d
-{
-    virtio_gpu_ctrl_hdr_t hdr;
-    uint32_t x;
-    uint32_t y;
-    uint32_t width;
-    uint32_t height;
-    uint64_t offset;
-    uint32_t resource_id;
-    uint32_t padding;
-} virtio_gpu_transfer_to_host_2d_t;
-
-typedef struct __attribute__((packed)) virtio_gpu_rect
+typedef struct __attribute__((packed))
 {
     uint32_t x;
     uint32_t y;
@@ -90,27 +45,70 @@ typedef struct __attribute__((packed)) virtio_gpu_rect
 typedef struct __attribute__((packed))
 {
     virtio_gpu_ctrl_hdr_t hdr;
+    uint32_t resource_id;
+    uint32_t format;
+    uint32_t width;
+    uint32_t height;
+} virtio_gpu_resource_create_2d_t;
+
+typedef struct __attribute__((packed))
+{
+    virtio_gpu_ctrl_hdr_t hdr;
+    uint32_t resource_id;
+    uint32_t num_entries;
+} virtio_gpu_resource_attach_backing_t;
+
+typedef struct __attribute__((packed))
+{
+    uint64_t addr;
+    uint32_t length;
+    uint32_t padding;
+} virtio_gpu_mem_entry_t;
+
+typedef struct __attribute__((packed))
+{
+    virtio_gpu_ctrl_hdr_t hdr;
+    virtio_gpu_rect_t r;
+    uint64_t offset;
+    uint32_t resource_id;
+    uint32_t padding;
+} virtio_gpu_transfer_to_host_2d_t;
+
+typedef struct __attribute__((packed))
+{
+    virtio_gpu_ctrl_hdr_t hdr;
+    virtio_gpu_rect_t r;
+    uint32_t resource_id;
+    uint32_t padding;
+} virtio_gpu_resource_flush_t;
+
+typedef struct __attribute__((packed))
+{
+    virtio_gpu_ctrl_hdr_t hdr;
     virtio_gpu_rect_t r;
     uint32_t scanout_id;
     uint32_t resource_id;
 } virtio_gpu_set_scanout_t;
 
-typedef struct __attribute__((packed)) virtio_gpu_display_one
+typedef struct __attribute__((packed))
 {
     virtio_gpu_rect_t rect;
     uint32_t enabled;
     uint32_t flags;
 } virtio_gpu_display_one_t;
 
-typedef struct __attribute__((packed)) virtio_gpu_resp_display_info
+typedef struct __attribute__((packed))
 {
     virtio_gpu_ctrl_hdr_t hdr;
-    virtio_gpu_display_one_t scanout[1];
+    virtio_gpu_display_one_t scanout[16];
 } virtio_gpu_resp_display_info_t;
 
 void gpu_init(void);
+
 void draw_pixel(uint32_t x, uint32_t y, uint32_t color);
+
 void gpu_fill_screen(uint32_t color);
+
 void gpu_test(void);
 
 #endif
