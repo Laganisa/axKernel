@@ -162,6 +162,15 @@ void devo_main(void)
     puts("devo_main: GPU fill demo start\n");
     gpu_init();
 
+    enter("display");
+
+    dump("virtio_gpu_transfer_to_host_2d_t", sizeof(virtio_gpu_transfer_to_host_2d_t));
+    dump("virtio_gpu_resource_flush_t", sizeof(virtio_gpu_resource_flush_t));
+
+    gpu_fill_screen(0xFFFF0000);
+
+    full_stop();
+
     while (1)
     {
         for (int i = 0; i < 10000000000; i++)
