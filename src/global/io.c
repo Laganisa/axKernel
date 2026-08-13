@@ -148,3 +148,22 @@ void *memset(void *ptr, int value, size_t num)
 
     return ptr;
 }
+
+char *strstr(const char *s, const char *sub)
+{
+    if (!*sub)
+        return (char *)s;
+    for (; *s; s++)
+    {
+        const char *h = s;
+        const char *n = sub;
+        while (*h && *n && (*h == *n))
+        {
+            h++;
+            n++;
+        }
+        if (!*n)
+            return (char *)s;
+    }
+    return 0;
+}

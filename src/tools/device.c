@@ -51,9 +51,11 @@ void uart_dev_init()
 
 #pragma region NIC
 
+extern uint64_t g_virtio_net_base;
+
 dcb_t nic_device = {
     .name = "vritQ0",
-    .base_addr = VIRTIO_MMIO_BASE,
+    .base_addr = 0,
     .init = nic_dev_init,
     .read = NULL,
     .write = NULL,
@@ -62,6 +64,7 @@ dcb_t nic_device = {
 void nic_dev_init(void)
 {
     uint32_t host_features;
+    nic_device.base_addr = g_virtio_net_base;
 
     VIRTIO_STATUS = 0;
 
