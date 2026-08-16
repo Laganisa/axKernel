@@ -129,6 +129,14 @@ static int gpu_submit_control(
     void *resp,
     uint32_t resp_size)
 {
+    // enter("gpu_submit_control");
+
+    /*
+    dump_("cmd", cmd);
+    dump_("cmd_size", cmd_size);
+    dump_("resp", resp);
+    dump_("resp_size", resp_size);
+    */
 
     VIRTIO_GPU_QUEUE_SEL = 0;
 
@@ -161,17 +169,6 @@ static int gpu_submit_control(
         (uint64_t)(uintptr_t)
             gpu_resp_slot[slot];
 
-    /*
-dump("submit head", head);
-dump("submit avail_idx", avail_idx);
-dump("submit old_used", gpu_used_idx);
-
-dump("slot", slot);
-dump("head", head);
-dump("next_desc", next_desc);
-dump("avail_idx", avail_idx);
-dump("old_used_idx", gpu_used_idx);
-*/
     /*
      * Command
      */
@@ -221,16 +218,6 @@ dump("old_used_idx", gpu_used_idx);
     gpu_queue.desc[next_desc].next = 0;
 
     /*
-    dump("CMD addr", gpu_queue.desc[head].addr);
-    dump("CMD len", gpu_queue.desc[head].len);
-    dump("CMD flags", gpu_queue.desc[head].flags);
-
-    dump("RESP addr", gpu_queue.desc[next_desc].addr);
-    dump("RESP len", gpu_queue.desc[next_desc].len);
-    dump("RESP flags", gpu_queue.desc[next_desc].flags);
-    */
-
-    /*
      * Avail
      */
     gpu_queue.avail->ring[ring_index] =
@@ -249,7 +236,9 @@ dump("old_used_idx", gpu_used_idx);
      * Wait
      */
     if (gpu_wait_used() < 0)
+    {
         return -1;
+    }
 
     /*
      * Used 확인
@@ -272,24 +261,41 @@ dump("old_used_idx", gpu_used_idx);
     }
 
     /*
-    dump("cmd type", *(uint32_t *)gpu_cmd_slot[slot]);
-    dump("new_used_idx", gpu_queue.used->idx);
-    dump("used_elem.id", used_elem.id);
-    dump("used_elem.len", used_elem.len);
-
-    dump("submit new_used", gpu_queue.used->idx);
-    dump("used id", used_elem.id);
-    dump("used len", used_elem.len);
-    */
-
-    /*
      * Response 반환
      */
+
     for (uint32_t i = 0; i < resp_size; ++i)
     {
+        // dump_("gpu_resp_slot[slot][i]", gpu_resp_slot[slot][i]);
         ((unsigned char *)resp)[i] =
             gpu_resp_slot[slot][i];
     }
+
+    /*
+    dump_("SLOT type",
+          *(uint32_t *)&gpu_cmd_slot[slot][0x00]);
+
+    _dump("SLOT resource_id",
+          *(uint32_t *)&gpu_cmd_slot[slot][0x30]);
+
+    dump_("SLOT offset low",
+          *(uint32_t *)&gpu_cmd_slot[slot][0x28]);
+
+    dump_("SLOT offset high",
+          *(uint32_t *)&gpu_cmd_slot[slot][0x2C]);
+
+    dump_("SLOT x",
+          *(uint32_t *)&gpu_cmd_slot[slot][0x18]);
+
+    dump_("SLOT y",
+          *(uint32_t *)&gpu_cmd_slot[slot][0x1C]);
+
+    dump_("SLOT width",
+          *(uint32_t *)&gpu_cmd_slot[slot][0x20]);
+
+    dump_("SLOT height",
+          *(uint32_t *)&gpu_cmd_slot[slot][0x24]);
+        */
 
     return 0;
 }
@@ -312,6 +318,13 @@ static int gpu_create_resource(void)
     cmd.format = VIRTIO_GPU_FORMAT_B8G8R8A8_UNORM;
     cmd.width = gpu_display_width;
     cmd.height = gpu_display_height;
+    /*
+        dump_("CREATE resource_id", cmd.resource_id);
+        dump_("CREATE format", cmd.format);
+        dump_("CREATE width", cmd.width);
+        dump_("CREATE height", cmd.height);
+        dump_("CREATE size", sizeof(cmd));
+    */
 
     if (gpu_submit_control(
             &cmd,
@@ -325,16 +338,17 @@ static int gpu_create_resource(void)
 
     if (resp.type != VIRTIO_GPU_RESP_OK_NODATA)
     {
-        dump("GPU create resource response", resp.type);
+        dump_("GPU create resource response", resp.type);
         return -1;
     }
-    dump("GPU create resource response", resp.type);
+    dump_("GPU create resource response", resp.type);
 
     return 0;
 }
 
 static int gpu_attach_backing(void)
 {
+    enter("gpu_attach_backing");
     unsigned char cmd_buf[sizeof(virtio_gpu_resource_attach_backing_t) +
                           sizeof(virtio_gpu_mem_entry_t)];
 
@@ -374,9 +388,17 @@ static int gpu_attach_backing(void)
     entry->padding = 0;
 
     uint32_t command_size = sizeof(*cmd) + sizeof(*entry);
+
     /*
-    dump("!command_size", command_size);
-    dump("!submitting cmd type", ((virtio_gpu_ctrl_hdr_t *)cmd)->type);
+    dump_("ATTACH type", cmd->hdr.type);
+    dump_("ATTACH resource", cmd->resource_id);
+    dump_("ATTACH num_entries", cmd->num_entries);
+
+    dump_("ATTACH addr", entry->addr);
+    dump_("ATTACH length", entry->length);
+    dump_("ATTACH padding", entry->padding);
+
+    dump_("ATTACH command_size", command_size);
         */
 
     if (gpu_submit_control(
@@ -392,19 +414,18 @@ static int gpu_attach_backing(void)
     // full_stop();
 
     /*
-    dump("ATTACH resource", cmd->resource_id);
-    dump("ATTACH num_entries", cmd->num_entries);
-    dump("ATTACH addr", entry->addr);
-    dump("ATTACH length", entry->length);
-    dump("ATTACH command_size", command_size);
+    for (uint32_t i = 0; i < command_size; ++i)
+    {
+        dump("ATTACH byte", cmd_buf[i]);
+    }
     */
 
     if (resp.type != VIRTIO_GPU_RESP_OK_NODATA)
     {
-        dump("GPU attach backing response", resp.type);
+        dump_("GPU attach backing response", resp.type);
         return -1;
     }
-    dump("GPU create resource response", resp.type);
+    dump_("GPU attach backing response", resp.type);
 
     return 0;
 }
@@ -509,6 +530,8 @@ static int gpu_resource_flush(
     virtio_gpu_resource_flush_t cmd;
     virtio_gpu_ctrl_hdr_t resp;
 
+    enter("gpu_resource_flush");
+
     memset(&cmd, 0, sizeof(cmd));
     memset(&resp, 0, sizeof(resp));
 
@@ -542,6 +565,8 @@ static int gpu_resource_flush(
         return -1;
     }
 
+    dump_("GPU resource flush response", resp.type);
+
     return 0;
 }
 
@@ -551,6 +576,7 @@ static int gpu_transfer_to_host_2d(
     uint32_t width,
     uint32_t height)
 {
+    enter("gpu_transfer_to_host_2d");
     virtio_gpu_transfer_to_host_2d_t cmd;
     virtio_gpu_ctrl_hdr_t resp;
 
@@ -575,6 +601,34 @@ static int gpu_transfer_to_host_2d(
     cmd.resource_id = GPU_RESOURCE_ID;
     cmd.padding = 0;
 
+    /*
+    dump("cmd.hdr.type", cmd.hdr.type);
+    dump("cmd.resource_id", cmd.resource_id);
+    dump("cmd.offset", cmd.offset);
+    dump("cmd.r.x", cmd.r.x);
+    dump("cmd.r.y", cmd.r.y);
+    dump("cmd.r.width", cmd.r.width);
+    dump("cmd.r.height", cmd.r.height);
+    */
+
+    // cmd.hdr.type = VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D;
+
+    // cmd.hdr.type = VIRTIO_GPU_CMD_RESOURCE_FLUSH;
+
+    // cmd.hdr.type = VIRTIO_GPU_CMD_SET_SCANOUT;
+
+    // cmd.hdr.type = VIRTIO_GPU_CMD_RESOURCE_DETACH_BACKING;
+
+    /*
+    uint32_t *raw = (uint32_t *)&cmd;
+
+    raw[10] = GPU_RESOURCE_ID;
+    raw[11] = 0;
+    raw[12] = GPU_RESOURCE_ID;
+    */
+
+    //    cmd.offset = 1;
+
     if (gpu_submit_control(
             &cmd,
             sizeof(cmd),
@@ -584,16 +638,27 @@ static int gpu_transfer_to_host_2d(
         puts("GPU transfer submit failed\n");
         return -1;
     }
-
+    /*
+        dump("cmd.hdr.type", cmd.hdr.type);
+        dump("cmd.resource_id", cmd.resource_id);
+        dump("cmd.offset", cmd.offset);
+        dump("cmd.r.x", cmd.r.x);
+        dump("cmd.r.y", cmd.r.y);
+        dump("cmd.r.width", cmd.r.width);
+        dump("cmd.r.height", cmd.r.height);
+        */
     if (resp.type != VIRTIO_GPU_RESP_OK_NODATA)
     {
         dump("GPU transfer response", resp.type);
         return -1;
     }
 
+    dump_("GPU transfer response", resp.type);
+
     return 0;
 }
 
+// 이거 바꾸거나 지우기
 static int gpu_present(void)
 {
     if (gpu_transfer_to_host_2d(
@@ -723,6 +788,28 @@ void gpu_fill_screen(uint32_t color)
     for (uint32_t i = 0; i < pixel_count; ++i)
     {
         gpu_framebuffer[i] = color;
+    }
+
+    if (gpu_transfer_to_host_2d(
+            0,
+            0,
+            gpu_display_width,
+            gpu_display_height) < 0)
+    {
+        puts("GPU transfer failed\n");
+        full_stop();
+        return;
+    }
+
+    if (gpu_resource_flush(
+            0,
+            0,
+            gpu_display_width,
+            gpu_display_height) < 0)
+    {
+        puts("GPU flush failed\n");
+        full_stop();
+        return;
     }
 }
 

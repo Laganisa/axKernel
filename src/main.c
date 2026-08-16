@@ -169,8 +169,6 @@ void devo_main(void)
 
     gpu_fill_screen(0xFFFF0000);
 
-    full_stop();
-
     while (1)
     {
         for (int i = 0; i < 10000000000; i++)
