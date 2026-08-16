@@ -3,6 +3,10 @@
 #include "global/_io.h"
 #include "tools/_virtio.h"
 
+/*
+    나중에 파일 분리
+*/
+
 #define GPU_RESOURCE_ID 1
 #define GPU_SCANOUT_ID 0
 
@@ -130,13 +134,6 @@ static int gpu_submit_control(
     uint32_t resp_size)
 {
     // enter("gpu_submit_control");
-
-    /*
-    dump_("cmd", cmd);
-    dump_("cmd_size", cmd_size);
-    dump_("resp", resp);
-    dump_("resp_size", resp_size);
-    */
 
     VIRTIO_GPU_QUEUE_SEL = 0;
 
@@ -266,36 +263,9 @@ static int gpu_submit_control(
 
     for (uint32_t i = 0; i < resp_size; ++i)
     {
-        // dump_("gpu_resp_slot[slot][i]", gpu_resp_slot[slot][i]);
         ((unsigned char *)resp)[i] =
             gpu_resp_slot[slot][i];
     }
-
-    /*
-    dump_("SLOT type",
-          *(uint32_t *)&gpu_cmd_slot[slot][0x00]);
-
-    _dump("SLOT resource_id",
-          *(uint32_t *)&gpu_cmd_slot[slot][0x30]);
-
-    dump_("SLOT offset low",
-          *(uint32_t *)&gpu_cmd_slot[slot][0x28]);
-
-    dump_("SLOT offset high",
-          *(uint32_t *)&gpu_cmd_slot[slot][0x2C]);
-
-    dump_("SLOT x",
-          *(uint32_t *)&gpu_cmd_slot[slot][0x18]);
-
-    dump_("SLOT y",
-          *(uint32_t *)&gpu_cmd_slot[slot][0x1C]);
-
-    dump_("SLOT width",
-          *(uint32_t *)&gpu_cmd_slot[slot][0x20]);
-
-    dump_("SLOT height",
-          *(uint32_t *)&gpu_cmd_slot[slot][0x24]);
-        */
 
     return 0;
 }
@@ -318,13 +288,6 @@ static int gpu_create_resource(void)
     cmd.format = VIRTIO_GPU_FORMAT_B8G8R8A8_UNORM;
     cmd.width = gpu_display_width;
     cmd.height = gpu_display_height;
-    /*
-        dump_("CREATE resource_id", cmd.resource_id);
-        dump_("CREATE format", cmd.format);
-        dump_("CREATE width", cmd.width);
-        dump_("CREATE height", cmd.height);
-        dump_("CREATE size", sizeof(cmd));
-    */
 
     if (gpu_submit_control(
             &cmd,
@@ -389,18 +352,6 @@ static int gpu_attach_backing(void)
 
     uint32_t command_size = sizeof(*cmd) + sizeof(*entry);
 
-    /*
-    dump_("ATTACH type", cmd->hdr.type);
-    dump_("ATTACH resource", cmd->resource_id);
-    dump_("ATTACH num_entries", cmd->num_entries);
-
-    dump_("ATTACH addr", entry->addr);
-    dump_("ATTACH length", entry->length);
-    dump_("ATTACH padding", entry->padding);
-
-    dump_("ATTACH command_size", command_size);
-        */
-
     if (gpu_submit_control(
             cmd_buf,
             command_size,
@@ -411,20 +362,12 @@ static int gpu_attach_backing(void)
         return -1;
     }
 
-    // full_stop();
-
-    /*
-    for (uint32_t i = 0; i < command_size; ++i)
-    {
-        dump("ATTACH byte", cmd_buf[i]);
-    }
-    */
-
     if (resp.type != VIRTIO_GPU_RESP_OK_NODATA)
     {
         dump_("GPU attach backing response", resp.type);
         return -1;
     }
+
     dump_("GPU attach backing response", resp.type);
 
     return 0;
@@ -658,32 +601,6 @@ static int gpu_transfer_to_host_2d(
     return 0;
 }
 
-// 이거 바꾸거나 지우기
-static int gpu_present(void)
-{
-    if (gpu_transfer_to_host_2d(
-            0,
-            0,
-            gpu_display_width,
-            gpu_display_height) < 0)
-    {
-        puts("GPU transfer failed\n");
-        return -1;
-    }
-
-    if (gpu_resource_flush(
-            0,
-            0,
-            gpu_display_width,
-            gpu_display_height) < 0)
-    {
-        puts("GPU flush failed\n");
-        return -1;
-    }
-
-    return 0;
-}
-
 void gpu_init(void)
 {
     dump("fb addr:", (uint64_t)gpu_framebuffer);
@@ -811,17 +728,4 @@ void gpu_fill_screen(uint32_t color)
         full_stop();
         return;
     }
-}
-
-void gpu_test(void)
-{
-    gpu_fill_screen(0xFF0000FF);
-
-    if (gpu_present() < 0)
-    {
-        puts("GPU present failed\n");
-        return;
-    }
-
-    puts("GPU screen filled\n");
 }

@@ -88,7 +88,6 @@ void kernel_main(void)
 
     nm_init();
     gpu_init();
-    gpu_test();
 
     puts("Booting AxKernel!\n");
 
@@ -169,12 +168,13 @@ void devo_main(void)
 
     gpu_fill_screen(0xFFFF0000);
 
+    full_stop();
+
     while (1)
     {
         for (int i = 0; i < 10000000000; i++)
         {
             ;
         }
-        gpu_fill_screen(0xFFFF0000);
     }
 }

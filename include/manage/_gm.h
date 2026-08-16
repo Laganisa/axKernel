@@ -5,29 +5,9 @@
 #include "_types.h"
 #include "_macro.h"
 
-/*
-#define VIRTIO_GPU_CMD_GET_DISPLAY_INFO 0x0100
-#define VIRTIO_GPU_CMD_RESOURCE_CREATE_2D 0x0101
-#define VIRTIO_GPU_CMD_RESOURCE_UNREF 0x0102
-#define VIRTIO_GPU_CMD_SET_SCANOUT 0x0103
-#define VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D 0x0104
-#define VIRTIO_GPU_CMD_RESOURCE_ATTACH_BACKING 0x0106
-#define VIRTIO_GPU_CMD_RESOURCE_DETACH_BACKING 0x0107
-#define VIRTIO_GPU_CMD_RESOURCE_FLUSH 0x0108
 #define VIRTIO_GPU_FORMAT_B8G8R8A8_UNORM 1
 
-#define VIRTIO_GPU_RESP_OK_NODATA 0x1100
-#define VIRTIO_GPU_RESP_OK_DISPLAY_INFO 0x1101
-
-#define VIRTIO_GPU_RESP_ERR_UNSPEC 0x1200
-#define VIRTIO_GPU_RESP_ERR_OUT_OF_MEMORY 0x1201
-#define VIRTIO_GPU_RESP_ERR_INVALID_RESOURCE_ID 0x1202
-#define VIRTIO_GPU_RESP_ERR_INVALID_SCANOUT_ID 0x1203
-#define VIRTIO_GPU_RESP_ERR_UNSUPPORTED 0x1204
-    */
-
-#define VIRTIO_GPU_FORMAT_B8G8R8A8_UNORM 1
-
+// qemu 8.2.2 에서 가져온 상수 정의
 enum virtio_gpu_ctrl_type
 {
     VIRTIO_GPU_UNDEFINED = 0,
@@ -165,7 +145,5 @@ void gpu_init(void);
 void draw_pixel(uint32_t x, uint32_t y, uint32_t color);
 
 void gpu_fill_screen(uint32_t color);
-
-void gpu_test(void);
 
 #endif
