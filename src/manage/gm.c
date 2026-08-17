@@ -28,7 +28,10 @@ static uint32_t gpu_queue_size = 0;
 static uint32_t gpu_display_width = GPU_DEFAULT_WIDTH;
 static uint32_t gpu_display_height = GPU_DEFAULT_HEIGHT;
 /* Framebuffer (고정 주소 0x400DA000을 직접 가리키는 포인터) */
+/*
 static volatile uint32_t *gpu_framebuffer = (volatile uint32_t *)0x400DA000;
+*/
+static volatile uint32_t *gpu_framebuffer = (volatile uint32_t *)0x41000000;
 
 /* GPU Command/Response Slots */
 static unsigned char
@@ -349,6 +352,12 @@ static int gpu_attach_backing(void)
         total_bytes;
 
     entry->padding = 0;
+
+    dump("ATTACH_BACKING: resource_id", cmd->resource_id);
+    dump("ATTACH_BACKING: num_entries", cmd->num_entries);
+    dump("ATTACH_BACKING: entry->addr (high)", (uint32_t)(entry->addr >> 32));       // 64비트 주소 상위
+    dump("ATTACH_BACKING: entry->addr (low)", (uint32_t)(entry->addr & 0xFFFFFFFF)); // 64비트 주소 하위
+    dump("ATTACH_BACKING: entry->length", entry->length);
 
     uint32_t command_size = sizeof(*cmd) + sizeof(*entry);
 
@@ -728,4 +737,6 @@ void gpu_fill_screen(uint32_t color)
         full_stop();
         return;
     }
+
+    log("Reached right after gpu_resource_flush");
 }
