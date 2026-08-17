@@ -2,6 +2,7 @@
 #include "global/_debug.h"
 #include "global/_io.h"
 #include "tools/_virtio.h"
+#include "tools/_font.h"
 
 void draw_pixel(
     uint32_t x,
@@ -17,7 +18,7 @@ void draw_pixel(
     gpu_framebuffer[y * gpu_display_width + x] = color;
 }
 
-void gpu_fill_screen(uint32_t color)
+void gm_full(uint32_t color)
 {
     uint32_t pixel_count =
         gpu_display_width * gpu_display_height;
@@ -48,13 +49,21 @@ void gpu_fill_screen(uint32_t color)
     }
 }
 
-void gpu_part_screen(
+void gm_rect(
     uint32_t x,
     uint32_t y,
     uint32_t width,
     uint32_t height,
     uint32_t color)
 {
+
+    if (x > gpu_display_width || y > gpu_display_height)
+    {
+        puts("out of frame!");
+        return;
+    }
+
+    // 그리기
     for (uint32_t row = 0; row < height; ++row)
     {
         for (uint32_t col = 0; col < width; ++col)

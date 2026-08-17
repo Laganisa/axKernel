@@ -89,6 +89,10 @@ void kernel_main(void)
     nm_init();
     gpu_init();
 
+    /*
+        그래픽을 사용하여 부팅 로그를 만들기
+    */
+
     puts("Booting AxKernel!\n");
 
     /*
@@ -158,17 +162,12 @@ void kernel_main(void)
 // 임시 함수로 빼기전 개발용 매인
 void devo_main(void)
 {
-    puts("devo_main: GPU fill demo start\n");
+    puts("devo main\n");
     gpu_init();
-    gpu_part_screen(50, 50, 100, 100, ARGB(128, 0, 0, 255));
+    /*
+        그래픽 메니저 테스트 로직
+    */
 
-    full_stop();
-
-    while (1)
-    {
-        for (int i = 0; i < 10000000000; i++)
-        {
-            ;
-        }
-    }
+    for (int i = 0; i < 100; i++)
+        ltr(8 * i, 0, 'A');
 }
