@@ -27,10 +27,8 @@ static uint32_t gpu_queue_size = 0;
 /* 현재 디스플레이 정보 */
 static uint32_t gpu_display_width = GPU_DEFAULT_WIDTH;
 static uint32_t gpu_display_height = GPU_DEFAULT_HEIGHT;
-/* Framebuffer (고정 주소 0x400DA000을 직접 가리키는 포인터) */
-/*
-static volatile uint32_t *gpu_framebuffer = (volatile uint32_t *)0x400DA000;
-*/
+
+/* Framebuffer (고정 주소을 직접 가리키는 포인터) */
 static volatile uint32_t *gpu_framebuffer = (volatile uint32_t *)0x41000000;
 
 /* GPU Command/Response Slots */
@@ -307,14 +305,13 @@ static int gpu_create_resource(void)
         dump_("GPU create resource response", resp.type);
         return -1;
     }
-    dump_("GPU create resource response", resp.type);
 
     return 0;
 }
 
 static int gpu_attach_backing(void)
 {
-    enter("gpu_attach_backing");
+    // enter("gpu_attach_backing");
     unsigned char cmd_buf[sizeof(virtio_gpu_resource_attach_backing_t) +
                           sizeof(virtio_gpu_mem_entry_t)];
 
@@ -352,13 +349,6 @@ static int gpu_attach_backing(void)
         total_bytes;
 
     entry->padding = 0;
-
-    dump("ATTACH_BACKING: resource_id", cmd->resource_id);
-    dump("ATTACH_BACKING: num_entries", cmd->num_entries);
-    dump("ATTACH_BACKING: entry->addr (high)", (uint32_t)(entry->addr >> 32));       // 64비트 주소 상위
-    dump("ATTACH_BACKING: entry->addr (low)", (uint32_t)(entry->addr & 0xFFFFFFFF)); // 64비트 주소 하위
-    dump("ATTACH_BACKING: entry->length", entry->length);
-
     uint32_t command_size = sizeof(*cmd) + sizeof(*entry);
 
     if (gpu_submit_control(
@@ -376,9 +366,6 @@ static int gpu_attach_backing(void)
         dump_("GPU attach backing response", resp.type);
         return -1;
     }
-
-    dump_("GPU attach backing response", resp.type);
-
     return 0;
 }
 
@@ -482,7 +469,7 @@ static int gpu_resource_flush(
     virtio_gpu_resource_flush_t cmd;
     virtio_gpu_ctrl_hdr_t resp;
 
-    enter("gpu_resource_flush");
+    // enter("gpu_resource_flush");
 
     memset(&cmd, 0, sizeof(cmd));
     memset(&resp, 0, sizeof(resp));
@@ -516,9 +503,6 @@ static int gpu_resource_flush(
         dump("GPU resource flush response", resp.type);
         return -1;
     }
-
-    dump_("GPU resource flush response", resp.type);
-
     return 0;
 }
 
@@ -528,7 +512,7 @@ static int gpu_transfer_to_host_2d(
     uint32_t width,
     uint32_t height)
 {
-    enter("gpu_transfer_to_host_2d");
+    // enter("gpu_transfer_to_host_2d");
     virtio_gpu_transfer_to_host_2d_t cmd;
     virtio_gpu_ctrl_hdr_t resp;
 
@@ -553,34 +537,6 @@ static int gpu_transfer_to_host_2d(
     cmd.resource_id = GPU_RESOURCE_ID;
     cmd.padding = 0;
 
-    /*
-    dump("cmd.hdr.type", cmd.hdr.type);
-    dump("cmd.resource_id", cmd.resource_id);
-    dump("cmd.offset", cmd.offset);
-    dump("cmd.r.x", cmd.r.x);
-    dump("cmd.r.y", cmd.r.y);
-    dump("cmd.r.width", cmd.r.width);
-    dump("cmd.r.height", cmd.r.height);
-    */
-
-    // cmd.hdr.type = VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D;
-
-    // cmd.hdr.type = VIRTIO_GPU_CMD_RESOURCE_FLUSH;
-
-    // cmd.hdr.type = VIRTIO_GPU_CMD_SET_SCANOUT;
-
-    // cmd.hdr.type = VIRTIO_GPU_CMD_RESOURCE_DETACH_BACKING;
-
-    /*
-    uint32_t *raw = (uint32_t *)&cmd;
-
-    raw[10] = GPU_RESOURCE_ID;
-    raw[11] = 0;
-    raw[12] = GPU_RESOURCE_ID;
-    */
-
-    //    cmd.offset = 1;
-
     if (gpu_submit_control(
             &cmd,
             sizeof(cmd),
@@ -590,23 +546,11 @@ static int gpu_transfer_to_host_2d(
         puts("GPU transfer submit failed\n");
         return -1;
     }
-    /*
-        dump("cmd.hdr.type", cmd.hdr.type);
-        dump("cmd.resource_id", cmd.resource_id);
-        dump("cmd.offset", cmd.offset);
-        dump("cmd.r.x", cmd.r.x);
-        dump("cmd.r.y", cmd.r.y);
-        dump("cmd.r.width", cmd.r.width);
-        dump("cmd.r.height", cmd.r.height);
-        */
     if (resp.type != VIRTIO_GPU_RESP_OK_NODATA)
     {
         dump("GPU transfer response", resp.type);
         return -1;
     }
-
-    dump_("GPU transfer response", resp.type);
-
     return 0;
 }
 
@@ -663,7 +607,6 @@ void gpu_init(void)
         return;
     }
 
-    // 수정 후
     memset(
         (void *)gpu_framebuffer,
         0,
@@ -678,18 +621,14 @@ void gpu_init(void)
     if (gpu_attach_backing() < 0)
     {
         puts("GPU attach backing failed\n");
-        full_stop();
         return;
     }
 
     if (gpu_set_scanout() < 0)
     {
         puts("GPU set scanout failed\n");
-        full_stop();
         return;
     }
-
-    puts("GPU display ready\n");
 }
 
 void draw_pixel(
@@ -723,7 +662,6 @@ void gpu_fill_screen(uint32_t color)
             gpu_display_height) < 0)
     {
         puts("GPU transfer failed\n");
-        full_stop();
         return;
     }
 
@@ -734,9 +672,42 @@ void gpu_fill_screen(uint32_t color)
             gpu_display_height) < 0)
     {
         puts("GPU flush failed\n");
-        full_stop();
+        return;
+    }
+}
+
+void gpu_part_screen(
+    uint32_t x,
+    uint32_t y,
+    uint32_t width,
+    uint32_t height,
+    uint32_t color)
+{
+    for (uint32_t row = 0; row < height; ++row)
+    {
+        for (uint32_t col = 0; col < width; ++col)
+        {
+            gpu_framebuffer[(y + row) * gpu_display_width + (x + col)] = color;
+        }
+    }
+
+    if (gpu_transfer_to_host_2d(
+            x,
+            y,
+            width,
+            height) < 0)
+    {
+        puts("GPU partial transfer failed\n");
         return;
     }
 
-    log("Reached right after gpu_resource_flush");
+    if (gpu_resource_flush(
+            x,
+            y,
+            width,
+            height) < 0)
+    {
+        puts("GPU partial flush failed\n");
+        return;
+    }
 }

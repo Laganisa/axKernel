@@ -160,19 +160,8 @@ void devo_main(void)
 {
     puts("devo_main: GPU fill demo start\n");
     gpu_init();
+    gpu_part_screen(50, 50, 100, 100, ARGB(128, 0, 0, 255));
 
-    enter("display");
-
-    dump("virtio_gpu_transfer_to_host_2d_t", sizeof(virtio_gpu_transfer_to_host_2d_t));
-    dump("virtio_gpu_resource_flush_t", sizeof(virtio_gpu_resource_flush_t));
-
-    log("0");
-    gpu_fill_screen(0xFFFF0000);
-    log("Reached after gpu_fill_screen");
-
-    log("1");
-    gpu_fill_screen(0xFFFF00FF);
-    log("2");
     full_stop();
 
     while (1)

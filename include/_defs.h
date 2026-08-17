@@ -17,6 +17,10 @@
 #define BIT_ODD64_t 0x5555555555555555  // 64비트 홀수 비트 검정
 #define BIT_EVEN64_t 0xAAAAAAAAAAAAAAAA // 64비트 짝수 비트 검정
 
+// 색상 관련
+
+#define ARGB(a, r, g, b) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
+
 // 메모리 관리자 관련
 
 // 프로세스 관련
