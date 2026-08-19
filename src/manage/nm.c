@@ -86,6 +86,7 @@ void nm_cap(uint8_t *dst, const void *data, uint16_t len, uint16_t type)
 uint64_t nm_discap()
 {
     /*네트워크에서 받는 함수*/
+    // nm_queue(nm_connect, 0, 1);
 }
 
 /*

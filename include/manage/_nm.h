@@ -60,15 +60,13 @@ typedef struct NMv1_connect
 #define nm_connect ((NMv1_connect *)NM_ADDR_START)
 
 void nm_cap(uint8_t *dst, const void *data, uint16_t len, uint16_t type);
-
-/*
-void setup_virtqueue(int queue_index);
-void check_nic_completion(void);
-*/
+uint64_t nm_discap();
 
 void nm_init();
 
 uint8_t nm_queue(NMv1_connect *queue, uint8_t cmd, uint8_t val); // 송신용도
+
+// 송신 용도
 void net_TX_main(void);
 
 // 수신용도

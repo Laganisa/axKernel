@@ -53,6 +53,23 @@ void net_RX_main(void)
     dump("RX buffer addr", rx_packet_buffer);
     dump("Descriptor addr", rx_queue.desc[0].addr);
 
+    GIC_DIST_CTRL = 1;
+
+    // IRQ 79 → CPU 0
+    GIC_DIST_REG8(0x84F) = 0x01;
+
+    // IRQ 79 enable
+    GIC_DIST_REG(0x108) |= (1U << 15);
+
+    // CPU interface enable
+    GIC_CPU_PMR = 0xFF;
+    GIC_CPU_CTRL = 1;
+    GIC_DIST_REG(0x108) |= (1U << 15);
+
+    dump_("GIC ISENABLER2", GIC_DIST_REG(0x108));
+    dump_("IRQ79 ENABLE",
+          (GIC_DIST_REG(0x108) >> 15) & 1);
+
     VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
 
     puts("RX Driver Ready\n");
@@ -71,15 +88,6 @@ void net_RX_main(void)
 
         packet_buf_t *pkt =
             (packet_buf_t *)rx_packet_buffer;
-
-        dump("RX used idx", (uint64_t)rx_queue.used->idx);
-
-        dump("VIRTIO INT STATUS", (uint64_t)VIRTIO_INTERRUPT_STATUS);
-
-        // GIC Distributor Enable / Set-Pending 레지스터 매크로 반영
-        dump("GIC ISPENDR", (uint64_t)GIC_DIST_REG(0x200)); // GICD_ISPENDR의 Distributor 내 오프셋 (0x200)
-
-        dump("DAIF", (uint64_t)read_daif());
 
         dump("Descriptor", elem->id);
         dump("Length", elem->len);
