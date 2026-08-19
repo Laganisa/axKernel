@@ -45,7 +45,7 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_MASTER_FLAG 0
+#define B_MASTER_FLAG 1
 
 // 커널 함수
 void master(uint64_t dtb_addr)
