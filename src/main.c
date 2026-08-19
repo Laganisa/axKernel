@@ -164,10 +164,16 @@ void devo_main(void)
 {
     puts("devo main\n");
     gpu_init();
+
     /*
         그래픽 메니저 테스트 로직
     */
 
-    for (int i = 0; i < 100; i++)
-        ltr(8 * i, 0, 'A');
+    ltrs(0, 0, "AxOS");
+
+    char arr[10];
+
+    gets(arr, 10);
+
+    ltrs(0, 8, arr);
 }

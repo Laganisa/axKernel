@@ -106,4 +106,7 @@ void ltr(uint32_t x,
          uint32_t y,
          char c);
 
+void ltrs(uint32_t x,
+          uint32_t y,
+          char *string);
 #endif
