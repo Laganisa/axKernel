@@ -45,7 +45,7 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_MASTER_FLAG 2
+#define B_MASTER_FLAG 0
 
 // 커널 함수
 void master(uint64_t dtb_addr)
@@ -93,6 +93,8 @@ void kernel_main(void)
         그래픽을 사용하여 부팅 로그를 만들기
     */
 
+    ltrs(0, 0, "Booting AxKernel!");
+
     puts("Booting AxKernel!\n");
 
     /*
@@ -100,7 +102,8 @@ void kernel_main(void)
         나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
 
-#ifdef defined(B_MAIN_FLAG) && B_MAIN_FLAG == 0
+#ifdef defined(B_MAIN_FLAG)
+
     // 프로세스 전환 테스트 로직
 
     pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
@@ -119,6 +122,24 @@ void kernel_main(void)
     _proc(proc1);
 
 #elif B_MAIN_FLAG == 1
+    // 프로세스 전환 테스트 로직
+
+    pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
+
+    pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
+    pm_awake(&pm_object, 0, proc2);
+
+    proc_dump("proc1", proc1);
+    proc_dump("proc2", proc2);
+
+    /*
+        프로세스 전환
+    */
+
+    current_proc = proc1;
+    _proc(proc1);
+
+#elif B_MAIN_FLAG == 2
     // 쉘 테스트 로직
     pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);

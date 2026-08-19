@@ -31,6 +31,17 @@ void prepare_rx_buffer(void)
     VIRTIO_QUEUE_NOTIFY = 0;
 }
 
+static inline uint64_t read_daif(void)
+{
+    uint64_t value;
+
+    asm volatile(
+        "mrs %0, daif"
+        : "=r"(value));
+
+    return value;
+}
+
 void net_RX_main(void)
 {
     nic_device.init();
@@ -46,6 +57,8 @@ void net_RX_main(void)
 
     puts("RX Driver Ready\n");
 
+    enable_irq();
+
     while (1)
     {
         if (rx_queue.used->idx == last_rx_used_idx)
@@ -58,6 +71,15 @@ void net_RX_main(void)
 
         packet_buf_t *pkt =
             (packet_buf_t *)rx_packet_buffer;
+
+        dump("RX used idx", (uint64_t)rx_queue.used->idx);
+
+        dump("VIRTIO INT STATUS", (uint64_t)VIRTIO_INTERRUPT_STATUS);
+
+        // GIC Distributor Enable / Set-Pending 레지스터 매크로 반영
+        dump("GIC ISPENDR", (uint64_t)GIC_DIST_REG(0x200)); // GICD_ISPENDR의 Distributor 내 오프셋 (0x200)
+
+        dump("DAIF", (uint64_t)read_daif());
 
         dump("Descriptor", elem->id);
         dump("Length", elem->len);
@@ -94,7 +116,7 @@ void net_RX_main(void)
             putchar(pkt->payload[i]);
         }
 
-        for_dump("pkt->payload", pkt->payload, payload_len);
+        // for_dump("pkt->payload", pkt->payload, payload_len);
 
         puts("\n");
 
