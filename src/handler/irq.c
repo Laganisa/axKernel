@@ -37,8 +37,7 @@ void irq_handler_main(pcb_t *proc)
     {
         current_proc = schedule_proc(proc);
 
-        // ! 나중에 30fps 로 맞추기
-        asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1000000));
+        asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1FCA05));
 
         GIC_CPU_EOI = iar;
         enable_irq();

@@ -29,6 +29,12 @@ typedef struct proc_msg_t
     char *msgbox;      // 메세지
 } proc_msg_t;
 
+// fd 유니온 만들기
+typedef struct ctrl_t
+{
+
+} ctrl_t;
+
 typedef struct pcb_t
 {
     struct proc_regs_t regs;
@@ -43,10 +49,11 @@ typedef struct pcb_t
     struct proc_msg_t msgs;
 
     // 장치 관련
-    uint8_t is_file;        // 파일이 열려 있는지
-    uint32_t file_offset;   // 파일 오프셋
-    struct dcb_t *use_dev;  // 사용하는 디바이스
-    struct fcb_t *use_file; // 사용하는 파일
+    uint32_t is_ctrl_alloc[MAX_CONTROL_NUM]; // 파일 할당 여부
+    uint8_t is_file[MAX_CONTROL_NUM];        // 파일이 열려 있는지
+    uint32_t file_offset[MAX_CONTROL_NUM];   // 파일 오프셋
+    struct dcb_t *use_dev[MAX_CONTROL_NUM];  // 사용하는 디바이스
+    struct fcb_t *use_file[MAX_CONTROL_NUM]; // 사용하는 파일
 
 } __attribute__((aligned(8))) pcb_t;
 

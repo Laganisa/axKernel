@@ -40,16 +40,19 @@ static int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
         dump("arg3", arg3);
     */
 
+    int fd = (int)arg1;
+    void *buf = (void *)arg2;
+    uint32_t len = (uint32_t)arg3;
+
+    dump_("fd", fd);
+
     // 장치에 쓰기
-    if (current_proc->is_file == 0)
+    if (current_proc->is_file[fd] == 0)
     {
-        if (arg1 == 1 || arg1 == 2)
+        // "fd 값이 0이다"라는 소리는 uart
+        if (fd == 0)
         {
-            if (arg1 == 2)
-            {
-                puts("[debug]");
-            }
-            return current_proc->use_dev->write(arg2, arg3);
+            return current_proc->use_dev[fd]->write(buf, len);
         }
         return 1;
     }
@@ -58,17 +61,18 @@ static int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     {
         uint32_t written = fm_write(
             fm_record,
-            current_proc->use_file,
-            (void *)arg2,
-            (uint32_t)arg3,
-            current_proc->file_offset);
-        current_proc->file_offset += written;
+            current_proc->use_file[fd],
+            buf,
+            len,
+            current_proc->file_offset[fd]);
+        current_proc->file_offset[fd] += written;
         return (int32_t)written;
     }
 }
 
 static int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
+    // ! 근데 이거 길이 입력 방식이 필요할 듯
 
     int fd = (int)arg1;
     char *buf = (char *)arg2;
@@ -79,9 +83,14 @@ static int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
         return 0;
     }
 
-    // 장치 읽기일 경우
+    enter("read_call");
+    _dump("fd", fd);
 
-    if (current_proc->is_file == 0)
+    dump("current_proc->is_file[fd]", current_proc->is_file[fd]);
+    dump("current_proc->is_file[fd]", current_proc->is_file[1]);
+
+    // 장치 읽기일 경우
+    if (current_proc->is_file[fd] == 0)
     {
         char c = getchar();
 
@@ -93,11 +102,16 @@ static int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
     // 파일 읽기일 경우
     else
     {
-        uint32_t read_bytes = fm_read(fm_record, current_proc->use_file, (void *)buf, 1, current_proc->file_offset);
+        uint32_t read_bytes = fm_read(
+            fm_record,
+            current_proc->use_file[fd],
+            (void *)buf,
+            1,
+            current_proc->file_offset[fd]);
 
         if (read_bytes > 0)
         {
-            current_proc->file_offset += 1;
+            current_proc->file_offset[fd] += 1;
             return 0;
         }
         return -1;
@@ -115,52 +129,88 @@ static int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
     char *path = (char *)arg1;
     uint8_t flags = (uint8_t)arg2;
 
-    // 플레그의 하위 1비트의 값이 0이면 장치라고 생각
+    int now_fd = -1;
+
+    for (int i = 1; i < MAX_CONTROL_NUM; i++)
+    {
+        if (current_proc->is_ctrl_alloc[i] == 0)
+        {
+            current_proc->is_ctrl_alloc[i] = 1;
+            now_fd = i;
+            break;
+        }
+    }
+
+    if (now_fd == -1)
+    {
+        return -1;
+    }
+
+    dump("fd", now_fd);
+
+    // Device
     if ((flags & 1) == 0)
     {
-
-        // 장치를 바꿔주기
         dcb_t *dev = dm_find(dm_driver, path);
 
         if (dev == NULL)
         {
-            return 0;
+            current_proc->is_ctrl_alloc[now_fd] = 0;
+            return -1;
         }
 
-        current_proc->use_dev = dev;
+        current_proc->use_dev[now_fd] = dev;
+        current_proc->use_file[now_fd] = NULL;
+        current_proc->is_file[now_fd] = FALSE;
+        current_proc->file_offset[now_fd] = 0;
 
-        return 1;
+        return now_fd;
     }
-    // 플레그의 하위 1비트의 값이 1이면 장치가 아님
+    // File
     else
     {
-        // 플레그를 사용한 파일 열기
         fcb_t *fil = fm_find(fm_record, path);
 
         if (fil == NULL)
         {
-            return 0;
+            current_proc->is_ctrl_alloc[now_fd] = 0;
+            return -1;
         }
 
-        current_proc->use_file = fil;
-        current_proc->is_file = TRUE; // 파일을 열었다고 설정
+        current_proc->use_dev[now_fd] = NULL;
+        current_proc->use_file[now_fd] = fil;
+        current_proc->is_file[now_fd] = TRUE;
 
-        // 오프셋 설정
-
-        // 새로 작업
-        if ((flags >> 3) & 1 != 0)
+        // append
+        if (((flags >> 3) & 1) != 0)
         {
-            current_proc->file_offset = 0;
+            current_proc->file_offset[now_fd] = fil->lens * 1024;
+        }
+        else
+        {
+            current_proc->file_offset[now_fd] = 0;
         }
 
-        return 1;
+        return now_fd;
     }
 }
 
 static int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
-    current_proc->use_dev = &uart_device;
-    current_proc->is_file = FALSE;
+    int fd = (int)arg1;
+
+    if (fd == 0)
+    {
+        current_proc->use_dev[fd] = &uart_device;
+        current_proc->use_file[fd] = NULL;
+    }
+    else
+    {
+        current_proc->is_ctrl_alloc[fd] = 0;
+        current_proc->use_dev[fd] = NULL;
+        current_proc->use_file[fd] = NULL;
+    }
+
     return 1;
 }
 
