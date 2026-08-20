@@ -21,6 +21,7 @@ void reg_elr_el1(void);
 void reg_esr_el1(void);
 void reg_far_el1(void);
 void reg_vbar(void);
+void reg_cntfrq_el0(void);
 
 void check_el1_sync(void);
 void check_el0_sync(void);

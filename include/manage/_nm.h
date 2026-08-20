@@ -5,6 +5,7 @@
 #include "_types.h"
 #include "_macro.h"
 #include "manage/_dm.h"
+#include "tools/_dstruc.h"
 
 typedef struct __attribute__((packed)) virtio_net_hdr
 {
@@ -54,7 +55,7 @@ typedef struct NMv1_connect
     uint8_t tail;
     uint8_t num;
     uint8_t queue_buf[NETWORK_CACHE_SIZE];
-    packet_buf_t payload_buf[NETWORK_CACHE_SIZE];
+    uint8_t payload_buf[NETWORK_CACHE_SIZE][1500];
 } NMv1_connect;
 
 #define nm_connect ((NMv1_connect *)NM_ADDR_START)

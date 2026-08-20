@@ -72,6 +72,8 @@ void master(uint64_t dtb_addr)
 
 void kernel_main(void)
 {
+    reg_cntfrq_el0();
+
     // 하드웨어 초기화
     uart_init();
     // 인터럽트 초기화
@@ -104,23 +106,6 @@ void kernel_main(void)
 
 #ifdef defined(B_MAIN_FLAG)
 
-    // 프로세스 전환 테스트 로직
-
-    pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
-
-    pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
-    pm_awake(&pm_object, 0, proc2);
-
-    proc_dump("proc1", proc1);
-    proc_dump("proc2", proc2);
-
-    /*
-        프로세스 전환
-    */
-
-    current_proc = proc1;
-    _proc(proc1);
-
 #elif B_MAIN_FLAG == 1
     // 프로세스 전환 테스트 로직
 
@@ -149,18 +134,18 @@ void kernel_main(void)
     current_proc = shell_proc;
     _proc(shell_proc);
 
-#elif b_main_flag == 2
+#elif B_MAIN_FLAG == 3
     // 브릿지 테스트 로직
 
     pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
     pm_awake(&pm_object, 0, brdge_proc);
 
-    proc_dump("proc1", brdge_proc);
+    proc_dump("brdge proc", brdge_proc);
 
     current_proc = brdge_proc;
     _proc(brdge_proc);
 
-#elif b_main_flag == 3
+#elif B_MAIN_FLAG == 4
     // ipc 테스트 로직
 
     /*
@@ -177,6 +162,17 @@ void kernel_main(void)
 
     current_proc = shell_proc;
     _proc(shell_proc);
+#elif B_MAIN_FLAG == 5
+    // 컴파일러 테스트 로직
+
+    pcb_t *compil_proc = proc_turn(fm_record, "compil.bin", _task_compiler_start, 1);
+    pm_awake(&pm_object, 0, compil_proc);
+
+    proc_dump("compil proc", compil_proc);
+
+    current_proc = compil_proc;
+    _proc(compil_proc);
+
 #endif
 }
 

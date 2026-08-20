@@ -1,6 +1,5 @@
 #include "tools/_dstruc.h"
 
-/*
 static void queue_push(queue *this, uint8_t data)
 {
     if (this->count >= this->size)
@@ -56,4 +55,3 @@ void queue_init(queue *this, uint8_t *buffer, uint32_t size)
     this->empty = queue_empty;
     this->full = queue_full;
 }
-*/

@@ -27,6 +27,14 @@ void gic_set_priority(uint32_t irq, uint8_t priority)
 
 void gic_init(void)
 {
+    GIC_DIST_CTRL = 1;
+
+    // IRQ 79 → CPU 0
+    GIC_DIST_REG8(0x84F) = 0x01;
+
+    // IRQ 79 enable
+    GIC_DIST_REG(0x108) |= (1U << 15);
+
     /* Distributor Disable */
     GIC_DIST_CTRL = 0;
 

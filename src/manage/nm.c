@@ -83,10 +83,50 @@ void nm_cap(uint8_t *dst, const void *data, uint16_t len, uint16_t type)
     puts("TX COMPLETE\n");
 }
 
+static unsigned char rx_packet_buffer[10 + 2048];
+
 uint64_t nm_discap()
 {
-    /*네트워크에서 받는 함수*/
-    // nm_queue(nm_connect, 0, 1);
+    /* 네트워크에서 받은 패킷을 Network Manager로 전달 */
+    if (rx_queue.used->idx == last_rx_used_idx)
+    {
+        return 0;
+    }
+
+    puts("RX SUCCESS\n");
+
+    struct virtq_used_elem *elem =
+        &rx_queue.used->ring[last_rx_used_idx % VIRTIO_QUEUE_SIZE];
+
+    packet_buf_t *pkt =
+        (packet_buf_t *)rx_packet_buffer;
+
+    uint8_t now_pkt = nm_connect->head;
+
+    /*
+     * RX packet → Network Manager
+     */
+    memcpy(
+        nm_connect->payload_buf[now_pkt],
+        pkt->payload,
+        1500);
+
+    /*
+     * 사용한 descriptor 재등록
+     */
+    rx_queue.avail->ring[rx_queue.avail->idx % VIRTIO_QUEUE_SIZE] = elem->id;
+
+    virtio_mb();
+
+    rx_queue.avail->idx++;
+
+    virtio_mb();
+
+    VIRTIO_QUEUE_NOTIFY = 0;
+
+    last_rx_used_idx++;
+
+    return 1;
 }
 
 /*

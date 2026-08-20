@@ -21,6 +21,24 @@ pcb_t *get_current_proc_addr()
     return current_proc;
 }
 
+#define FPS 15
+
+#ifdef defined(FPS)
+
+#elif FPS == 30
+
+#define frq 0x1FCA05
+
+#elif FPS == 24
+
+#define frq 0x278D06
+
+#elif FPS == 15
+
+#define frq 0x3F940A
+
+#endif
+
 // 인터럽트 핸들러
 void irq_handler_main(pcb_t *proc)
 {
@@ -37,7 +55,7 @@ void irq_handler_main(pcb_t *proc)
     {
         current_proc = schedule_proc(proc);
 
-        asm volatile("msr cntp_tval_el0, %0" : : "r"(0x1FCA05));
+        asm volatile("msr cntp_tval_el0, %0" : : "r"(frq));
 
         GIC_CPU_EOI = iar;
         enable_irq();
@@ -48,14 +66,17 @@ void irq_handler_main(pcb_t *proc)
     // 나중에 만들기
     else if (irq_nr == g_virtio_net_irq)
     {
-        dump_("IRQ NUM", irq_nr);
 
+        uint32_t status = VIRTIO_INTERRUPT_STATUS;
         // nm 케시에 저장하기
-        nm_discap();
+        nm_discap(nm_connect);
+
+        VIRTIO_INTERRUPT_ACK = status;
 
         // 인터럽트 처리 후
         GIC_CPU_EOI = iar;
         enable_irq();
+
         _proc(proc);
     }
     else

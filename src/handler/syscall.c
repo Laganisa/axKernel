@@ -30,10 +30,6 @@ static int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
 {
     // enter("sys_write");
 
-    // arg1: fd (0=stdin, 1=stdout, 2=stderr)
-    // arg2: buffer pointer
-    // arg3: length
-
     int fd = (int)arg1;
     void *buf = (void *)arg2;
     uint32_t len = (uint32_t)arg3;
@@ -65,7 +61,6 @@ static int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
 static int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     // ! 근데 이거 길이 입력 방식이 필요할 듯
-
     int fd = (int)arg1;
     char *buf = (char *)arg2;
     size_t count = (size_t)arg3;
@@ -270,6 +265,11 @@ static int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
 
 static int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
+    /*
+    dump("arg1", arg1);
+    dump("arg2", arg2);
+    dump("arg3", arg3);
+    */
 }
 
 #pragma endregion
