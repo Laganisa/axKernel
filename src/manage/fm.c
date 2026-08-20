@@ -104,7 +104,8 @@ uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint
         size = file_size - offset;
     }
 
-    memcpy((uint8_t *)fm_data_addr(reco, file) + offset, (uint8_t *)buf, size);
+    uint8_t *dst_addr = (uint8_t *)fm_data_addr(reco, file) + offset;
+    memcpy(dst_addr, (uint8_t *)buf, size);
     return size;
 }
 
@@ -124,8 +125,9 @@ uint32_t fm_read(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint3
     {
         size = file_size - offset;
     }
+    uint8_t *src_addr = (uint8_t *)fm_data_addr(reco, file) + offset;
+    memcpy((uint8_t *)buf, src_addr, size);
 
-    memcpy((uint8_t *)buf, (uint8_t *)fm_data_addr(reco, file) + offset, size);
     return size;
 }
 

@@ -34,25 +34,17 @@ static int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     // arg2: buffer pointer
     // arg3: length
 
-    /*
-        dump("arg1", arg1);
-        dump("arg2", arg2);
-        dump("arg3", arg3);
-    */
-
     int fd = (int)arg1;
     void *buf = (void *)arg2;
     uint32_t len = (uint32_t)arg3;
 
-    dump_("fd", fd);
-
     // 장치에 쓰기
-    if (current_proc->is_file[fd] == 0)
+    if (current_proc->control[fd].is_file == 0)
     {
         // "fd 값이 0이다"라는 소리는 uart
         if (fd == 0)
         {
-            return current_proc->use_dev[fd]->write(buf, len);
+            return current_proc->control[fd].use_dev->write(buf, len);
         }
         return 1;
     }
@@ -61,11 +53,11 @@ static int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     {
         uint32_t written = fm_write(
             fm_record,
-            current_proc->use_file[fd],
+            current_proc->control[fd].use_file,
             buf,
             len,
-            current_proc->file_offset[fd]);
-        current_proc->file_offset[fd] += written;
+            current_proc->control[fd].file_offset);
+        current_proc->control[fd].file_offset += written;
         return (int32_t)written;
     }
 }
@@ -77,20 +69,15 @@ static int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
     int fd = (int)arg1;
     char *buf = (char *)arg2;
     size_t count = (size_t)arg3;
+    uint32_t offset = (uint32_t)arg4;
 
     if (count == 0)
     {
         return 0;
     }
 
-    enter("read_call");
-    _dump("fd", fd);
-
-    dump("current_proc->is_file[fd]", current_proc->is_file[fd]);
-    dump("current_proc->is_file[fd]", current_proc->is_file[1]);
-
     // 장치 읽기일 경우
-    if (current_proc->is_file[fd] == 0)
+    if (current_proc->control[fd].is_file == 0)
     {
         char c = getchar();
 
@@ -102,18 +89,25 @@ static int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
     // 파일 읽기일 경우
     else
     {
+
+        if (offset >= current_proc->control[fd].file_offset)
+        {
+            offset = current_proc->control[fd].file_offset;
+        }
+
         uint32_t read_bytes = fm_read(
             fm_record,
-            current_proc->use_file[fd],
+            current_proc->control[fd].use_file,
             (void *)buf,
-            1,
-            current_proc->file_offset[fd]);
+            arg3,
+            offset);
 
         if (read_bytes > 0)
         {
-            current_proc->file_offset[fd] += 1;
+            current_proc->control[fd].file_offset += 1;
             return 0;
         }
+
         return -1;
     }
 }
@@ -133,9 +127,9 @@ static int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
 
     for (int i = 1; i < MAX_CONTROL_NUM; i++)
     {
-        if (current_proc->is_ctrl_alloc[i] == 0)
+        if (current_proc->control[i].is_ctrl_alloc == 0)
         {
-            current_proc->is_ctrl_alloc[i] = 1;
+            current_proc->control[i].is_ctrl_alloc = 1;
             now_fd = i;
             break;
         }
@@ -143,26 +137,25 @@ static int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
 
     if (now_fd == -1)
     {
+
         return -1;
     }
 
-    dump("fd", now_fd);
-
     // Device
-    if ((flags & 1) == 0)
+    if ((flags & 1) != 0)
     {
+
         dcb_t *dev = dm_find(dm_driver, path);
 
         if (dev == NULL)
         {
-            current_proc->is_ctrl_alloc[now_fd] = 0;
+            current_proc->control[now_fd].is_ctrl_alloc = 0;
             return -1;
         }
 
-        current_proc->use_dev[now_fd] = dev;
-        current_proc->use_file[now_fd] = NULL;
-        current_proc->is_file[now_fd] = FALSE;
-        current_proc->file_offset[now_fd] = 0;
+        current_proc->control[now_fd].use_dev = dev;
+        current_proc->control[now_fd].is_file = FALSE;
+        current_proc->control[now_fd].file_offset = 0;
 
         return now_fd;
     }
@@ -173,22 +166,21 @@ static int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
 
         if (fil == NULL)
         {
-            current_proc->is_ctrl_alloc[now_fd] = 0;
+            current_proc->control[now_fd].is_ctrl_alloc = 0;
             return -1;
         }
 
-        current_proc->use_dev[now_fd] = NULL;
-        current_proc->use_file[now_fd] = fil;
-        current_proc->is_file[now_fd] = TRUE;
+        current_proc->control[now_fd].use_file = fil;
+        current_proc->control[now_fd].is_file = TRUE;
 
         // append
         if (((flags >> 3) & 1) != 0)
         {
-            current_proc->file_offset[now_fd] = fil->lens * 1024;
+            current_proc->control[now_fd].file_offset = fil->lens * 1024;
         }
         else
         {
-            current_proc->file_offset[now_fd] = 0;
+            current_proc->control[now_fd].file_offset = 0;
         }
 
         return now_fd;
@@ -201,14 +193,12 @@ static int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
 
     if (fd == 0)
     {
-        current_proc->use_dev[fd] = &uart_device;
-        current_proc->use_file[fd] = NULL;
+        current_proc->control[fd].use_dev = &uart_device;
     }
     else
     {
-        current_proc->is_ctrl_alloc[fd] = 0;
-        current_proc->use_dev[fd] = NULL;
-        current_proc->use_file[fd] = NULL;
+        current_proc->control[fd].is_ctrl_alloc = 0;
+        current_proc->control[fd].use_dev = NULL;
     }
 
     return 1;
@@ -406,7 +396,6 @@ uint64_t handle_svc_a64(
     uint64_t arg4,
     uint64_t arg5)
 {
-    // reg_x8();
 
     if (call_table[syscall_num] != NULL)
     {

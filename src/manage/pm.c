@@ -48,13 +48,12 @@ pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
 
     pcb_t *new_proc = &obj->PMv1_mem[temp_id];
 
-    new_proc->id = temp_id;              // 프로세스의 id를 할당된 pid로 변경
-    new_proc->p_id = parid;              // 부모 id를 수정함
-    new_proc->is_ctrl_alloc[0] = 1;      // uart로 정해짐
-    new_proc->use_dev[0] = &uart_device; // 정보를 0으로 수정
-    new_proc->file_offset[0] = 0;        // 파일 오프셋
-    new_proc->use_file[0] = NULL;        // 사용중인 파일
-    new_proc->is_file[0] = 0;            // 파일을 열지 않음
+    new_proc->id = temp_id;                      // 프로세스의 id를 할당된 pid로 변경
+    new_proc->p_id = parid;                      // 부모 id를 수정함
+    new_proc->control[0].is_ctrl_alloc = 1;      // uart로 정해짐
+    new_proc->control[0].use_dev = &uart_device; // 정보를 0으로 수정
+    new_proc->control[0].file_offset = 0;        // 파일 오프셋
+    new_proc->control[0].is_file = 0;            // 파일을 열지 않음
 
     // 메모리 로직
     // 128KB를 할당 리턴 된 메모리 스택 주소를 받음
