@@ -85,13 +85,12 @@ void kernel_main(void)
 
     // 관리자 초기화
     mm_init(&mm_stack, USER_PROC_START);
-    // pm_init(&pm_object, PM_ADDR_START);
     fm_init((uint64_t *)USER_FILE_START);
     pm_init();
 
     nm_init();
+    log("1");
     gpu_init();
-
     /*
         그래픽을 사용하여 부팅 로그를 만들기
     */
@@ -148,6 +147,22 @@ void kernel_main(void)
     _proc(brdge_proc);
 
 #elif B_MAIN_FLAG == 4
+    // 컴파일러 테스트 로직
+
+    pcb_t *compil_proc = proc_turn(
+        fm_record,
+        "compil.bin",
+        _task_compiler_start,
+        1);
+
+    pm_awake(&pm_object, 0, compil_proc);
+
+    proc_dump("compil proc", compil_proc);
+
+    current_proc = compil_proc;
+    _proc(compil_proc);
+#elif B_MAIN_FLAG == 5
+
     // ipc 테스트 로직
 
     /*
@@ -164,16 +179,6 @@ void kernel_main(void)
 
     current_proc = shell_proc;
     _proc(shell_proc);
-#elif B_MAIN_FLAG == 5
-    // 컴파일러 테스트 로직
-
-    pcb_t *compil_proc = proc_turn(fm_record, "compil.bin", _task_compiler_start, 1);
-    pm_awake(&pm_object, 0, compil_proc);
-
-    proc_dump("compil proc", compil_proc);
-
-    current_proc = compil_proc;
-    _proc(compil_proc);
 
 #endif
 }

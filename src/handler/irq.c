@@ -55,7 +55,7 @@ void irq_handler_main(pcb_t *proc)
 
         uint32_t status = VIRTIO_INTERRUPT_STATUS;
         // nm 케시에 저장하기
-        nm_discap(nm_connect);
+        nm_discap();
 
         VIRTIO_INTERRUPT_ACK = status;
 

@@ -61,15 +61,6 @@ void parse_dtb(uint64_t dtb_addr)
     uint32_t off_strings = fdt32_to_cpu(header->off_dt_strings);
     uint32_t off_mem_rsvmap = fdt32_to_cpu(header->off_mem_rsvmap);
 
-    // 디버그 출력으로 헤더 정보가 잘 읽히는지 확인
-    /*
-    dump("DTB_Magic", magic);
-    dump("DTB_TotalSize", totalsize);
-    dump("DTB_StructOffset", off_struct);
-    dump("DTB_StringOffset", off_strings);
-    */
-
-    // TODO: 다음 단계인 구조체 블록 순회 준비
     parse_dtb_tokens(dtb_addr);
 }
 
@@ -99,12 +90,14 @@ static uint32_t fdt_strnlen(const char *s, uint32_t maxlen)
 
 char current_node_name[256] = {0};
 
+// 전역 변수 선언
 uint64_t g_virtio_net_base = 0;
 uint64_t g_virtio_gpu_base = 0;
+uint64_t g_virtio_blk_base = 0;
 
-// 전역 변수로 인터럽트 번호도 저장할 수 있게 선언해 둡니다 (extern 또는 정의)
 uint32_t g_virtio_net_irq;
 uint32_t g_virtio_gpu_irq;
+uint32_t g_virtio_blk_irq;
 
 void parse_dtb_tokens(uint64_t dtb_addr)
 {
@@ -129,6 +122,7 @@ void parse_dtb_tokens(uint64_t dtb_addr)
     bool has_irq = 0;
     bool is_net = 0;
     bool is_gpu = 0;
+    bool is_blk = 0;
 
     while (1)
     {
@@ -144,16 +138,14 @@ void parse_dtb_tokens(uint64_t dtb_addr)
             has_irq = 0;
             is_net = 0;
             is_gpu = 0;
-
-            // 디버깅용으로 노드 이름도 살짝 찍어보고 싶다면 아래 주석 해제
-            // dump("NODE", (uint64_t)node_name);
+            is_blk = 0;
 
             uint32_t len = fdt_strnlen(node_name, 256) + 1;
             p = (uint32_t *)((uint8_t *)p + fdt_align(len));
         }
         else if (token == FDT_END_NODE)
         {
-            // 노드가 끝나는 시점에 모아둔 정보가 완벽하다면 전역 변수에 최종 확정!
+
             if (is_net && node_mmio_addr != 0)
             {
                 g_virtio_net_base = node_mmio_addr;
@@ -168,8 +160,17 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                 g_virtio_gpu_base = node_mmio_addr;
                 if (has_irq)
                 {
-                    g_virtio_gpu_irq = node_irq_num; // 혹은 g_virtio_gpu_irq
+                    g_virtio_gpu_irq = node_irq_num;
                     dump("Virtio_GPU_IRQ", (uint64_t)node_irq_num);
+                }
+            }
+            else if (is_blk && node_mmio_addr != 0)
+            {
+                g_virtio_blk_base = node_mmio_addr;
+                if (has_irq)
+                {
+                    g_virtio_blk_irq = node_irq_num;
+                    dump("Virtio_BLK_IRQ", (uint64_t)node_irq_num);
                 }
             }
         }
@@ -181,7 +182,6 @@ void parse_dtb_tokens(uint64_t dtb_addr)
             char *prop_name = strings_ptr + name_off;
             void *prop_val = (void *)p;
 
-            // 1. reg 프로퍼티 처리
             if (strcmp(prop_name, "reg") == 0)
             {
                 uint64_t *reg_data = (uint64_t *)prop_val;
@@ -198,6 +198,11 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                         dump("Found_Virtio_Net_At", mmio_addr);
                         is_net = 1;
                     }
+                    if (device_id == 2)
+                    {
+                        dump("Found_Virtio_BLK_At", mmio_addr);
+                        is_blk = 1;
+                    }
                     else if (device_id == 16)
                     {
                         dump("Found_Virtio_GPU_At", mmio_addr);
@@ -206,7 +211,6 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                 }
             }
 
-            // 2. interrupts 프로퍼티 처리 (순서 상관없이 임시 저장)
             if (strcmp(prop_name, "interrupts") == 0)
             {
                 uint32_t *intr_data = (uint32_t *)prop_val;

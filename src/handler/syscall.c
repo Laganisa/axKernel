@@ -332,6 +332,7 @@ static uint64_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
     uint16_t type = (uint16_t)arg3;
 
     // 온 순서대로 리턴하기
+    enter("rece_L2_call");
     uint8_t ret = nm_connect.nmqueue.pop(&(nm_connect.nmqueue));
     return nm_connect.payload_buf[ret];
 }

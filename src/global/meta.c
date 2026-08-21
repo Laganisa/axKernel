@@ -10,7 +10,11 @@ extern pcb_t *current_proc;
     ! 나중에 바꾸기
     만약 모드값이 1이라면 loader 함수를 호출하기
 */
-pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod)
+pcb_t *proc_turn(
+    FMv3_record *reco,
+    int8_t *name,
+    void *entry_point,
+    uint8_t mod)
 {
     // 헤더 설정
     fm_exec_hdr_t task;
@@ -22,12 +26,16 @@ pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod
     // IMAGE 모드일 때 바이너리 파일 기록
     if (mod == 1)
     {
+        // ! 이거 바꾸기
 
         extern uint8_t _task_shell_start[];
         extern uint8_t _task_shell_size[];
 
         extern uint8_t _task_bridge_start[];
         extern uint8_t _task_bridge_size[];
+
+        extern uint8_t _task_compiler_start[];
+        extern uint64_t _task_compiler_size[];
 
         if (entry_point == (void *)_task_shell_start)
         {
@@ -60,6 +68,23 @@ pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod
             fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_bridge_start, (uint32_t)bridge_size, sizeof(fm_exec_hdr_t));
+
+            return mata_exec_file(reco, &pm_object, name, 0);
+        }
+        if (entry_point == (void *)_task_compiler_start)
+        {
+            uint64_t compiler_size = *((uint64_t *)_task_compiler_size);
+
+            // ELF 이미지와 FM 헤더를 함께 저장
+            uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + compiler_size);
+            uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
+
+            fcb_t *fil = fm_create(reco, name, alloc_size, 0);
+
+            task.image_size = compiler_size;
+            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+
+            fm_write(reco, fil, _task_compiler_start, (uint32_t)compiler_size, sizeof(fm_exec_hdr_t));
 
             return mata_exec_file(reco, &pm_object, name, 0);
         }
