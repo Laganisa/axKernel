@@ -68,7 +68,7 @@ void master(uint64_t dtb_addr)
 #endif
 }
 
-#define B_MAIN_FLAG 2
+#define B_MAIN_FLAG 1
 
 void kernel_main(void)
 {
@@ -87,6 +87,7 @@ void kernel_main(void)
     mm_init(&mm_stack, USER_PROC_START);
     // pm_init(&pm_object, PM_ADDR_START);
     fm_init((uint64_t *)USER_FILE_START);
+    pm_init();
 
     nm_init();
     gpu_init();
@@ -120,6 +121,7 @@ void kernel_main(void)
     /*
         프로세스 전환
     */
+    dump("1", pm_object.lowbuf[0]);
 
     current_proc = proc1;
     _proc(proc1);

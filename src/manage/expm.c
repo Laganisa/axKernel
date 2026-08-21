@@ -17,44 +17,32 @@
     cmd = 0 : 넣기
     cmd = 1 : 빼기
 */
-uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val)
+uint8_t pm_low(PMv1_object *obj, uint8_t cmd, uint8_t val)
 {
     if (cmd == 0)
     {
-        queue->PMv1_lowqueue[queue->lowhead] = val;
-        queue->lowhead = (queue->lowhead + 1) & 255;
-        queue->lownum++;
+        obj->lowqueue.push(&(obj->lowqueue), val);
         return 0;
     }
-
-    if (queue->lownum == 0)
+    else
     {
-        return 0;
+        uint8_t ret = obj->lowqueue.pop(&(obj->lowqueue));
+        return ret;
     }
-    uint8_t ret = queue->PMv1_lowqueue[queue->lowtail];
-    queue->lowtail = (queue->lowtail + 1) & 255;
-    queue->lownum--;
-    return ret;
 }
 
-uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val)
+uint8_t pm_high(PMv1_object *obj, uint8_t cmd, uint8_t val)
 {
     if (cmd == 0)
     {
-        queue->PMv1_highqueue[queue->highhead] = val;
-        queue->highhead = (queue->highhead + 1) & 255;
-        queue->highnum++;
+        obj->highqueue.push(&(obj->highqueue), val);
         return 0;
     }
-
-    if (queue->highnum == 0)
+    else
     {
-        return 0;
+        uint8_t ret = obj->highqueue.pop(&(obj->highqueue));
+        return ret;
     }
-    uint8_t ret = queue->PMv1_highqueue[queue->hightail];
-    queue->hightail = (queue->hightail + 1) & 255;
-    queue->highnum--;
-    return ret;
 }
 
 /*
@@ -66,11 +54,11 @@ pcb_t *pm_run(PMv1_object *obj)
 {
     uint8_t data; // pm 큐에서 뽑은 id 값
 
-    if (obj->highnum != 0)
+    if (!(obj->highqueue.empty(&(obj->highqueue))))
     {
         data = pm_high(obj, 1, 0);
     }
-    else if (obj->lownum != 0)
+    else if (!(obj->lowqueue.empty(&(obj->lowqueue))))
     {
         data = pm_low(obj, 1, 0);
     }

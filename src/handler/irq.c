@@ -21,23 +21,9 @@ pcb_t *get_current_proc_addr()
     return current_proc;
 }
 
-#define FPS 15
+#define FPS 1 // 1 ~ 30 사이 원하는 값 설정
 
-#ifdef defined(FPS)
-
-#elif FPS == 30
-
-#define frq 0x1FCA05
-
-#elif FPS == 24
-
-#define frq 0x278D06
-
-#elif FPS == 15
-
-#define frq 0x3F940A
-
-#endif
+#define frq (62500000 / (FPS))
 
 // 인터럽트 핸들러
 void irq_handler_main(pcb_t *proc)
