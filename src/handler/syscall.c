@@ -17,7 +17,7 @@ extern dcb_t uart_device;
 
 #pragma region general_call
 
-static int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     uint8_t *addr = (uint8_t *)arg1;
     uint8_t rule = (uint8_t)arg2;
@@ -26,7 +26,7 @@ static int32_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     return 1;
 }
 
-static int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     // enter("sys_write");
 
@@ -58,7 +58,7 @@ static int32_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     }
 }
 
-static int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     // ! 근데 이거 길이 입력 방식이 필요할 듯
     int fd = (int)arg1;
@@ -107,7 +107,7 @@ static int32_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
     }
 }
 
-static int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
     dump("arg1", arg1);
@@ -182,7 +182,7 @@ static int32_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
     }
 }
 
-static int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     int fd = (int)arg1;
 
@@ -199,7 +199,7 @@ static int32_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     return 1;
 }
 
-static int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     enter("sys_exit");
     // arg1: exit code
@@ -232,7 +232,7 @@ static int32_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t a
 
 #pragma region file_call
 
-static int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         dump("arg1", arg1);
@@ -250,7 +250,7 @@ static int32_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint
     return 1;
 }
 
-static int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         dump("arg1", arg1);
@@ -263,7 +263,7 @@ static int32_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
 
 #pragma region proc_call
 
-static int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
     dump("arg1", arg1);
@@ -276,7 +276,7 @@ static int32_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint
 
 #pragma region L2toL3
 
-static int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         송신 시스템 콜
@@ -292,9 +292,9 @@ static int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_
         id로 찾는 로직
     */
 
-    uint8_t *dst = nm_connect->dst_buf[id];
+    uint8_t *dst = nm_connect.dst_buf[id];
 
-    if (dst == NULL || nm_connect->is_dst[id] == 0)
+    if (dst == NULL || nm_connect.is_dst[id] == 0)
     {
         return -1;
     }
@@ -320,31 +320,23 @@ static int32_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_
     1. 일단 관리자 구조체에서 온 신호가 있는지 확인한다.
     2. 만약 없다면 이 프로세스를 재우고 나중에 인터럽트로 올때 자신을 깨우라고 한다.
 */
-static int32_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         일단 스캘레톤으로 만듬
+        아니 인자 왜 받는거임?
+        todo : 검증이 필요
     */
     char *data = (char *)arg1;
     uint8_t *dst = (uint8_t *)arg2;
     uint16_t type = (uint16_t)arg3;
 
-    // nm_discap(dst, data, type);
-    uint8_t ret = nm_queue(nm_connect, 1, 0);
-
-    // ! 수정이 필요
-    if (ret == 0)
-    {
-        // 없다면 그냥 리턴하고 나중에 주는걸로
-    }
-
-    // 복사 로직
-    nm_connect->payload_buf[ret];
-
-    return -1; // 타임아웃
+    // 온 순서대로 리턴하기
+    uint8_t ret = nm_connect.nmqueue.pop(&(nm_connect.nmqueue));
+    return nm_connect.payload_buf[ret];
 }
 
-static int32_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
 {
     /*
         ARP 요청 보네고 인덱스를 리턴하기
@@ -357,7 +349,7 @@ static int32_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_
 
 #pragma endregion
 
-static int32_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = {
+static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = {
     /* General */
     [SYS_EXIT] = exit_call,
     /*[SYS_ABORT] = abort_call,
@@ -399,7 +391,7 @@ uint64_t handle_svc_a64(
 
     if (call_table[syscall_num] != NULL)
     {
-        int32_t ret = call_table[syscall_num](arg1, arg2, arg3, arg4, arg5);
+        uint64_t ret = call_table[syscall_num](arg1, arg2, arg3, arg4, arg5);
         return ret;
     }
     else

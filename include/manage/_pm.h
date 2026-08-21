@@ -66,13 +66,14 @@ typedef struct PMv1_object
     uint64_t *base; // 바닥 주소
     // 총 공간이 24KB 정도
 
+    // 할당여부를 담당
     uint8_t is_alloc[MAX_PCB_SIZE];
 
+    // 큐
     struct queue lowqueue;
-    uint8_t lowbuf[MAX_PCB_SIZE]; // 프로세스 low q
-
+    uint8_t lowbuf[MAX_PCB_SIZE];
     struct queue highqueue;
-    uint8_t highbuf[MAX_PCB_SIZE]; // 프로세스 high q
+    uint8_t highbuf[MAX_PCB_SIZE];
 
     // 동적 배열로 바꾸기
     struct pcb_t PMv1_mem[MAX_PCB_SIZE]; // 최대 프로세스 수 만큼 만들기 8KB 정도 pcb의 배열

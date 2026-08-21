@@ -68,7 +68,7 @@ void master(uint64_t dtb_addr)
 #endif
 }
 
-#define B_MAIN_FLAG 1
+#define B_MAIN_FLAG 2
 
 void kernel_main(void)
 {

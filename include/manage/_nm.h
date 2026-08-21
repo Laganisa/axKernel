@@ -47,24 +47,20 @@ typedef struct NMv1_connect
     uint8_t is_dst[DST_CACHE_SIZE];
     uint8_t dst_buf[DST_CACHE_SIZE][6];
 
+    // 할당여부를 봄
+    uint8_t is_alloc[NETWORK_CACHE_SIZE];
+
+    struct queue nmqueue;
+    uint8_t nmbuf[NETWORK_CACHE_SIZE];
+
     // ! 나중에 동적할당으로 바꾸기
-    /*
-        나중에 큐 자료 구조를 이용하기
-    */
-    uint8_t head;
-    uint8_t tail;
-    uint8_t num;
-    uint8_t queue_buf[NETWORK_CACHE_SIZE];
     uint8_t payload_buf[NETWORK_CACHE_SIZE][1500];
 } NMv1_connect;
 
-#define nm_connect ((NMv1_connect *)NM_ADDR_START)
-
+#define nm_connect (*(NMv1_connect *)NM_ADDR_START)
 void nm_cap(uint8_t *dst, const void *data, uint16_t len, uint16_t type);
 uint64_t nm_discap();
-
 void nm_init();
-
 uint8_t nm_queue(NMv1_connect *queue, uint8_t cmd, uint8_t val); // 송신용도
 
 // 송신 용도
