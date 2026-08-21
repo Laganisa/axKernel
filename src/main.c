@@ -89,7 +89,6 @@ void kernel_main(void)
     pm_init();
 
     nm_init();
-    log("1");
     gpu_init();
     /*
         그래픽을 사용하여 부팅 로그를 만들기
@@ -104,7 +103,7 @@ void kernel_main(void)
         나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
 
-#ifdef defined(B_MAIN_FLAG)
+#ifdef defined B_MAIN_FLAG
 
 #elif B_MAIN_FLAG == 1
     // 프로세스 전환 테스트 로직
