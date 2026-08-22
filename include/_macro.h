@@ -62,9 +62,15 @@ static inline volatile uint32_t *virtio_gpu_reg_ptr(uint32_t offset)
     return (volatile uint32_t *)(uintptr_t)(g_virtio_gpu_base + offset);
 }
 
+static inline volatile uint32_t *virtio_blk_reg_ptr(uint32_t offset)
+{
+    return (volatile uint32_t *)(uintptr_t)(g_virtio_gpu_base + offset);
+}
+
 // 3. 인라인 함수를 활용하도록 매크로 변경
 #define VIRTIO_NET_REG(offset) (*virtio_net_reg_ptr(offset))
 #define VIRTIO_GPU_REG(offset) (*virtio_gpu_reg_ptr(offset))
+#define VIRTIO_BLK_REG(offset) (*virtio_gpu_reg_ptr(offset))
 
 // 기존에 쓰던 레거시 호환용 (기본적으로 네트워크 베이스를 바라보게 처리)
 #define VIRTIO_REG(offset) VIRTIO_NET_REG(offset)

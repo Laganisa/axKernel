@@ -45,7 +45,7 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_MASTER_FLAG 1
+#define B_MASTER_FLAG 2
 
 // 커널 함수
 void master(uint64_t dtb_addr)
@@ -185,17 +185,6 @@ void kernel_main(void)
 void devo_main(void)
 {
     puts("devo main\n");
-    gpu_init();
 
-    /*
-        그래픽 메니저 테스트 로직
-    */
-
-    ltrs(0, 0, "AxOS");
-
-    char arr[10];
-
-    gets(arr, 10);
-
-    ltrs(0, 8, arr);
+    blk_init();
 }

@@ -222,4 +222,6 @@ int gpu_resource_flush(
     uint32_t width,
     uint32_t height);
 
+void blk_init(void);
+
 #endif
