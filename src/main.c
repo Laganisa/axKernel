@@ -72,7 +72,6 @@ void master(uint64_t dtb_addr)
 
 void kernel_main(void)
 {
-    reg_cntfrq_el0();
 
     // 하드웨어 초기화
     uart_init();

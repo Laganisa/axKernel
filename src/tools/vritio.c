@@ -671,12 +671,15 @@ void gpu_init(void)
 
     puts("GPU driver initialized\n");
 
+    log("1");
+
     if (gpu_get_display_info() < 0)
     {
         puts("GPU display info failed\n");
         return;
     }
 
+    log("1");
     memset(
         (void *)gpu_framebuffer,
         0,

@@ -9,7 +9,10 @@
 #include "manage/_nm.h"
 
 extern void _proc(pcb_t *);
+
 extern uint32_t g_virtio_net_irq;
+extern uint32_t g_virtio_gpu_irq;
+extern uint32_t g_virtio_blk_irq;
 
 // 시스템 타이머: 두 타이머 인터럽트 간의 시간을 tick으로 나타낸거
 static uint64_t system_tick = 0;
@@ -60,6 +63,15 @@ void irq_handler_main(pcb_t *proc)
         VIRTIO_INTERRUPT_ACK = status;
 
         // 인터럽트 처리 후
+        GIC_CPU_EOI = iar;
+        enable_irq();
+
+        _proc(proc);
+    }
+    else if (irq_nr == g_virtio_gpu_irq)
+    {
+        log("gpu");
+        uint32_t status = VIRTIO_GPU_INTERRUPT_STATUS;
         GIC_CPU_EOI = iar;
         enable_irq();
 

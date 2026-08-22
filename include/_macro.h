@@ -124,6 +124,9 @@ static inline volatile uint32_t *virtio_gpu_reg_ptr(uint32_t offset)
 #define VIRTQ_DESC_F_NEXT 0x01U
 #define VIRTQ_DESC_F_WRITE 0x02U
 
+#define VIRTIO_GPU_INTERRUPT_STATUS VIRTIO_GPU_REG(0x060)
+#define VIRTIO_GPU_INTERRUPT_ACK VIRTIO_GPU_REG(0x064)
+
 #pragma endregion
 
 #endif
