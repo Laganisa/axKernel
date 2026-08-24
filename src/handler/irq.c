@@ -7,6 +7,7 @@
 #include "global/_meta.h"
 #include "global/_dtb.h"
 #include "manage/_nm.h"
+#include "tools/_virtio.h"
 
 extern void _proc(pcb_t *);
 
@@ -72,6 +73,17 @@ void irq_handler_main(pcb_t *proc)
     {
         log("gpu");
         uint32_t status = VIRTIO_GPU_INTERRUPT_STATUS;
+        GIC_CPU_EOI = iar;
+        enable_irq();
+
+        _proc(proc);
+    }
+    else if (irq_nr == g_virtio_blk_irq)
+    {
+        log("blk");
+
+        virtio_blk_irq_handle();
+
         GIC_CPU_EOI = iar;
         enable_irq();
 

@@ -36,7 +36,7 @@ void gic_init(void)
     GIC_DIST_REG(0x108) |= (1U << 15);
 
     /* Distributor Disable */
-    GIC_DIST_CTRL = 0;
+    // GIC_DIST_CTRL = 0;
 
     /* 모든 PPI를 Group0 */
     GIC_DIST_IGROUPR0 = 0x00000000;
@@ -63,6 +63,15 @@ void gic_init(void)
 
     asm volatile("dsb sy");
     asm volatile("isb");
+
+    dump("GIC DIST CTRL",
+         GIC_DIST_CTRL);
+
+    dump("GIC IRQ79 ENABLE",
+         GIC_DIST_REG(0x108) & (1U << 15));
+
+    dump("GIC IRQ79 TARGET",
+         GIC_DIST_REG8(0x84F));
 
     enable_irq();
 }

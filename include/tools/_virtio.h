@@ -224,4 +224,6 @@ int gpu_resource_flush(
 
 void blk_init(void);
 
+void virtio_blk_irq_handle(void);
+
 #endif
