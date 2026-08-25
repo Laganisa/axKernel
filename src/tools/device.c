@@ -76,7 +76,6 @@ void nic_dev_init(void)
     // dump("host_features", host_features);
 
     VIRTIO_GUEST_FEATURES = 0;
-
     VIRTIO_GUEST_PAGE_SIZE = 4096;
 
     // log("NIC Features Negotiated Successfully!\n");

@@ -74,6 +74,7 @@ static int gpu_wait_used(void)
     return 0;
 }
 
+/*
 static void gpu_setup_queue(void)
 {
     VIRTIO_GPU_QUEUE_SEL = 0;
@@ -118,7 +119,9 @@ static void gpu_setup_queue(void)
     VIRTIO_GPU_QUEUE_PFN =
         ((uint64_t)gpu_queue.storage) >> 12;
 }
+*/
 
+/*
 static void gpu_dump_status(const char *tag)
 {
     uint32_t status = VIRTIO_GPU_STATUS;
@@ -129,6 +132,7 @@ static void gpu_dump_status(const char *tag)
 
     dump("status", status);
 }
+*/
 
 static int gpu_submit_control(
     void *cmd,
@@ -558,52 +562,17 @@ int gpu_transfer_to_host_2d(
 
 void gpu_init(void)
 {
-    dump("fb addr:", (uint64_t)gpu_framebuffer);
-
-    dump("TRANSFER size",
-         sizeof(virtio_gpu_transfer_to_host_2d_t));
-
     if (g_virtio_gpu_base == 0)
     {
         puts("GPU MMIO base not found\n");
         return;
     }
 
-    VIRTIO_GPU_STATUS = 0;
+    vq_init(g_virtio_gpu_base);
 
-    VIRTIO_GPU_STATUS |= VIRTIO_STATUS_ACKNOWLEDGE;
-    VIRTIO_GPU_STATUS |= VIRTIO_STATUS_DRIVER;
+    vq_setup(g_virtio_gpu_base, 0, &gpu_queue_storage, &gpu_queue);
 
-    VIRTIO_GPU_HOST_FEATURES_SEL = 0;
-
-    uint32_t host_features =
-        VIRTIO_GPU_HOST_FEATURES;
-
-    dump("GPU host features", host_features);
-
-    VIRTIO_GPU_GUEST_FEATURES_SEL = 0;
-    VIRTIO_GPU_GUEST_FEATURES = 0;
-
-    VIRTIO_GPU_GUEST_PAGE_SIZE = 4096;
-
-    VIRTIO_GPU_STATUS |= VIRTIO_STATUS_FEATURES_OK;
-
-    if ((VIRTIO_GPU_STATUS &
-         VIRTIO_STATUS_FEATURES_OK) == 0)
-    {
-        puts("GPU FEATURES_OK rejected\n");
-        return;
-    }
-
-    gpu_setup_queue();
-
-    VIRTIO_GPU_STATUS |= VIRTIO_STATUS_DRIVER_OK;
-
-    gpu_dump_status("after driver ok");
-
-    puts("GPU driver initialized\n");
-
-    log("1");
+    full_stop();
 
     if (gpu_get_display_info() < 0)
     {
@@ -612,6 +581,7 @@ void gpu_init(void)
     }
 
     log("1");
+
     memset(
         (void *)gpu_framebuffer,
         0,
@@ -634,4 +604,8 @@ void gpu_init(void)
         puts("GPU set scanout failed\n");
         return;
     }
+}
+
+void virtio_gpu_irq_handle(void)
+{
 }

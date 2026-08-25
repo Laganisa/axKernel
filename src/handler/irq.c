@@ -72,7 +72,9 @@ void irq_handler_main(pcb_t *proc)
     else if (irq_nr == g_virtio_gpu_irq)
     {
         log("gpu");
-        uint32_t status = VIRTIO_GPU_INTERRUPT_STATUS;
+
+        virtio_gpu_irq_handle();
+
         GIC_CPU_EOI = iar;
         enable_irq();
 

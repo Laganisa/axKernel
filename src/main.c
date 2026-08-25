@@ -72,9 +72,11 @@ void master(uint64_t dtb_addr)
 void devo_main(void)
 {
     puts("devo main\n");
-    gic_init();
+    // gic_init();
 
-    blk_init();
+    gpu_init();
+    ltrs(0, 0, "Booting AxKernel!");
+    // blk_init();
 }
 
 #define B_MAIN_FLAG 2
@@ -97,12 +99,9 @@ void kernel_main(void)
     pm_init();
 
     nm_init();
-    gpu_init();
     /*
         그래픽을 사용하여 부팅 로그를 만들기
     */
-
-    ltrs(0, 0, "Booting AxKernel!");
 
     puts("Booting AxKernel!\n");
 

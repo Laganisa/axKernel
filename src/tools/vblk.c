@@ -29,6 +29,8 @@ extern uint64_t g_virtio_blk_base;
 static unsigned char blk_queue_storage[VIRTIO_QUEUE_STORAGE]
     __attribute__((aligned(4096)));
 static struct virtio_queue_state blk_queue;
+
+/*
 static void blk_setup_queue(void)
 {
     VIRTIO_BLK_QUEUE_SEL = 0;
@@ -69,32 +71,35 @@ static void blk_setup_queue(void)
     VIRTIO_BLK_QUEUE_PFN =
         ((uint64_t)blk_queue_storage) >> 12;
 
-    dump("BLK queue PFN",
-         VIRTIO_BLK_QUEUE_PFN);
 
-    dump("BLK queue storage",
-         (uint64_t)blk_queue_storage);
+dump("BLK queue PFN",
+     VIRTIO_BLK_QUEUE_PFN);
 
-    dump("BLK desc",
-         (uint64_t)blk_queue.desc);
+dump("BLK queue storage",
+     (uint64_t)blk_queue_storage);
 
-    dump("BLK avail",
-         (uint64_t)blk_queue.avail);
+dump("BLK desc",
+     (uint64_t)blk_queue.desc);
 
-    dump("BLK used",
-         (uint64_t)blk_queue.used);
+dump("BLK avail",
+     (uint64_t)blk_queue.avail);
 
-    dump("BLK desc bytes",
-         VIRTIO_DESC_BYTES);
+dump("BLK used",
+     (uint64_t)blk_queue.used);
 
-    dump("BLK used offset",
-         VIRTIO_USED_OFFSET);
+dump("BLK desc bytes",
+     VIRTIO_DESC_BYTES);
 
-    dump("BLK queue storage size",
-         VIRTIO_QUEUE_STORAGE);
+dump("BLK used offset",
+     VIRTIO_USED_OFFSET);
 
-    puts("BLK queue initialized\n");
+dump("BLK queue storage size",
+     VIRTIO_QUEUE_STORAGE);
+
+
+puts("BLK queue initialized\n");
 }
+*/
 
 #define VIRTIO_BLK_T_IN 0
 #define VIRTIO_BLK_T_OUT 1
@@ -261,43 +266,18 @@ static int blk_read_test(void)
 
 void blk_init(void)
 {
+    // 주소 확인
     if (g_virtio_blk_base == 0)
     {
         puts("BLK MMIO base not found\n");
         return;
     }
 
-    VIRTIO_BLK_STATUS = 0;
+    // 피쳐
+    vq_init(g_virtio_blk_base);
 
-    VIRTIO_BLK_STATUS |= VIRTIO_STATUS_ACKNOWLEDGE;
-    VIRTIO_BLK_STATUS |= VIRTIO_STATUS_DRIVER;
-
-    VIRTIO_BLK_HOST_FEATURES_SEL = 0;
-
-    uint32_t host_features =
-        VIRTIO_BLK_HOST_FEATURES;
-
-    dump("BLK host features", host_features);
-
-    VIRTIO_BLK_GUEST_FEATURES_SEL = 0;
-    VIRTIO_BLK_GUEST_FEATURES = 0;
-
-    VIRTIO_BLK_GUEST_PAGE_SIZE = 4096;
-
-    VIRTIO_BLK_STATUS |= VIRTIO_STATUS_FEATURES_OK;
-
-    if ((VIRTIO_BLK_STATUS &
-         VIRTIO_STATUS_FEATURES_OK) == 0)
-    {
-        puts("BLK FEATURES_OK rejected\n");
-        return;
-    }
-
-    dump("BLK status", VIRTIO_BLK_STATUS);
-    blk_setup_queue();
-    VIRTIO_BLK_STATUS |= VIRTIO_STATUS_DRIVER_OK;
-
-    dump("BLK final status", VIRTIO_BLK_STATUS);
+    // 큐 설정
+    vq_setup(g_virtio_blk_base, 0, blk_queue_storage, &blk_queue);
 
     puts("BLK basic initialization successful\n");
 
@@ -306,14 +286,13 @@ void blk_init(void)
         puts("BLK write request failed\n");
     }
 
-    log("1");
+    // log("1");
 
+    // ! 이거 바꿀거
     while (blk_req_state == BLK_REQ_PENDING)
     {
         asm volatile("wfi");
     }
-
-    log("end wfi");
 
     blk_read_test();
 

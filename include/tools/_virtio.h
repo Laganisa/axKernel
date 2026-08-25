@@ -42,6 +42,14 @@ typedef struct virtio_queue_state
     unsigned char *storage;
 } virtio_queue_state;
 
+void vq_setup(
+    uint64_t v_base_addr,
+    int q_index,
+    uint8_t *storage,
+    struct virtio_queue_state *vq);
+
+void vq_init(uint64_t v_base_addr);
+
 extern virtio_queue_state rx_queue;
 extern virtio_queue_state tx_queue;
 
@@ -126,6 +134,8 @@ enum virtio_gpu_ctrl_type
     VIRTIO_GPU_RESP_ERR_INVALID_PARAMETER,
 };
 
+#pragma region gpu_hdr
+
 typedef struct __attribute__((packed))
 {
     uint32_t type;
@@ -204,9 +214,13 @@ typedef struct __attribute__((packed))
     virtio_gpu_display_one_t scanout[16];
 } virtio_gpu_resp_display_info_t;
 
+#pragma endregion
+
 extern uint32_t gpu_display_width;
 extern uint32_t gpu_display_height;
 extern volatile uint32_t *gpu_framebuffer;
+
+void virtio_gpu_irq_handle(void);
 
 void gpu_init(void);
 

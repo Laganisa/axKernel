@@ -25,7 +25,7 @@ struct virtio_queue_state tx_queue;
 uint16_t last_rx_used_idx = 0;
 uint16_t last_tx_used_idx = 0;
 
-static void setup_queue_state(int queue_index, struct virtio_queue_state *queue)
+static void net_setup_queue(int queue_index, struct virtio_queue_state *queue)
 {
     VIRTIO_QUEUE_SEL = queue_index;
 
@@ -67,12 +67,12 @@ void setup_virtqueue(int queue_index)
     if (queue_index == 0)
     {
         rx_queue.storage = rx_queue_storage;
-        setup_queue_state(0, &rx_queue);
+        net_setup_queue(0, &rx_queue);
     }
     else
     {
         tx_queue.storage = tx_queue_storage;
-        setup_queue_state(1, &tx_queue);
+        net_setup_queue(1, &tx_queue);
     }
     puts("Queue setup done with PFN!\n");
 }
