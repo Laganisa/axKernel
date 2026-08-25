@@ -73,13 +73,15 @@ void devo_main(void)
 {
     puts("devo main\n");
 
-    // net_TX_main();
+    net_TX_main();
 
+    /*
     gic_init();
 
     // gpu_init();
     // ltrs(0, 0, "Booting AxKernel!");
     blk_init();
+    */
 }
 
 #define B_MAIN_FLAG 5

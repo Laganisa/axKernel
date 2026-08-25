@@ -42,11 +42,30 @@ static inline uint64_t read_daif(void)
     return value;
 }
 
+static unsigned char rx_queue_storage[VIRTIO_QUEUE_STORAGE]
+    __attribute__((aligned(4096)));
+
+void nm_init()
+{
+    vq_init(g_virtio_net_base);
+
+    vq_setup(g_virtio_net_base, 0, rx_queue_storage, &rx_queue);
+
+    for (int i = 0; i < 6; i++)
+    {
+        nm_connect.dst_buf[0][i] = 0xFF;
+    }
+
+    nm_connect.is_dst[0] = 1;
+
+    queue_init(&(nm_connect.nmqueue), nm_connect.nmbuf, NETWORK_CACHE_SIZE);
+}
+
 void net_RX_main(void)
 {
-    nic_device.init();
+    vq_init(g_virtio_net_base);
 
-    setup_virtqueue(0);
+    vq_setup(g_virtio_net_base, 0, rx_queue_storage, &rx_queue);
 
     prepare_rx_buffer();
 

@@ -10,26 +10,6 @@
 
 extern dcb_t nic_device;
 
-void nm_init()
-{
-    nic_device.init();
-
-    setup_virtqueue(1);
-
-    VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
-
-    puts("TX Driver Ready\n");
-
-    for (int i = 0; i < 6; i++)
-    {
-        nm_connect.dst_buf[0][i] = 0xFF;
-    }
-
-    nm_connect.is_dst[0] = 1;
-
-    queue_init(&(nm_connect.nmqueue), nm_connect.nmbuf, NETWORK_CACHE_SIZE);
-}
-
 /*
     전송하는 함수
 */
@@ -148,60 +128,4 @@ uint64_t nm_discap()
     last_rx_used_idx++;
 
     return 1;
-}
-
-void net_TX_main(void)
-{
-    nic_device.init();
-
-    setup_virtqueue(1);
-
-    VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
-
-    puts("TX Driver Ready\n");
-
-    // 입력 받기
-
-    static packet_buf_t pkt = {
-        .vhdr = {0},
-        .eth = {
-            .dst_mac = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-            .src_mac = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01},
-            .ethertype = 0x0008},
-        .payload = "Hello Kernel!"};
-
-    // 전송하는 부분
-    VIRTIO_QUEUE_SEL = 1;
-
-    tx_queue.desc[0].addr = (uint64_t)&pkt;
-    tx_queue.desc[0].len = sizeof(pkt);
-    tx_queue.desc[0].flags = 0;
-    tx_queue.desc[0].next = 0;
-
-    tx_queue.avail->flags = 0;
-    tx_queue.avail->ring[tx_queue.avail->idx % VIRTIO_QUEUE_SIZE] = 0;
-
-    virtio_mb();
-    tx_queue.avail->idx++;
-    virtio_mb();
-
-    VIRTIO_QUEUE_NOTIFY = 1;
-
-    puts("Packet sent to TX queue, notified hardware!\n");
-
-    puts("Waiting TX...\n");
-
-    int timeout = 10000000;
-
-    while (timeout--)
-    {
-        if (tx_queue.used->idx != last_tx_used_idx)
-        {
-            puts("TX SUCCESS\n");
-            last_tx_used_idx++;
-            return;
-        }
-    }
-
-    puts("TX TIMEOUT\n");
 }

@@ -64,7 +64,6 @@ void nm_init();
 uint8_t nm_queue(NMv1_connect *queue, uint8_t cmd, uint8_t val); // 송신용도
 
 // 송신 용도
-void net_TX_main(void);
 
 // 수신용도
 void net_RX_main(void);

@@ -240,4 +240,6 @@ void blk_init(void);
 
 void virtio_blk_irq_handle(void);
 
+void net_TX_main(void);
+
 #endif

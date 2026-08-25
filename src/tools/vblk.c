@@ -30,73 +30,6 @@ static unsigned char blk_queue_storage[VIRTIO_QUEUE_STORAGE]
     __attribute__((aligned(4096)));
 static struct virtio_queue_state blk_queue;
 
-static void blk_setup_queue(void)
-{
-    VIRTIO_BLK_QUEUE_SEL = 0;
-
-    uint32_t max = VIRTIO_BLK_QUEUE_NUM_MAX;
-
-    dump("BLK queue max", max);
-
-    if (max == 0)
-    {
-        puts("BLK queue unavailable\n");
-        return;
-    }
-
-    if (max < VIRTIO_QUEUE_SIZE)
-    {
-        puts("BLK queue too small\n");
-        return;
-    }
-
-    VIRTIO_BLK_QUEUE_NUM = VIRTIO_QUEUE_SIZE;
-    VIRTIO_BLK_QUEUE_ALIGN = 4096;
-
-    blk_queue.desc =
-        (struct virtq_desc *)blk_queue_storage;
-
-    blk_queue.avail =
-        (struct virtq_avail *)(blk_queue_storage + VIRTIO_DESC_BYTES);
-
-    blk_queue.used =
-        (struct virtq_used *)(blk_queue_storage + VIRTIO_USED_OFFSET);
-
-    for (uint32_t i = 0; i < VIRTIO_QUEUE_STORAGE; ++i)
-    {
-        blk_queue_storage[i] = 0;
-    }
-
-    VIRTIO_BLK_QUEUE_PFN =
-        ((uint64_t)blk_queue_storage) >> 12;
-
-    dump("BLK queue PFN",
-         VIRTIO_BLK_QUEUE_PFN);
-
-    dump("BLK queue storage",
-         (uint64_t)blk_queue_storage);
-
-    dump("BLK desc",
-         (uint64_t)blk_queue.desc);
-
-    dump("BLK avail",
-         (uint64_t)blk_queue.avail);
-
-    dump("BLK used",
-         (uint64_t)blk_queue.used);
-
-    dump("BLK desc bytes",
-         VIRTIO_DESC_BYTES);
-
-    dump("BLK used offset",
-         VIRTIO_USED_OFFSET);
-
-    dump("BLK queue storage size",
-         VIRTIO_QUEUE_STORAGE);
-
-    puts("BLK queue initialized\n");
-}
-
 #define VIRTIO_BLK_T_IN 0
 #define VIRTIO_BLK_T_OUT 1
 
@@ -153,94 +86,8 @@ static void blk_prepare_test_data(void)
 #define VIRTIO_BLK_INTERRUPT_STATUS \
     (*(volatile uint32_t *)(g_virtio_blk_base + 0x060))
 
-void blk_wr_test(uint64_t *func, uint8_t *data)
-{
-    struct virtq_desc *desc = blk_queue.desc;
-
-    blk_req.type = VIRTIO_BLK_T_OUT;
-    blk_req.reserved = 0;
-    blk_req.sector = BLK_TEST_SECTOR;
-
-    blk_status = 0xFF;
-
-    memset(data, 0, sizeof(data));
-}
-
-static int blk_write_test(void)
-{
-    struct virtq_desc *desc = blk_queue.desc;
-
-    blk_req.type = VIRTIO_BLK_T_OUT;
-    blk_req.reserved = 0;
-    blk_req.sector = BLK_TEST_SECTOR;
-
-    blk_status = 0xFF;
-
-    desc[0].addr = (uint64_t)&blk_req;
-    desc[0].len = sizeof(struct virtio_blk_req);
-    desc[0].flags = VRING_DESC_F_NEXT;
-    desc[0].next = 1;
-    desc[1].addr = (uint64_t)blk_data;
-    desc[1].len = sizeof(blk_data);
-    desc[1].flags = VRING_DESC_F_NEXT;
-    desc[1].next = 2;
-    desc[2].addr = (uint64_t)&blk_status;
-    desc[2].len = sizeof(blk_status);
-    desc[2].flags = VRING_DESC_F_WRITE;
-    desc[2].next = 0;
-
-    struct virtq_avail *avail = blk_queue.avail;
-    uint16_t index = avail->idx;
-    avail->ring[index % VIRTIO_QUEUE_SIZE] = 0;
-
-    virtio_mb();
-    avail->idx = index + 1;
-    blk_req_state = BLK_REQ_PENDING;
-    virtio_mb();
-
-    VIRTIO_BLK_QUEUE_NOTIFY = 0;
-
-    return 0;
-}
-
 static uint8_t blk_read_data[512]
     __attribute__((aligned(16)));
-
-static int blk_read_test(void)
-{
-    struct virtq_desc *desc = blk_queue.desc;
-
-    blk_req.type = VIRTIO_BLK_T_IN;
-    blk_req.reserved = 0;
-    blk_req.sector = BLK_TEST_SECTOR;
-
-    blk_status = 0xFF;
-
-    desc[0].addr = (uint64_t)&blk_req;
-    desc[0].len = sizeof(struct virtio_blk_req);
-    desc[0].flags = VRING_DESC_F_NEXT;
-    desc[0].next = 1;
-    desc[1].addr = (uint64_t)blk_read_data;
-    desc[1].len = sizeof(blk_read_data);
-    desc[1].flags = VRING_DESC_F_WRITE | VRING_DESC_F_NEXT;
-    desc[1].next = 2;
-    desc[2].addr = (uint64_t)&blk_status;
-    desc[2].len = sizeof(blk_status);
-    desc[2].flags = VRING_DESC_F_WRITE;
-
-    struct virtq_avail *avail = blk_queue.avail;
-    uint16_t index = avail->idx;
-    avail->ring[index % VIRTIO_QUEUE_SIZE] = 0;
-
-    virtio_mb();
-    avail->idx = index + 1;
-    blk_req_state = BLK_REQ_PENDING;
-    virtio_mb();
-
-    VIRTIO_BLK_QUEUE_NOTIFY = 0;
-
-    return 0;
-}
 
 /*
     cmd == 0 쓰기
@@ -301,8 +148,6 @@ void blk_init(void)
     // 큐 설정
     vq_setup(g_virtio_blk_base, 0, blk_queue_storage, &blk_queue);
 
-    puts("BLK basic initialization successful\n");
-
     const char *msg = "HELLO FROM axOS";
 
     for (uint32_t i = 0; msg[i] != '\0'; ++i)
@@ -310,20 +155,13 @@ void blk_init(void)
         blk_data[i] = (uint8_t)msg[i];
     }
 
-    if (blk_submit(0) < 0)
-    {
-        puts("BLK write request failed\n");
-    }
-
-    log("1");
+    blk_submit(0);
 
     // ! 이거 바꿀거
     while (blk_req_state == BLK_REQ_PENDING)
     {
         asm volatile("wfi");
     }
-
-    log("1");
 
     memset(blk_read_data, 0, sizeof(blk_read_data));
 
@@ -333,8 +171,6 @@ void blk_init(void)
     {
         asm volatile("wfi");
     }
-
-    dump("blk_req_state", blk_req_state);
 
     if (blk_req_state == BLK_REQ_COMPLETE)
     {
@@ -351,7 +187,6 @@ void blk_init(void)
     {
         if (blk_read_data[i] != 0)
         {
-
             put_hex2(blk_read_data[i]);
         }
     }
