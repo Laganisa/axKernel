@@ -73,13 +73,15 @@ void devo_main(void)
 {
     puts("devo main\n");
 
-    net_TX_main();
+    gpu_init();
+
+    ltr(0, 0, 'A');
+
+    // net_TX_main();
 
     /*
     gic_init();
 
-    // gpu_init();
-    // ltrs(0, 0, "Booting AxKernel!");
     blk_init();
     */
 }

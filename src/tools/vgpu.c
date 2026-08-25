@@ -74,73 +74,12 @@ static int gpu_wait_used(void)
     return 0;
 }
 
-/*
-static void gpu_setup_queue(void)
-{
-    VIRTIO_GPU_QUEUE_SEL = 0;
-
-    uint32_t max = VIRTIO_GPU_QUEUE_NUM_MAX;
-
-    gpu_queue_size =
-        (max < VIRTIO_QUEUE_SIZE)
-            ? max
-            : VIRTIO_QUEUE_SIZE;
-
-    VIRTIO_GPU_GUEST_PAGE_SIZE = 4096;
-    VIRTIO_GPU_QUEUE_ALIGN = 4096;
-    VIRTIO_GPU_QUEUE_NUM = gpu_queue_size;
-
-    gpu_queue.storage = gpu_queue_storage;
-
-    gpu_queue.desc =
-        (struct virtq_desc *)gpu_queue.storage;
-
-    gpu_queue.avail =
-        (struct virtq_avail *)(gpu_queue.storage + VIRTIO_DESC_BYTES);
-
-    gpu_queue.used =
-        (struct virtq_used *)(gpu_queue.storage + VIRTIO_USED_OFFSET);
-
-    for (uint32_t i = 0; i < VIRTIO_QUEUE_STORAGE; ++i)
-    {
-        gpu_queue.storage[i] = 0;
-    }
-
-    gpu_queue.avail->flags = 0;
-    gpu_queue.avail->idx = 0;
-
-    gpu_queue.used->flags = 0;
-    gpu_queue.used->idx = 0;
-
-    gpu_used_idx = 0;
-
-    virtio_mb();
-
-    VIRTIO_GPU_QUEUE_PFN =
-        ((uint64_t)gpu_queue.storage) >> 12;
-}
-*/
-
-/*
-static void gpu_dump_status(const char *tag)
-{
-    uint32_t status = VIRTIO_GPU_STATUS;
-
-    puts("GPU status: ");
-    puts(tag);
-    puts("\n");
-
-    dump("status", status);
-}
-*/
-
 static int gpu_submit_control(
     void *cmd,
     uint32_t cmd_size,
     void *resp,
     uint32_t resp_size)
 {
-    // enter("gpu_submit_control");
 
     VIRTIO_GPU_QUEUE_SEL = 0;
 
@@ -570,17 +509,13 @@ void gpu_init(void)
 
     vq_init(g_virtio_gpu_base);
 
-    vq_setup(g_virtio_gpu_base, 0, &gpu_queue_storage, &gpu_queue);
-
-    full_stop();
+    vq_setup(g_virtio_gpu_base, 0, gpu_queue_storage, &gpu_queue);
 
     if (gpu_get_display_info() < 0)
     {
         puts("GPU display info failed\n");
         return;
     }
-
-    log("1");
 
     memset(
         (void *)gpu_framebuffer,
