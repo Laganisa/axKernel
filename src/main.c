@@ -72,14 +72,17 @@ void master(uint64_t dtb_addr)
 void devo_main(void)
 {
     puts("devo main\n");
-    // gic_init();
 
-    gpu_init();
-    ltrs(0, 0, "Booting AxKernel!");
-    // blk_init();
+    // net_TX_main();
+
+    gic_init();
+
+    // gpu_init();
+    // ltrs(0, 0, "Booting AxKernel!");
+    blk_init();
 }
 
-#define B_MAIN_FLAG 2
+#define B_MAIN_FLAG 5
 
 void kernel_main(void)
 {
@@ -99,6 +102,7 @@ void kernel_main(void)
     pm_init();
 
     nm_init();
+
     /*
         그래픽을 사용하여 부팅 로그를 만들기
     */
@@ -114,9 +118,7 @@ void kernel_main(void)
 
     proc_dump("proc1", proc1);
 
-    /*
-        프로세스 전환
-    */
+    //    프로세스 전환
 
     current_proc = proc1;
     _proc(proc1);
