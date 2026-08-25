@@ -2,16 +2,7 @@
 #define __KERNEL_PM_H__
 
 #include "manage/_dm.h"
-
-// 나중에 넣을 예정
-typedef struct proc_info_t
-{
-    uint8_t id;       // 프로세스 id
-    uint8_t p_id;     // 부모의 id
-    uint16_t mm_addr; // 메모리 주소
-    uint8_t state;    // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
-
-} proc_info_t;
+#include "tools/_dstruc.h"
 
 typedef struct proc_regs_t
 {
@@ -29,6 +20,21 @@ typedef struct proc_msg_t
     char *msgbox;      // 메세지
 } proc_msg_t;
 
+// fd 유니온 만들기
+typedef struct ctrl_t
+{
+    uint32_t is_ctrl_alloc;
+    uint8_t is_file; // 파일이 열려 있는지
+
+    uint32_t file_offset;
+    union
+    {
+        struct dcb_t *use_dev;  // 사용하는 디바이스
+        struct fcb_t *use_file; // 사용하는 파일
+    };
+
+} ctrl_t;
+
 typedef struct pcb_t
 {
     struct proc_regs_t regs;
@@ -43,10 +49,7 @@ typedef struct pcb_t
     struct proc_msg_t msgs;
 
     // 장치 관련
-    uint8_t is_file;        // 파일이 열려 있는지
-    uint32_t file_offset;   // 파일 오프셋
-    struct dcb_t *use_dev;  // 사용하는 디바이스
-    struct fcb_t *use_file; // 사용하는 파일
+    struct ctrl_t control[MAX_CONTROL_NUM];
 
 } __attribute__((aligned(8))) pcb_t;
 
@@ -63,28 +66,17 @@ typedef struct PMv1_object
     uint64_t *base; // 바닥 주소
     // 총 공간이 24KB 정도
 
-    // ! 이름 수정 필요
-    uint8_t proc_comocc : 4; // 그중에서 어떤 proc_occ 이 사용되지 않았는지
-    uint8_t proc_comscj : 4; // 프로세서 pm_rum에 들어가는 관리하는
+    // 할당여부를 담당
+    uint8_t is_alloc[MAX_PCB_SIZE];
 
-    // ? 이 큐 데이터들 제거 해야할듯 너무 많은 공간을 차지함
-    // ! 아니면 객체 지향으로 만들던가
-    uint8_t lownum;   // low에 들어있는 프로세스 수
-    uint8_t highnum;  // high에 들어있는 프로세스 수
-    uint8_t lowhead;  // 원형큐 머리
-    uint8_t lowtail;  // 원형큐 꼬리
-    uint8_t highhead; // 원형큐 머리
-    uint8_t hightail; // 원형큐 꼬리
+    // 큐
+    struct queue lowqueue;
+    uint8_t lowbuf[MAX_PCB_SIZE];
+    struct queue highqueue;
+    uint8_t highbuf[MAX_PCB_SIZE];
 
     // 동적 배열로 바꾸기
-    struct pcb_t PMv1_mem[MAX_PCB_SIZE];  // 최대 프로세스 수 만큼 만들기 8KB 정도 pcb의 배열
-    uint8_t PMv1_lowqueue[MAX_PCB_SIZE];  // 프로세스 low q
-    uint8_t PMv1_highqueue[MAX_PCB_SIZE]; // 프로세스 high q
-
-    uint64_t proc_occ[MAX_PCB_BITSIZE];    // 어떤 프로세스 pid 를 사용하지 않았는지
-    uint64_t occ_num;                      // occ 숫자 넣기 레지스터에 넣기 좋도록 64bit를 씀
-    uint64_t proc_scj[MAX_PCB_BITSIZE];    // 스케줄러에 들어갈 task들의 우선순위를 계산하기 위한 배열 순환돌때 여기다가 적는다
-    uint64_t proc_priscj[MAX_PCB_BITSIZE]; // 스캐줄러에 들어갈 task들의 우선순위가 적힌 배열
+    struct pcb_t PMv1_mem[MAX_PCB_SIZE]; // 최대 프로세스 수 만큼 만들기 8KB 정도 pcb의 배열
 
     // 프로토콜 관련
     struct proto_t proto_arr[MAX_PCB_SIZE];
@@ -94,7 +86,7 @@ typedef struct PMv1_object
 // 함수 선언
 
 // init 만들기
-
+void pm_init();
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid);
 pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid);
 uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);

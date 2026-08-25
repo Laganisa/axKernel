@@ -10,24 +10,6 @@
 
 extern dcb_t nic_device;
 
-void nm_init()
-{
-    nic_device.init();
-
-    setup_virtqueue(1);
-
-    VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
-
-    puts("TX Driver Ready\n");
-
-    for (int i = 0; i < 6; i++)
-    {
-        nm_connect->dst_buf[0][i] = 0xFF;
-    }
-
-    nm_connect->is_dst[0] = 1;
-}
-
 /*
     전송하는 함수
 */
@@ -83,87 +65,67 @@ void nm_cap(uint8_t *dst, const void *data, uint16_t len, uint16_t type)
     puts("TX COMPLETE\n");
 }
 
+static unsigned char rx_packet_buffer[10 + 2048];
+
 uint64_t nm_discap()
 {
-    /*네트워크에서 받는 함수*/
-}
-
-/*
-    0 : 집어 넣기
-    1 : 빼기
-*/
-uint8_t nm_queue(NMv1_connect *queue, uint8_t cmd, uint8_t val)
-{
-    if (cmd == 0)
-    {
-        queue->queue_buf[queue->head] = val;
-        queue->head = (queue->head + 1) & 255;
-        queue->num++;
-        return 0;
-    }
-
-    if (queue->num == 0)
+    /* 네트워크에서 받은 패킷을 Network Manager로 전달 */
+    if (rx_queue.used->idx == last_rx_used_idx)
     {
         return 0;
     }
-    uint8_t ret = queue->queue_buf[queue->tail];
-    queue->tail = (queue->tail + 1) & 255;
-    queue->num--;
-    return ret;
-}
 
-void net_TX_main(void)
-{
-    nic_device.init();
+    puts("RX SUCCESS\n");
 
-    setup_virtqueue(1);
+    struct virtq_used_elem *elem =
+        &rx_queue.used->ring[last_rx_used_idx % VIRTIO_QUEUE_SIZE];
 
-    VIRTIO_STATUS |= VIRTIO_STATUS_DRIVER_OK;
+    packet_buf_t *pkt =
+        (packet_buf_t *)rx_packet_buffer;
 
-    puts("TX Driver Ready\n");
+    int16_t id = -1;
 
-    // 입력 받기
-
-    static packet_buf_t pkt = {
-        .vhdr = {0},
-        .eth = {
-            .dst_mac = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-            .src_mac = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01},
-            .ethertype = 0x0008},
-        .payload = "Hello Kernel!"};
-
-    // 전송하는 부분
-    VIRTIO_QUEUE_SEL = 1;
-
-    tx_queue.desc[0].addr = (uint64_t)&pkt;
-    tx_queue.desc[0].len = sizeof(pkt);
-    tx_queue.desc[0].flags = 0;
-    tx_queue.desc[0].next = 0;
-
-    tx_queue.avail->flags = 0;
-    tx_queue.avail->ring[tx_queue.avail->idx % VIRTIO_QUEUE_SIZE] = 0;
-
-    virtio_mb();
-    tx_queue.avail->idx++;
-    virtio_mb();
-
-    VIRTIO_QUEUE_NOTIFY = 1;
-
-    puts("Packet sent to TX queue, notified hardware!\n");
-
-    puts("Waiting TX...\n");
-
-    int timeout = 10000000;
-
-    while (timeout--)
+    for (int i = 0; i < NETWORK_CACHE_SIZE; i++)
     {
-        if (tx_queue.used->idx != last_tx_used_idx)
+        if (nm_connect.is_alloc[i] == 0)
         {
-            puts("TX SUCCESS\n");
-            last_tx_used_idx++;
-            return;
+            nm_connect.is_alloc[i] = 1;
+            id = i;
+            break;
         }
     }
 
-    puts("TX TIMEOUT\n");
+    if (id == -1)
+    {
+        return -1; // 더 이상 패킷을 받을 수 없음
+    }
+
+    uint8_t now_pkt = (uint8_t)id;
+
+    nm_connect.nmqueue.push(&(nm_connect.nmqueue), now_pkt);
+
+    /*
+     * RX packet → Network Manager
+     */
+    memcpy(
+        nm_connect.payload_buf[now_pkt],
+        pkt->payload,
+        1500);
+
+    /*
+     * 사용한 descriptor 재등록
+     */
+    rx_queue.avail->ring[rx_queue.avail->idx % VIRTIO_QUEUE_SIZE] = elem->id;
+
+    virtio_mb();
+
+    rx_queue.avail->idx++;
+
+    virtio_mb();
+
+    VIRTIO_QUEUE_NOTIFY = 0;
+
+    last_rx_used_idx++;
+
+    return 1;
 }

@@ -13,11 +13,15 @@ void flow(const char type);
 void exit(const char *name);
 void for_dump(const char *name, uint64_t *val, uint8_t num);
 
+void dump_(const char *name, uint64_t val);
+void _dump(const char *name, uint64_t val);
+
 void reg_x8(void);
 void reg_elr_el1(void);
 void reg_esr_el1(void);
 void reg_far_el1(void);
 void reg_vbar(void);
+void reg_cntfrq_el0(void);
 
 void check_el1_sync(void);
 void check_el0_sync(void);

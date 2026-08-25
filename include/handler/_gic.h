@@ -2,7 +2,7 @@
 #define __KERNEL_GIC_H__
 #include "_types.h"
 
-#define VIRTIO_IRQ 32
+#define VIRTIO_IRQ 31
 
 void gic_init(void);
 

@@ -113,10 +113,7 @@ el0_a64_irq:
 
     // 핸들러 호출하기
     mov x0, x9           
-    bl irq_handler_main
-
-    // 복원부 호출
-    b _proc
+    b irq_handler_main
 
 el0_a64_fiq:
     bl check_inf_loop

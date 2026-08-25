@@ -4,13 +4,17 @@ laganisa가 kernel을 공부하기 위해 만드는
 
 실험용 및 공부용 toyKERNEL
 
-## 소개
+## 개요
 
-종류 : 마이크로커널
+종류 : Microkernel
 
-목적 기기 : QEMU 가상머신
+목적 기기 : QEMU Emulator (v8.2.2)
 
-목적 아키텍처 : AArch64 기반의 CPU (cortex-a72)
+목적 아키텍처 : ARMv8-A AArch64 (Cortex-A72)
+
+해상도 : 640 * 360 (nHD)
+
+프래임레이트 : 30fps
 
 ## 폴더 구조
 

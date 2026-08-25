@@ -13,8 +13,10 @@ void gets(int8_t *s, int32_t max_len);
 
 void put_hex(uint64_t d);
 void put_uint(uint64_t n);
+void put_hex2(uint64_t d);
 
 int32_t strcmp(const int8_t *s1, const int8_t *s2);
 void *memset(void *ptr, int value, size_t num);
+char *strstr(const char *s, const char *sub);
 
 #endif

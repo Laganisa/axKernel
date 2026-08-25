@@ -9,7 +9,11 @@ extern dcb_t uart_device;
 /*
     프로세스 생성 및 삭제와 관련한 파일
 */
-
+void pm_init()
+{
+    queue_init(&(pm_object.lowqueue), pm_object.lowbuf, 255);
+    queue_init(&(pm_object.highqueue), pm_object.highbuf, 255);
+}
 /*
     프로세스 생성하는 함수
     프로세스로 만들고 싶어하는 함수의 주소랑
@@ -18,42 +22,33 @@ extern dcb_t uart_device;
 */
 pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
 {
-    // id 로직
-    uint64_t target_chunk;
-    uint64_t leading_zeros;
-    uint8_t temp_id;
+    int16_t id = -1;
 
-    uint64_t search_com = ~(uint64_t)obj->proc_comocc;
-    asm volatile("clz %0, %1" : "=r"(leading_zeros) : "r"(search_com << 60));
-
-    obj->occ_num = (uint8_t)leading_zeros;
-
-    // if (obj->occ_num >= 4) 이면 나가게
-    // 선택된 64비트 청크 내에서 빈자리(0) 찾기
-    target_chunk = ~obj->proc_occ[obj->occ_num]; // 0을 1로 반전
-    asm volatile("clz %0, %1" : "=r"(leading_zeros) : "r"(target_chunk));
-
-    // PID 계산 (청크 번호 * 64 + 비트 위치)
-    uint8_t bit_pos = 63 - (uint8_t)leading_zeros;
-    uint8_t pid = (obj->occ_num << 6) | bit_pos;
-
-    // ! 사용한 비트 1로 채우기 (나중에 occ_num 청크가 다 차면 comocc도 1로)
-    obj->proc_occ[obj->occ_num] |= (1ULL << bit_pos);
-    if (obj->proc_occ[obj->occ_num] == ~0ULL)
+    for (int i = 0; i < MAX_PCB_SIZE; i++)
     {
-        obj->proc_comocc |= (1ULL << (3 - obj->occ_num));
+        if (obj->is_alloc[i] == 0)
+        {
+            obj->is_alloc[i] = 1;
+            id = i;
+            break;
+        }
     }
 
-    temp_id = 64 - pid; // 순방향으로 바꾸기
+    if (id == -1)
+    {
+        return NULL;
+    }
 
-    pcb_t *new_proc = &obj->PMv1_mem[temp_id];
+    id = (uint8_t)id + 1;
 
-    new_proc->id = temp_id;           // 프로세스의 id를 할당된 pid로 변경
-    new_proc->p_id = parid;           // 부모 id를 수정함
-    new_proc->use_dev = &uart_device; // 정보를 0으로 수정
-    new_proc->file_offset = 0;        // 파일 오프셋
-    new_proc->use_file = NULL;        // 사용중인 파일
-    new_proc->is_file = 0;            // 파일을 열지 않음
+    pcb_t *new_proc = &obj->PMv1_mem[id];
+
+    new_proc->id = id;                           // 프로세스의 id를 할당된 pid로 변경
+    new_proc->p_id = parid;                      // 부모 id를 수정함
+    new_proc->control[0].is_ctrl_alloc = 1;      // uart로 정해짐
+    new_proc->control[0].use_dev = &uart_device; // 정보를 0으로 수정
+    new_proc->control[0].file_offset = 0;        // 파일 오프셋
+    new_proc->control[0].is_file = 0;            // 파일을 열지 않음
 
     // 메모리 로직
     // 128KB를 할당 리턴 된 메모리 스택 주소를 받음

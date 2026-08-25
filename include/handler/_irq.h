@@ -4,7 +4,9 @@
 #include "manage/_pm.h"
 #include "handler/_gic.h"
 
-pcb_t *irq_handler_main(pcb_t *proc);
+void irq_handler_main(pcb_t *proc);
+
+// pcb_t *irq_handler_main(pcb_t *proc);
 
 void vector_init(void);
 

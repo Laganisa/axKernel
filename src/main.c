@@ -12,8 +12,9 @@
 #include "global/_debug.h"
 #include "global/_in_proc.h"
 #include "global/_alloc.h"
+#include "global/_dtb.h"
 
-#include "manage/_mm.h" // 메모리 관리자가 있는 헤더
+#include "manage/_mm.h" // 메모리 관리자 헤더
 #include "manage/_pm.h" // 프로세스 관리자 헤더
 #include "manage/_fm.h" // 파일 관리자 헤더
 #include "manage/_nm.h" // 네트워크 관리자 헤더
@@ -44,12 +45,15 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_MASTER_FLAG 2
+#define B_MASTER_FLAG 1
 
 // 커널 함수
 void master(uint64_t dtb_addr)
 {
     dump("Passed_DTB_addr", dtb_addr);
+
+    // dtb 파싱 후 연동
+    parse_dtb(dtb_addr);
 
 #if defined(NET)
     net_RX_main();
@@ -58,16 +62,35 @@ void master(uint64_t dtb_addr)
 #elif B_MASTER_FLAG == 1
     kernel_main();
 #elif B_MASTER_FLAG == 2
-    // parse_dtb(dtb_addr);
+    devo_main();
 #else
     kernel_main();
 #endif
 }
 
-#define B_MAIN_FLAG 1
+// 임시 함수로 빼기전 개발용 매인
+void devo_main(void)
+{
+    puts("devo main\n");
+
+    gpu_init();
+
+    ltr(0, 0, 'A');
+
+    // net_TX_main();
+
+    /*
+    gic_init();
+
+    blk_init();
+    */
+}
+
+#define B_MAIN_FLAG 5
 
 void kernel_main(void)
 {
+
     // 하드웨어 초기화
     uart_init();
     // 인터럽트 초기화
@@ -79,10 +102,14 @@ void kernel_main(void)
 
     // 관리자 초기화
     mm_init(&mm_stack, USER_PROC_START);
-    // pm_init(&pm_object, PM_ADDR_START);
     fm_init((uint64_t *)USER_FILE_START);
+    pm_init();
 
     nm_init();
+
+    /*
+        그래픽을 사용하여 부팅 로그를 만들기
+    */
 
     puts("Booting AxKernel!\n");
 
@@ -91,25 +118,39 @@ void kernel_main(void)
         나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
 
-#ifdef defined(B_MAIN_FLAG) && B_MAIN_FLAG == 0
+    pcb_t *proc1 = proc_turn(fm_record, "devo.BIN", devo_main, 0);
+
+    proc_dump("proc1", proc1);
+
+    //    프로세스 전환
+
+    current_proc = proc1;
+    _proc(proc1);
+
+#ifdef defined B_MAIN_FLAG
+
+#elif B_MAIN_FLAG == 1
     // 프로세스 전환 테스트 로직
 
-    pcb_t *proc1 = proc_turn(fm_record, "SHELL.BIN", task_inf_A, 0);
+    pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
 
-    pcb_t *proc2 = proc_turn(fm_record, "BRDGE.BIN", task_inf_B, 0);
+    pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
     pm_awake(&pm_object, 0, proc2);
 
     proc_dump("proc1", proc1);
     proc_dump("proc2", proc2);
 
     /*
-    프로세스 전환
+        프로세스 전환
     */
+
+    dump("1", pm_object.lowbuf[0]);
 
     current_proc = proc1;
     _proc(proc1);
 
-#elif B_MAIN_FLAG == 1
+#elif B_MAIN_FLAG == 2
+
     // 쉘 테스트 로직
     pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
@@ -119,21 +160,34 @@ void kernel_main(void)
     current_proc = shell_proc;
     _proc(shell_proc);
 
-#elif b_main_flag == 2
+#elif B_MAIN_FLAG == 3
     // 브릿지 테스트 로직
 
-    /*
-        쉘이랑 브릿지 2개를 띄워서 테스트
-    */
     pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
     pm_awake(&pm_object, 0, brdge_proc);
 
-    proc_dump("proc1", brdge_proc);
+    proc_dump("brdge proc", brdge_proc);
 
     current_proc = brdge_proc;
     _proc(brdge_proc);
 
-#elif b_main_flag == 3
+#elif B_MAIN_FLAG == 4
+    // 컴파일러 테스트 로직
+
+    pcb_t *compil_proc = proc_turn(
+        fm_record,
+        "compil.bin",
+        _task_compiler_start,
+        1);
+
+    pm_awake(&pm_object, 0, compil_proc);
+
+    proc_dump("compil proc", compil_proc);
+
+    current_proc = compil_proc;
+    _proc(compil_proc);
+#elif B_MAIN_FLAG == 5
+
     // ipc 테스트 로직
 
     /*
@@ -150,8 +204,6 @@ void kernel_main(void)
 
     current_proc = shell_proc;
     _proc(shell_proc);
+
 #endif
 }
-
-// 임시 함수로 빼기전 개발용 매인
-void devo_main(void) {}

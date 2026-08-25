@@ -3,6 +3,11 @@
 
 _start:
     mov x3, x0 // DTB 파싱을 위한 처리
+    cbz x0, dtb_fallback
+    b el1_entry
+
+dtb_fallback:
+    ldr x3, =0x40000000
     b el1_entry
     
 // EL1 KERNEL ENTRY

@@ -15,6 +15,30 @@ void dump(const char *name, uint64_t val)
     }
 }
 
+void dump_(const char *name, uint64_t val)
+{
+    if (toggle)
+    {
+        puts("\033[34m[Debug] ");
+        puts(name);
+        puts(" : ");
+        put_hex(val);
+        puts("\033[0m\n");
+    }
+}
+
+void _dump(const char *name, uint64_t val)
+{
+    if (toggle)
+    {
+        puts("\033[36m[Debug] ");
+        puts(name);
+        puts(" : ");
+        put_hex(val);
+        puts("\033[0m\n");
+    }
+}
+
 void for_dump(const char *name, uint64_t *val, uint8_t num)
 {
     if (toggle)
@@ -30,6 +54,9 @@ void for_dump(const char *name, uint64_t *val, uint8_t num)
     }
 }
 
+// 함수 내부에서 함수 호출 인자를 보는 함수
+void xxx_dump() {}
+
 void full_stop(void)
 {
     puts("\ninf loop\n");
@@ -44,9 +71,9 @@ void enter(const char *name)
     if (toggle)
     {
         puts("\n");
-        puts("[Enter] ");
+        puts("\033[31m[Enter] ");
         puts(name);
-        puts("\n");
+        puts("\033[0m\n");
     }
 }
 
