@@ -56,11 +56,11 @@ pcb_t *pm_run(PMv1_object *obj)
 
     if (!(obj->highqueue.empty(&(obj->highqueue))))
     {
-        data = pm_high(obj, 1, 0);
+        data = obj->highqueue.pop(&(obj->highqueue));
     }
     else if (!(obj->lowqueue.empty(&(obj->lowqueue))))
     {
-        data = pm_low(obj, 1, 0);
+        data = obj->lowqueue.pop(&(obj->lowqueue));
     }
     else
     {
@@ -136,7 +136,12 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     cmd = 1 : 메시지 수신 함수
     who가 towho에게 msg를 실행
 */
-void ptp(PMv1_object *obj, uint8_t who, uint8_t towho, int8_t msg[64])
+void ptp(
+    PMv1_object *obj,
+    uint8_t who,
+    uint8_t towho,
+    uint8_t msg[64],
+    uint8_t len)
 {
     pcb_t *rece = &obj->PMv1_mem[towho];
     if (rece->msgs.is_msgbox == FALSE)
@@ -145,7 +150,13 @@ void ptp(PMv1_object *obj, uint8_t who, uint8_t towho, int8_t msg[64])
         // 메시지 넣는 로직
         rece->msgs.is_msgbox = TRUE;
         rece->msgs.from = who;
-        for (int i = 0; i < 64; i++)
+
+        if (len > 64)
+        {
+            return;
+        }
+
+        for (int i = 0; i < len; i++)
         {
             rece->msgs.msgbox[i] = msg[i];
         }

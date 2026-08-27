@@ -254,20 +254,29 @@ void proc_dump(const char *name, pcb_t *proc)
         puts(" : ");
         put_hex(proc);
         puts("\n");
+
         puts("[Debug] ");
         puts(name);
         puts(" id : ");
         put_hex(proc->id);
         puts("\n");
+
         puts("[Debug] ");
         puts(name);
         puts(" sp : ");
         put_hex(proc->regs.sp);
         puts("\n");
+
         puts("[Debug] ");
         puts(name);
         puts(" elr_el1 : ");
         put_hex(proc->regs.elr_el1);
+        puts("\n");
+
+        puts("[Debug] ");
+        puts(name);
+        puts(" spsr: ");
+        put_hex(proc->regs.spsr);
         puts("\n");
     }
 }

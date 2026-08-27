@@ -41,9 +41,9 @@ void temp_posi1(void)
 
     puts("\ntemp position 1\n");
 
-    char msg_arr[64] = "hello";
+    // char msg_arr[64] = "hello";
 
-    ptp(&pm_object, 2, 1, msg_arr);
+    // ptp(&pm_object, 2, 1, msg_arr,);
 
     while (1)
     {

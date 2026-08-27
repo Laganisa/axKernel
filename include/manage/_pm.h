@@ -17,7 +17,8 @@ typedef struct proc_msg_t
     uint8_t from;      // 누구에게 왔는지
     uint8_t is_call;   // 자신에게 읽으라고 했는지
     uint8_t is_msgbox; // 메시지 박스가 차있는지
-    char *msgbox;      // 메세지
+    uint8_t len;       // 메시지 길이
+    uint8_t *msgbox;   // 메시지
 } proc_msg_t;
 
 // fd 유니온 만들기
@@ -94,7 +95,13 @@ uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);
 pcb_t *pm_run(PMv1_object *obj);
 void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc);
-void ptp(PMv1_object *obj, uint8_t who, uint8_t towho, int8_t msg[64]);
+
+void ptp(
+    PMv1_object *obj,
+    uint8_t who,
+    uint8_t towho,
+    uint8_t msg[64],
+    uint8_t len);
 
 // 전역 구조체 선언
 #define pm_object (*(PMv1_object *)PM_ADDR_START)

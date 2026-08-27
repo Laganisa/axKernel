@@ -75,7 +75,7 @@ void devo_main(void)
 
     gpu_init();
 
-    ltr(0, 0, 'A');
+    ltrs(16, 16, "AxKernel!");
 
     // net_TX_main();
 
@@ -117,15 +117,6 @@ void kernel_main(void)
         파일 생성 후 프로세스로 만든뒤 대기 큐에 넣기
         나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
-
-    pcb_t *proc1 = proc_turn(fm_record, "devo.BIN", devo_main, 0);
-
-    proc_dump("proc1", proc1);
-
-    //    프로세스 전환
-
-    current_proc = proc1;
-    _proc(proc1);
 
 #ifdef defined B_MAIN_FLAG
 
@@ -186,6 +177,7 @@ void kernel_main(void)
 
     current_proc = compil_proc;
     _proc(compil_proc);
+
 #elif B_MAIN_FLAG == 5
 
     // ipc 테스트 로직
@@ -196,14 +188,22 @@ void kernel_main(void)
     pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
     pm_awake(&pm_object, 0, bridge_proc);
 
+    /*
     pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
+    */
 
-    proc_dump("shell proc", bridge_proc);
-    proc_dump("shell proc", shell_proc);
+    pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", task_inf_B, 0);
+    pm_awake(&pm_object, 0, shell_proc);
 
-    current_proc = shell_proc;
-    _proc(shell_proc);
+    proc_dump("bridge proc", bridge_proc);
+    proc_dump("task_inf_B", shell_proc);
+
+    current_proc = bridge_proc;
+
+    enable_irq();
+
+    _proc(bridge_proc);
 
 #endif
 }

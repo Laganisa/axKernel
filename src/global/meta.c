@@ -267,11 +267,6 @@ pcb_t *schedule_proc(pcb_t *proc)
     // 다음 프로세스를 큐에서 꺼냄
     pcb_t *next = pm_run(&pm_object);
 
-    for (int i = 0; i < 4; i++)
-    {
-        dump("val", pm_object.lowbuf[i]);
-    }
-
     // ! 수정하기
     // 다른 프로세스를 꺼내는 상황
     if (next->state == (uint8_t)PROC_SIGNAL)

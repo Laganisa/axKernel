@@ -23,10 +23,11 @@
 #define SYS_FILE_DEL 11
 #define SYS_DIR_CREAT 12
 #define SYS_DIR_DEL 13
-#define SYS_RESERVED12 14
-#define SYS_RESERVED15 15
+#define SYS_DISK_CREAT 14
+#define SYS_DISK_DEL 15
 
 // Process System Call (16 ~ 23)
+//!  프로세스 생명 주기 관련 명령
 
 #define SYS_PROC_CREAT 16
 #define SYS_PROC_DEL 17
@@ -39,8 +40,8 @@
 
 // IPC System Call (24 ~ 31)
 
-#define SYS_RESERVED24 24
-#define SYS_RESERVED25 25
+#define SYS_IPC_SEND 24
+#define SYS_IPC_RECE 25
 #define SYS_RESERVED26 26
 #define SYS_RESERVED27 27
 #define SYS_RESERVED28 28
@@ -50,9 +51,9 @@
 
 // Network System Call (32 ~ 39)
 
-#define SYS_SEND_L2 32
-#define SYS_RESERVED33 33
-#define SYS_RESERVED34 34
+#define SYS_L2_SEND 32
+#define SYS_L2_RECE 33
+#define SYS_L2_FIND 34
 #define SYS_RESERVED35 35
 #define SYS_RESERVED36 36
 #define SYS_RESERVED37 37

@@ -17,7 +17,12 @@ extern dcb_t uart_device;
 
 #pragma region general_call
 
-static uint64_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t setup_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     uint8_t *addr = (uint8_t *)arg1;
     uint8_t rule = (uint8_t)arg2;
@@ -26,7 +31,12 @@ static uint64_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t
     return 1;
 }
 
-static uint64_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t write_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     // enter("sys_write");
 
@@ -58,9 +68,15 @@ static uint64_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t
     }
 }
 
-static uint64_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t read_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     // ! 근데 이거 길이 입력 방식이 필요할 듯
+    // TODO:
     int fd = (int)arg1;
     char *buf = (char *)arg2;
     size_t count = (size_t)arg3;
@@ -107,7 +123,12 @@ static uint64_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     }
 }
 
-static uint64_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t open_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
     dump("arg1", arg1);
@@ -182,7 +203,12 @@ static uint64_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     }
 }
 
-static uint64_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t close_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     int fd = (int)arg1;
 
@@ -199,7 +225,12 @@ static uint64_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t
     return 1;
 }
 
-static uint64_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t exit_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("sys_exit");
     // arg1: exit code
@@ -232,7 +263,12 @@ static uint64_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
 
 #pragma region file_call
 
-static uint64_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t creat_file_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         dump("arg1", arg1);
@@ -250,33 +286,80 @@ static uint64_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uin
     return 1;
 }
 
-static uint64_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t del_file_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         dump("arg1", arg1);
         dump("arg2", arg2);
         dump("arg3", arg3);
     */
+    // TODO:
 }
 
 #pragma endregion
 
 #pragma region proc_call
 
-static uint64_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t creat_proc_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
     dump("arg1", arg1);
     dump("arg2", arg2);
     dump("arg3", arg3);
     */
+    // TODO:
+}
+
+#pragma endregion
+
+#pragma region ipc_call
+
+static uint64_t ipc_send_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    uint8_t *data = (uint8_t *)arg1;
+    uint8_t len = (uint8_t)arg2;
+    uint8_t towho = (uint8_t)arg3;
+
+    uint8_t who = current_proc->id;
+
+    ptp(&pm_object, who, towho, data, len);
+    log("!");
+}
+
+static uint64_t ipc_rece_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
 }
 
 #pragma endregion
 
 #pragma region L2toL3
 
-static uint64_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t send_L2_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         송신 시스템 콜
@@ -320,12 +403,17 @@ static uint64_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
     1. 일단 관리자 구조체에서 온 신호가 있는지 확인한다.
     2. 만약 없다면 이 프로세스를 재우고 나중에 인터럽트로 올때 자신을 깨우라고 한다.
 */
-static uint64_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t rece_L2_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         일단 스캘레톤으로 만듬
         아니 인자 왜 받는거임?
-        todo : 검증이 필요
+        TODO: 검증이 필요
     */
     char *data = (char *)arg1;
     uint8_t *dst = (uint8_t *)arg2;
@@ -337,12 +425,17 @@ static uint64_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
     return nm_connect.payload_buf[ret];
 }
 
-static uint64_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t find_L2_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         ARP 요청 보네고 인덱스를 리턴하기
     */
-
+    // TODO:
     char *path = (char *)arg1;
     int mode = (int)arg2;
     uint32_t size = (uint32_t)arg3;
@@ -353,29 +446,25 @@ static uint64_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
 static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = {
     /* General */
     [SYS_EXIT] = exit_call,
-    /*[SYS_ABORT] = abort_call,
-    [SYS_LOAD] = load_call,
-    [SYS_YIELD] = yield_call,*/
+
     [SYS_SETUP] = setup_call,
     [SYS_WRITE] = write_call,
     [SYS_READ] = read_call,
 
     /* File */
+    [SYS_OPEN] = open_call,
+    [SYS_CLOSE] = close_call,
     [SYS_FILE_CREAT] = creat_file_call,
     [SYS_FILE_DEL] = del_file_call,
-    [SYS_OPEN] = open_call,
-    [SYS_CLOSE] = close_call, /*
-     [SYS_DIR_CREAT] = creat_dir_call,
-     [SYS_DIR_DEL] = del_dir_call,
-     */
+
+    /*IPC*/
+    [SYS_IPC_SEND] = ipc_send_call,
 
     /* Process */
     [SYS_PROC_CREAT] = creat_proc_call,
-    /*[SYS_PROC_DEL] = del_proc_call,
-     */
 
     /* Network */
-    [SYS_SEND_L2] = send_L2_call};
+    [SYS_L2_SEND] = send_L2_call};
 
 /*
     시스템 콜을 연결하는 파일

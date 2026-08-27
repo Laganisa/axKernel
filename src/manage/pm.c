@@ -65,8 +65,9 @@ pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
 
     new_proc->regs.elr_el1 = entry;                            // (ELR_EL1)
     new_proc->regs.sp = real_addr + (INITIAL_PROC_SIZE << 10); // sp
-    new_proc->regs.spsr = (entry == 0) ? 0x3c0 : 0x3c5;        // 인셉션 레벨 분기
 
+    // new_proc->regs.spsr = (entry == 0) ? 0x3c0 : 0x3c5;        // 인셉션 레벨 분기
+    new_proc->regs.spsr = (entry == 0) ? 0x340 : 0x3c5;
     return new_proc;
 }
 

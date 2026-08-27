@@ -15,7 +15,7 @@ extern uint32_t g_virtio_net_irq;
 extern uint32_t g_virtio_gpu_irq;
 extern uint32_t g_virtio_blk_irq;
 
-// 시스템 타이머: 두 타이머 인터럽트 간의 시간을 tick으로 나타낸거
+// 시스템 타이  머: 두 타이머 인터럽트 간의 시간을 tick으로 나타낸거
 static uint64_t system_tick = 0;
 
 pcb_t *current_proc = 0;
@@ -43,6 +43,8 @@ void irq_handler_main(pcb_t *proc)
     // 타이머 인터럽트
     if (irq_nr == NSPTI)
     {
+        log("time");
+
         current_proc = schedule_proc(proc);
 
         asm volatile("msr cntp_tval_el0, %0" : : "r"(frq));
@@ -56,6 +58,7 @@ void irq_handler_main(pcb_t *proc)
     // 나중에 만들기
     else if (irq_nr == g_virtio_net_irq)
     {
+        log("net");
 
         uint32_t status = VIRTIO_INTERRUPT_STATUS;
         // nm 케시에 저장하기
