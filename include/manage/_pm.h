@@ -58,10 +58,9 @@ typedef struct proto_t
 {
     uint8_t rule;
     uint8_t *addr;
-
 } proto_t;
 
-// ! 전체적으로 개편이 필요함
+// 버전 v2로 올리기
 typedef struct PMv1_object
 {
     uint64_t *base; // 바닥 주소

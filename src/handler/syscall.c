@@ -24,6 +24,7 @@ static uint64_t setup_call(
     uint64_t arg4,
     uint64_t arg5)
 {
+    enter("setup");
     uint8_t *addr = (uint8_t *)arg1;
     uint8_t rule = (uint8_t)arg2;
     pm_object.proto_arr[current_proc->id].rule = rule;
@@ -337,7 +338,10 @@ static uint64_t ipc_send_call(
 
     uint8_t who = current_proc->id;
 
+    enter("ipc send");
+
     ptp(&pm_object, who, towho, data, len);
+    pm_object.proto_arr[towho].addr = 3;
     log("!");
 }
 
@@ -348,6 +352,15 @@ static uint64_t ipc_rece_call(
     uint64_t arg4,
     uint64_t arg5)
 {
+    enter("ipc rece");
+
+    // 주소의 위치에 복사하기
+    uint8_t *addr = (uint8_t *)arg1;
+
+    for (int i = 0; i < current_proc->msgs.len; i++)
+    {
+        addr[i] = current_proc->msgs.msgbox[i];
+    }
 }
 
 #pragma endregion
@@ -459,6 +472,7 @@ static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64
 
     /*IPC*/
     [SYS_IPC_SEND] = ipc_send_call,
+    [SYS_IPC_RECE] = ipc_rece_call,
 
     /* Process */
     [SYS_PROC_CREAT] = creat_proc_call,

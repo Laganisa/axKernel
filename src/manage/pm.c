@@ -14,6 +14,7 @@ void pm_init()
     queue_init(&(pm_object.lowqueue), pm_object.lowbuf, 255);
     queue_init(&(pm_object.highqueue), pm_object.highbuf, 255);
 }
+
 /*
     프로세스 생성하는 함수
     프로세스로 만들고 싶어하는 함수의 주소랑
@@ -40,11 +41,21 @@ pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
     }
 
     id = (uint8_t)id + 1;
-
     pcb_t *new_proc = &obj->PMv1_mem[id];
 
-    new_proc->id = id;                           // 프로세스의 id를 할당된 pid로 변경
-    new_proc->p_id = parid;                      // 부모 id를 수정함
+    // 프로세스 상태
+    new_proc->id = id;      // 프로세스의 id를 할당된 pid로 변경
+    new_proc->p_id = parid; // 부모 id를 수정함
+    new_proc->state = 0;
+
+    // 프로세스 메시지
+    new_proc->msgs.from = NULL;
+    new_proc->msgs.is_call = NULL;
+    new_proc->msgs.is_msgbox = NULL;
+    new_proc->msgs.len = NULL;
+    new_proc->msgs.msgbox = NULL;
+
+    // 프로세스 조종
     new_proc->control[0].is_ctrl_alloc = 1;      // uart로 정해짐
     new_proc->control[0].use_dev = &uart_device; // 정보를 0으로 수정
     new_proc->control[0].file_offset = 0;        // 파일 오프셋

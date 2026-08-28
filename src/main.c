@@ -185,25 +185,23 @@ void kernel_main(void)
     /*
         쉘이랑 브릿지 2개를 띄워서 테스트
     */
-    pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
-    pm_awake(&pm_object, 0, bridge_proc);
 
-    /*
+    pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
+
     pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
     pm_awake(&pm_object, 0, shell_proc);
-    */
 
-    pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", task_inf_B, 0);
-    pm_awake(&pm_object, 0, shell_proc);
+    // pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
+    // pm_awake(&pm_object, 0, bridge_proc);
 
+    proc_dump("shell_proc", shell_proc);
     proc_dump("bridge proc", bridge_proc);
-    proc_dump("task_inf_B", shell_proc);
 
-    current_proc = bridge_proc;
+    current_proc = shell_proc;
 
     enable_irq();
 
-    _proc(bridge_proc);
+    _proc(shell_proc);
 
 #endif
 }

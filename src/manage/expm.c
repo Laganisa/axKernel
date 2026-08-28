@@ -158,16 +158,19 @@ void ptp(
 
         for (int i = 0; i < len; i++)
         {
+            dump("msg", msg[i]);
             rece->msgs.msgbox[i] = msg[i];
         }
 
         // towho의 우선순위를 증가시켜 바로 입력 받을 수 있도록
-        pm_low(obj, 1, towho);  // 대상자를 빼고
-        pm_high(obj, 0, towho); // 대상자를 넣고
+        // ! 수정하기
+        obj->lowqueue.pop(&(obj->lowqueue));           // 대상자를 빼고
+        obj->highqueue.push(&(obj->highqueue), towho); // 대상자를 넣고
     }
     else
     {
         log("WHY");
         // ! 예외 처리
+        // 메시지 박스가 차 있다면?
     }
 }

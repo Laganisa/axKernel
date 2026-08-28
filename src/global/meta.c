@@ -16,6 +16,7 @@ pcb_t *proc_turn(
     void *entry_point,
     uint8_t mod)
 {
+
     // 헤더 설정
     fm_exec_hdr_t task;
     task.magic = FM_EXEC_MAGIC;
@@ -44,7 +45,7 @@ pcb_t *proc_turn(
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + shell_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
-
+            dump("total size", total_size);
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
             task.image_size = shell_size;
@@ -61,7 +62,7 @@ pcb_t *proc_turn(
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + bridge_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
-
+            dump("total size", total_size);
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
             task.image_size = bridge_size;
@@ -77,6 +78,7 @@ pcb_t *proc_turn(
 
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + compiler_size);
+            dump("total size", total_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
 
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
