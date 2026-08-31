@@ -144,17 +144,19 @@ void ptp(
     uint8_t len)
 {
     pcb_t *rece = &obj->PMv1_mem[towho];
+
     if (rece->msgs.is_msgbox == FALSE)
     {
         log("who");
-        // 메시지 넣는 로직
-        rece->msgs.is_msgbox = TRUE;
-        rece->msgs.from = who;
 
         if (len > 64)
         {
             return;
         }
+
+        // 메시지 넣는 로직
+        rece->msgs.is_msgbox = TRUE;
+        rece->msgs.from = who;
 
         for (int i = 0; i < len; i++)
         {

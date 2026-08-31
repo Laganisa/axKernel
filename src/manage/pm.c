@@ -53,7 +53,9 @@ pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
     new_proc->msgs.is_call = NULL;
     new_proc->msgs.is_msgbox = NULL;
     new_proc->msgs.len = NULL;
-    new_proc->msgs.msgbox = NULL;
+
+    // 메시지 배열 초기화
+    memset(new_proc->msgs.msgbox, 0, sizeof(new_proc->msgs.msgbox));
 
     // 프로세스 조종
     new_proc->control[0].is_ctrl_alloc = 1;      // uart로 정해짐

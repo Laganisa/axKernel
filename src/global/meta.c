@@ -184,7 +184,6 @@ static pcb_t *elf_load_image(
     }
 
     uint64_t real_addr = mm_find(&mm_stack, proc->mm_addr, 0);
-    dump("real_addr", real_addr);
 
     uint64_t load_base = real_addr;
     if (max_align > 1)
@@ -220,11 +219,6 @@ static pcb_t *elf_load_image(
     {
         return 0;
     }
-
-    dump_("min_vaddr", min_vaddr);
-    dump_("ehdr->e_entry", ehdr->e_entry);
-    dump_("load_base", load_base);
-    dump_("load_base + (ehdr->e_entry - min_vaddr)", load_base + (ehdr->e_entry - min_vaddr));
 
     proc->regs.elr_el1 = load_base + (ehdr->e_entry - min_vaddr);
     return proc;

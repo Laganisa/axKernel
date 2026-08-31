@@ -29,6 +29,7 @@ static uint64_t setup_call(
     uint8_t rule = (uint8_t)arg2;
     pm_object.proto_arr[current_proc->id].rule = rule;
     pm_object.proto_arr[current_proc->id].addr = addr;
+    exit("setup");
     return 1;
 }
 
@@ -338,11 +339,8 @@ static uint64_t ipc_send_call(
 
     uint8_t who = current_proc->id;
 
-    enter("ipc send");
-
     ptp(&pm_object, who, towho, data, len);
-    pm_object.proto_arr[towho].addr = 3;
-    log("!");
+    *(pm_object.proto_arr[towho].addr) = 3;
 }
 
 static uint64_t ipc_rece_call(

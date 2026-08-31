@@ -199,11 +199,11 @@ void kernel_main(void)
 
     // full_stop();
 
-    current_proc = shell_proc;
+    current_proc = bridge_proc;
 
     enable_irq();
 
-    _proc(shell_proc);
+    _proc(bridge_proc);
 
 #endif
 }

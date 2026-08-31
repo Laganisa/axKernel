@@ -14,11 +14,11 @@ typedef struct proc_regs_t
 
 typedef struct proc_msg_t
 {
-    uint8_t from;      // 누구에게 왔는지
-    uint8_t is_call;   // 자신에게 읽으라고 했는지
-    uint8_t is_msgbox; // 메시지 박스가 차있는지
-    uint8_t len;       // 메시지 길이
-    uint8_t *msgbox;   // 메시지
+    uint8_t from;       // 누구에게 왔는지
+    uint8_t is_call;    // 자신에게 읽으라고 했는지
+    uint8_t is_msgbox;  // 메시지 박스가 차있는지
+    uint8_t len;        // 메시지 길이
+    uint8_t msgbox[64]; // 메시지
 } proc_msg_t;
 
 // fd 유니온 만들기

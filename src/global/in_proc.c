@@ -66,7 +66,7 @@ void temp_posi2(void)
     puts("\ntemp position 2\n");
     char msg_arr[64] = {0};
 
-    pm_object.PMv1_mem[2].msgs.msgbox = msg_arr;
+    // pm_object.PMv1_mem[2].msgs.msgbox = msg_arr;
     pm_object.PMv1_mem[2].msgs.is_msgbox = 0;
 
     while (pm_object.PMv1_mem[2].msgs.is_msgbox == 0)
