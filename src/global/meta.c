@@ -127,7 +127,10 @@ static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
     return TRUE;
 }
 
-static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
+static pcb_t *elf_load_image(
+    pcb_t *proc,
+    uint8_t *image,
+    uint32_t image_size)
 {
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
@@ -140,6 +143,7 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
     uint64_t min_vaddr = (uint64_t)-1;
     uint64_t max_vaddr = 0;
     uint64_t max_align = 1;
+
     for (uint16_t i = 0; i < ehdr->e_phnum; i++)
     {
         elf_phdr_t *phdr = (elf_phdr_t *)(image + ehdr->e_phoff + (i * sizeof(elf_phdr_t)));
@@ -180,6 +184,8 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
     }
 
     uint64_t real_addr = mm_find(&mm_stack, proc->mm_addr, 0);
+    dump("real_addr", real_addr);
+
     uint64_t load_base = real_addr;
     if (max_align > 1)
     {
@@ -214,6 +220,11 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
     {
         return 0;
     }
+
+    dump_("min_vaddr", min_vaddr);
+    dump_("ehdr->e_entry", ehdr->e_entry);
+    dump_("load_base", load_base);
+    dump_("load_base + (ehdr->e_entry - min_vaddr)", load_base + (ehdr->e_entry - min_vaddr));
 
     proc->regs.elr_el1 = load_base + (ehdr->e_entry - min_vaddr);
     return proc;

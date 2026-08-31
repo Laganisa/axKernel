@@ -45,7 +45,8 @@ uint16_t mm_creat(MMv5_stack *stack, uint16_t val16)
         {
             // ! 이것도 위에 바꾸면서 바꾸기
             data = 37 - data;
-            return MMv5_regu_push(stack, data); // 메모리 스택 주소를 리턴함
+            uint8_t ret = MMv5_regu_push(stack, data); // 메모리 스택 주소를 리턴함
+            return ret;
         }
     }
     else
@@ -98,6 +99,7 @@ uint8_t mm_free(MMv5_stack *stack, MMv5_stack *substack, uint16_t val16)
 */
 uint64_t mm_find(MMv5_stack *stack, uint16_t val16, uint16_t indi_addr)
 {
+
     // cmd = 2 주소 탐색 -> 프로그램이 주소를 요청하면 uint64_t 를 리턴(간접 주소)
     volatile uint64_t safe_base = (uint64_t)stack->base;
 
@@ -135,5 +137,9 @@ uint64_t mm_find(MMv5_stack *stack, uint16_t val16, uint16_t indi_addr)
         calculated_val += (uint16_t)(cnt(last_bits & BIT_ODD64_t) + (cnt(last_bits & BIT_EVEN64_t) << 1));
     }
 
-    return safe_base + ((uint64_t)calculated_val << 10) + indi_addr;
+    // ! 수정하기
+    // TODO:
+    uint64_t ret = safe_base + 128 * ((uint64_t)calculated_val << 10) + indi_addr;
+
+    return ret;
 }
