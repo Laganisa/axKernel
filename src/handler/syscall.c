@@ -15,6 +15,10 @@ extern void _proc(pcb_t *);
 
 extern dcb_t uart_device;
 
+/*
+    시스템 콜을 연결하는 파일
+*/
+
 #pragma region general_call
 
 // 프로세스가 정상종료 시 호출하는 시스템 콜
@@ -605,10 +609,6 @@ static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64
     [SYS_L2_SEND] = l2_send_call,
     [SYS_L2_RECE] = l2_rece_call,
     [SYS_L2_FIND] = l2_find_call};
-
-/*
-    시스템 콜을 연결하는 파일
-*/
 
 uint64_t handle_svc_a64(
     uint64_t syscall_num,
