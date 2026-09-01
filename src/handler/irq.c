@@ -43,7 +43,7 @@ void irq_handler_main(pcb_t *proc)
     // 타이머 인터럽트
     if (irq_nr == NSPTI)
     {
-        log("time");
+        // log("time");
 
         current_proc = schedule_proc(proc);
 

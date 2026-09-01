@@ -17,6 +17,72 @@ extern dcb_t uart_device;
 
 #pragma region general_call
 
+// 프로세스가 정상종료 시 호출하는 시스템 콜
+static uint64_t exit_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    enter("sys_exit");
+    // arg1: exit code
+    // ! 아직은 그 인자에 대하여 사용하지 않음
+    {
+        pcb_t *current = get_current_proc_addr();
+        pcb_t *next;
+
+        pm_awake(&pm_object, 1, current);
+        next = pm_run(&pm_object);
+
+        // 다음 값이 무었인지 확인하기
+        dump("next", next);
+
+        current_proc = next;
+
+        if (next != 0)
+        {
+            _proc(next);
+        }
+
+        // 대기 함수 이거 나중에 바꿔야지
+        while (1)
+            ;
+    }
+    return 0;
+}
+
+// 프로세스가 비정상 종료시 호출하는 시스템 콜
+static uint64_t abort_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+}
+
+// 힙에 공간을 할당 받을 때 사용하는 시스템 콜
+static uint64_t brk_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+}
+
+// 자신이 프로세스 점유를 남에게 빌려주는 시스템 콜
+static uint64_t yield_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+}
+
+// 프로세스와 커널 간 초기 설정
 static uint64_t setup_call(
     uint64_t arg1,
     uint64_t arg2,
@@ -125,6 +191,10 @@ static uint64_t read_call(
     }
 }
 
+#pragma endregion
+
+#pragma region file_call
+
 static uint64_t open_call(
     uint64_t arg1,
     uint64_t arg2,
@@ -227,45 +297,7 @@ static uint64_t close_call(
     return 1;
 }
 
-static uint64_t exit_call(
-    uint64_t arg1,
-    uint64_t arg2,
-    uint64_t arg3,
-    uint64_t arg4,
-    uint64_t arg5)
-{
-    enter("sys_exit");
-    // arg1: exit code
-    // ! 아직은 그 인자에 대하여 사용하지 않음
-    {
-        pcb_t *current = get_current_proc_addr();
-        pcb_t *next;
-
-        pm_awake(&pm_object, 1, current);
-        next = pm_run(&pm_object);
-
-        // 다음 값이 무었인지 확인하기
-        dump("next", next);
-
-        current_proc = next;
-
-        if (next != 0)
-        {
-            _proc(next);
-        }
-
-        // 대기 함수 이거 나중에 바꿔야지
-        while (1)
-            ;
-    }
-    return 0;
-}
-
-#pragma endregion
-
-#pragma region file_call
-
-static uint64_t creat_file_call(
+static uint64_t file_creat_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -288,7 +320,67 @@ static uint64_t creat_file_call(
     return 1;
 }
 
-static uint64_t del_file_call(
+static uint64_t file_del_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+static uint64_t dir_creat_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+static uint64_t dir_del_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+static uint64_t disk_load_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+static uint64_t disk_store_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -307,7 +399,24 @@ static uint64_t del_file_call(
 
 #pragma region proc_call
 
-static uint64_t creat_proc_call(
+// 프로세스 생성 함수
+static uint64_t proc_creat_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+    dump("arg1", arg1);
+    dump("arg2", arg2);
+    dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+// 프로세스 제거 함수
+static uint64_t proc_del_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -341,6 +450,7 @@ static uint64_t ipc_send_call(
 
     ptp(&pm_object, who, towho, data, len);
     *(pm_object.proto_arr[towho].addr) = 3;
+    return 1;
 }
 
 static uint64_t ipc_rece_call(
@@ -350,22 +460,31 @@ static uint64_t ipc_rece_call(
     uint64_t arg4,
     uint64_t arg5)
 {
-    enter("ipc rece");
+    enter("ipc");
 
-    // 주소의 위치에 복사하기
     uint8_t *addr = (uint8_t *)arg1;
+
+    dump("addr", (uint64_t)addr);
+    dump("before", addr[0]);
 
     for (int i = 0; i < current_proc->msgs.len; i++)
     {
         addr[i] = current_proc->msgs.msgbox[i];
     }
+
+    dump("after0", addr[0]);
+    dump("after1", addr[1]);
+
+    exit("ipc");
+
+    return 1;
 }
 
 #pragma endregion
 
 #pragma region L2toL3
 
-static uint64_t send_L2_call(
+static uint64_t l2_send_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -414,7 +533,7 @@ static uint64_t send_L2_call(
     1. 일단 관리자 구조체에서 온 신호가 있는지 확인한다.
     2. 만약 없다면 이 프로세스를 재우고 나중에 인터럽트로 올때 자신을 깨우라고 한다.
 */
-static uint64_t rece_L2_call(
+static uint64_t l2_rece_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -436,7 +555,7 @@ static uint64_t rece_L2_call(
     return nm_connect.payload_buf[ret];
 }
 
-static uint64_t find_L2_call(
+static uint64_t l2_find_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -457,7 +576,9 @@ static uint64_t find_L2_call(
 static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = {
     /* General */
     [SYS_EXIT] = exit_call,
-
+    [SYS_ABORT] = abort_call,
+    [SYS_BRK] = brk_call,
+    [SYS_YIELD] = yield_call,
     [SYS_SETUP] = setup_call,
     [SYS_WRITE] = write_call,
     [SYS_READ] = read_call,
@@ -465,18 +586,25 @@ static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64
     /* File */
     [SYS_OPEN] = open_call,
     [SYS_CLOSE] = close_call,
-    [SYS_FILE_CREAT] = creat_file_call,
-    [SYS_FILE_DEL] = del_file_call,
+    [SYS_FILE_CREAT] = file_creat_call,
+    [SYS_FILE_DEL] = file_del_call,
+    [SYS_DIR_CREAT] = dir_creat_call,
+    [SYS_DIR_DEL] = dir_del_call,
+    [SYS_DISK_LOAD] = disk_load_call,
+    [SYS_DISK_STORE] = disk_store_call,
 
     /*IPC*/
     [SYS_IPC_SEND] = ipc_send_call,
     [SYS_IPC_RECE] = ipc_rece_call,
 
     /* Process */
-    [SYS_PROC_CREAT] = creat_proc_call,
+    [SYS_PROC_CREAT] = proc_creat_call,
+    [SYS_PROC_DEL] = proc_del_call,
 
     /* Network */
-    [SYS_L2_SEND] = send_L2_call};
+    [SYS_L2_SEND] = l2_send_call,
+    [SYS_L2_RECE] = l2_rece_call,
+    [SYS_L2_FIND] = l2_find_call};
 
 /*
     시스템 콜을 연결하는 파일

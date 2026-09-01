@@ -31,6 +31,7 @@ uint8_t pm_low(PMv1_object *obj, uint8_t cmd, uint8_t val)
     }
 }
 
+/*
 uint8_t pm_high(PMv1_object *obj, uint8_t cmd, uint8_t val)
 {
     if (cmd == 0)
@@ -44,6 +45,7 @@ uint8_t pm_high(PMv1_object *obj, uint8_t cmd, uint8_t val)
         return ret;
     }
 }
+*/
 
 /*
     프로세스 실행 함수
@@ -89,7 +91,8 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     // pm_run의 대기 큐에 삽입
     if (cmd == 0)
     {
-        pm_low(&pm_object, 0, proc->id);
+        obj->lowqueue.push(&(obj->lowqueue), proc->id);
+        // pm_low(&pm_object, 0, proc->id);
     }
     // 여기 하단은 호출되지 않음
     else
@@ -157,6 +160,7 @@ void ptp(
         // 메시지 넣는 로직
         rece->msgs.is_msgbox = TRUE;
         rece->msgs.from = who;
+        rece->msgs.len = len;
 
         for (int i = 0; i < len; i++)
         {
@@ -174,5 +178,7 @@ void ptp(
         log("WHY");
         // ! 예외 처리
         // 메시지 박스가 차 있다면?
+        // 그냥 안 보내면 되지 않나?
+        // 아니면 그냥 for 문을 돌린다음에 처리하는것도 생각 중
     }
 }

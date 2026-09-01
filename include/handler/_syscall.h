@@ -9,7 +9,7 @@
 #define SYS_RESERVED0 0
 #define SYS_EXIT 1
 #define SYS_ABORT 2
-#define SYS_LOAD 3
+#define SYS_BRK 3
 #define SYS_YIELD 4
 #define SYS_SETUP 5
 #define SYS_WRITE 6
@@ -23,8 +23,8 @@
 #define SYS_FILE_DEL 11
 #define SYS_DIR_CREAT 12
 #define SYS_DIR_DEL 13
-#define SYS_DISK_CREAT 14
-#define SYS_DISK_DEL 15
+#define SYS_DISK_LOAD 14
+#define SYS_DISK_STORE 15
 
 // Process System Call (16 ~ 23)
 //!  프로세스 생명 주기 관련 명령
