@@ -17,6 +17,8 @@
     cmd = 0 : 넣기
     cmd = 1 : 빼기
 */
+
+/*
 uint8_t pm_low(PMv1_object *obj, uint8_t cmd, uint8_t val)
 {
     if (cmd == 0)
@@ -31,7 +33,7 @@ uint8_t pm_low(PMv1_object *obj, uint8_t cmd, uint8_t val)
     }
 }
 
-/*
+
 uint8_t pm_high(PMv1_object *obj, uint8_t cmd, uint8_t val)
 {
     if (cmd == 0)

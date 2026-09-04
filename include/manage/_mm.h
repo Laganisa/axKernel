@@ -6,10 +6,13 @@
 
 // MMU 관련
 
-typedef struct
+// 프로세스에 들어갈 페이지 테이블
+typedef struct page_t
 {
-    /* data */
-};
+    uint8_t is_full;           // 페이지가 다 채워졌는지
+    uint64_t change;           // 바뀔 실제 주소
+    struct page_t *pages[512]; // 페이지 포인터
+} page_t;
 
 // 메모리 관리자가 담당하는 메모리 선언
 typedef struct MMv5_stack
@@ -22,6 +25,8 @@ typedef struct MMv5_stack
 
     uint8_t sp;             // 서브 스택 포인터
     uint8_t MMv5_submem[5]; // 4개면 되는데 예방차원으로 5개로 부여
+
+    struct page_t *pages[512];
 
 } __attribute__((aligned(8))) MMv5_stack;
 
@@ -41,5 +46,6 @@ uint64_t mm_find(MMv5_stack *stack, uint16_t val16, uint16_t indi_addr);
 // 전역 구조체 선언
 #define mm_stack (*(MMv5_stack *)MM_ADDR_START)
 #define mm_substack mm_stack
+uint64_t mm_page(MMv5_stack *stack, uint64_t vaddr);
 
 #endif

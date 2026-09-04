@@ -68,8 +68,7 @@ void master(uint64_t dtb_addr)
 #endif
 }
 
-// 임시 함수로 빼기전 개발용 매인
-void devo_main(void)
+void foo(void)
 {
     puts("devo main\n");
 
@@ -84,6 +83,14 @@ void devo_main(void)
 
     blk_init();
     */
+}
+
+// 임시 함수로 빼기전 개발용 매인
+void devo_main(void)
+{
+    puts("devo main\n");
+
+    dump("val", mm_page(&mm_stack, 0x1000));
 }
 
 #define B_MAIN_FLAG 5

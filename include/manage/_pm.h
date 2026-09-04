@@ -52,6 +52,8 @@ typedef struct pcb_t
     // 장치 관련
     struct ctrl_t control[MAX_CONTROL_NUM];
 
+    page_t (*fp)(uint64_t);
+
 } __attribute__((aligned(8))) pcb_t;
 
 typedef struct proto_t
@@ -89,8 +91,8 @@ typedef struct PMv1_object
 void pm_init();
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid);
 pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid);
-uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);
-uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
+// uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);
+// uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);
 pcb_t *pm_run(PMv1_object *obj);
 void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc);

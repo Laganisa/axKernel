@@ -143,3 +143,26 @@ uint64_t mm_find(MMv5_stack *stack, uint16_t val16, uint16_t indi_addr)
 
     return ret;
 }
+
+// 어떤 타입을 리턴할지 미정
+uint64_t mm_page(MMv5_stack *stack, uint64_t vaddr)
+{
+    uint64_t temp = vaddr;
+
+    page_t *page = stack->pages;
+
+    // 현재
+    while (temp >= 0x1FF)
+    {
+        temp = ((temp << 9) | (temp >> 55)) & 0x1FF;
+        page = page->pages[temp];
+    }
+
+    // 고른 마지막 페이지가
+    if (page->is_full)
+    {
+        // 새로운 페이지 찾기 로직
+    }
+
+    return (page->change << 4) | temp;
+}
