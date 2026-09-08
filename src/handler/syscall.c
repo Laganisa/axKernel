@@ -610,7 +610,7 @@ static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64
     [SYS_L2_RECE] = l2_rece_call,
     [SYS_L2_FIND] = l2_find_call};
 
-uint64_t handle_svc_a64(
+uint64_t svc_a64_handle(
     uint64_t syscall_num,
     uint64_t arg1,
     uint64_t arg2,
