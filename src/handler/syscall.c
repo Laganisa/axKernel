@@ -67,6 +67,7 @@ static uint64_t abort_call(
 }
 
 // 힙에 공간을 할당 받을 때 사용하는 시스템 콜
+// ! 그냥 디스크 관련 아님 미정
 static uint64_t brk_call(
     uint64_t arg1,
     uint64_t arg2,
@@ -577,7 +578,12 @@ static uint64_t l2_find_call(
 
 #pragma endregion
 
-static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = {
+static uint64_t (*call_table[40])(
+    uint64_t,
+    uint64_t,
+    uint64_t,
+    uint64_t,
+    uint64_t) = {
     /* General */
     [SYS_EXIT] = exit_call,
     [SYS_ABORT] = abort_call,
@@ -621,7 +627,12 @@ uint64_t svc_a64_handle(
 
     if (call_table[syscall_num] != NULL)
     {
-        uint64_t ret = call_table[syscall_num](arg1, arg2, arg3, arg4, arg5);
+        uint64_t ret = call_table[syscall_num](
+            arg1,
+            arg2,
+            arg3,
+            arg4,
+            arg5);
         return ret;
     }
     else

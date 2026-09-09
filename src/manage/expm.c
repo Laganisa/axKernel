@@ -7,53 +7,12 @@
     프로세스 간의 작업과 관련한 파일
 */
 
-// ! 큐는 따로 OOP로 수정할 예정
-
-/*
-    주소를 주면 변환해서 내주는 코드
-
-    주소 -> 실제 주소
-    pid
-    cmd = 0 : 넣기
-    cmd = 1 : 빼기
-*/
-
-/*
-uint8_t pm_low(PMv1_object *obj, uint8_t cmd, uint8_t val)
-{
-    if (cmd == 0)
-    {
-        obj->lowqueue.push(&(obj->lowqueue), val);
-        return 0;
-    }
-    else
-    {
-        uint8_t ret = obj->lowqueue.pop(&(obj->lowqueue));
-        return ret;
-    }
-}
-
-
-uint8_t pm_high(PMv1_object *obj, uint8_t cmd, uint8_t val)
-{
-    if (cmd == 0)
-    {
-        obj->highqueue.push(&(obj->highqueue), val);
-        return 0;
-    }
-    else
-    {
-        uint8_t ret = obj->highqueue.pop(&(obj->highqueue));
-        return ret;
-    }
-}
-*/
-
 /*
     프로세스 실행 함수
     큐에 들어가 있는 대로 진행함
     큐에 있는 프로세스를 리턴함
 */
+
 pcb_t *pm_run(PMv1_object *obj)
 {
     uint8_t data; // pm 큐에서 뽑은 id 값
@@ -88,6 +47,7 @@ pcb_t *pm_run(PMv1_object *obj)
     uint8_t cmd = 2 , uint8_t task의 주소 및 메모리 해제
     요악 하면 cmd = 1은 wait, cmd = 2 는 kill
 */
+
 void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
 {
     // pm_run의 대기 큐에 삽입

@@ -13,7 +13,9 @@ static uint64_t unknown_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("unknown_handle");
 
@@ -28,11 +30,14 @@ static uint64_t unknown_handle(
     return 0;
 }
 
+// 인터럽트 대기 및 이밴드 대기 트랩
 static uint64_t trap_wfi_wfe_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_wfi_wfe_handle");
 
@@ -46,11 +51,15 @@ static uint64_t trap_wfi_wfe_handle(
 
     return 0;
 }
+
+// 32비트에서 cp15 레지스터 접근 트랩
 static uint64_t trap_mcr_mrc_a32_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_mcr_mrc_a32_handle");
 
@@ -64,11 +73,15 @@ static uint64_t trap_mcr_mrc_a32_handle(
 
     return 0;
 }
+
+// 32비트에서 cp15 64비트 레지스터 접근 트랩
 static uint64_t trap_mcrr_mrrc_a32_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_mcrr_mrrc_a32_handle");
 
@@ -82,11 +95,14 @@ static uint64_t trap_mcrr_mrrc_a32_handle(
 
     return 0;
 }
+
 static uint64_t trap_mrc_mcr_a32_coproc_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_mrc_mcr_a32_coproc_handle");
 
@@ -100,11 +116,14 @@ static uint64_t trap_mrc_mcr_a32_coproc_handle(
 
     return 0;
 }
+
 static uint64_t trap_ldc_stc_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_ldc_stc_handle");
 
@@ -123,7 +142,9 @@ static uint64_t trap_fp_simd_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_fp_simd_handle");
 
@@ -142,7 +163,9 @@ static uint64_t trap_vmrs_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_vmrs_handle");
 
@@ -161,7 +184,9 @@ static uint64_t trap_ptr_auth_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_ptr_auth_handle");
 
@@ -180,7 +205,9 @@ static uint64_t illegal_excu_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_ptr_auth_handle");
 
@@ -198,7 +225,9 @@ static uint64_t svc_a32_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("svc_a32_handle");
 
@@ -216,7 +245,9 @@ static uint64_t hvc_a32_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("hvc_a32_handle");
 
@@ -234,7 +265,9 @@ static uint64_t smc_a32_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("smc_a32_handle");
 
@@ -252,7 +285,9 @@ static uint64_t hvc_a64_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("hvc_a64_handle");
 
@@ -270,7 +305,9 @@ static uint64_t smc_a64_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("smc_a64_handle");
 
@@ -288,7 +325,9 @@ static uint64_t trap_msr_mrs_sysinst_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("trap_msr_mrs_sysinst_handle");
 
@@ -306,7 +345,9 @@ static uint64_t sve_exce_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("sve_exce_handle");
 
@@ -324,7 +365,9 @@ static uint64_t eret_trap_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("eret_trap_handle");
 
@@ -343,7 +386,9 @@ static uint64_t ptr_auth_fail_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("ptr_auth_fail_handle");
 
@@ -361,7 +406,9 @@ static uint64_t inst_abort_el0_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("inst_abort_el0_handle");
 
@@ -379,7 +426,9 @@ static uint64_t inst_abort_el1_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("inst_abort_el1_handle");
 
@@ -397,7 +446,9 @@ static uint64_t pc_align_fault_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("pc_align_fault_handle");
 
@@ -415,7 +466,9 @@ static uint64_t data_abort_el0_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("data_abort_el0_handle");
 
@@ -433,7 +486,9 @@ static uint64_t data_abort_el1_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("data_abort_el1_handle");
 
@@ -451,7 +506,9 @@ static uint64_t sp_align_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("sp_align_handle");
 
@@ -469,7 +526,9 @@ static uint64_t floatpoint_exce_a32_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("floatpoint_exce_a32_handle");
 
@@ -487,7 +546,9 @@ static uint64_t floatpoint_exce_a64_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("floatpoint_exce_a64_handle");
 
@@ -505,7 +566,9 @@ static uint64_t serror_irq_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("serror_irq_handle");
 
@@ -523,7 +586,9 @@ static uint64_t breakpoint_el0_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("breakpoint_el0_handle");
 
@@ -541,7 +606,9 @@ static uint64_t breakpoint_el0_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("breakpoint_el0_handle");
 
@@ -559,7 +626,9 @@ static uint64_t breakpoint_el1_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("breakpoint_el1_handle");
 
@@ -577,7 +646,9 @@ static uint64_t software_step_el0_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("software_step_el0_handle");
 
@@ -595,7 +666,9 @@ static uint64_t software_step_el1_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("software_step_el1_handle");
 
@@ -613,7 +686,9 @@ static uint64_t watchpoint_el0_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("watchpoint_el0_handle");
 
@@ -631,7 +706,9 @@ static uint64_t watchpoint_el1_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("watchpoint_el1_handle");
 
@@ -650,7 +727,9 @@ static uint64_t brk_inst_a64_handle(
     uint64_t arg8,
     uint64_t arg1,
     uint64_t arg2,
-    uint64_t arg3)
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     enter("brk_inst_a64_handle");
 
