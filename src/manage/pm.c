@@ -91,3 +91,31 @@ pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
 {
     return pm_creat(obj, (uint64_t)task, parid);
 }
+
+// TODO:
+// 어떤 타입을 리턴할지 미정
+uint64_t mm_page(MMv5_stack *stack, uint64_t vaddr)
+{
+    uint64_t temp = vaddr;
+
+    // 프로세스에 있는 최신걸 가져오기
+    pcb_t *now_proc = get_current_proc_addr();
+
+    // 이거 sll로 해서 MM stack 쪽엔 root를 두어야지
+    page_t *page = stack->pages;
+
+    // 현재
+    while (temp >= 0x1FF)
+    {
+        temp = ((temp << 9) | (temp >> 55)) & 0x1FF;
+        page = page->pages[temp];
+    }
+
+    // 고른 마지막 페이지가
+    if (page->is_full)
+    {
+        // 새로운 페이지 찾기 로직
+    }
+
+    return (page->frame[temp] << 4) | temp;
+}

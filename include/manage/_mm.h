@@ -9,9 +9,17 @@
 // 프로세스에 들어갈 페이지 테이블
 typedef struct page_t
 {
-    uint8_t is_full;           // 페이지가 다 채워졌는지
-    uint64_t change;           // 바뀔 실제 주소
-    struct page_t *pages[512]; // 페이지 포인터
+    uint16_t is_full : 1; // 페이지가 다 채워졌는지
+    uint16_t num : 10;    // 어디까지 차있는지
+    uint16_t is_leaf : 1; // 말단인지
+    uint16_t padding : 4;
+
+    union
+    {
+        struct page_t *pages[512]; // 페이지 포인터
+        uint64_t frame[512];       // 프레임 주소
+    };
+
 } page_t;
 
 // 메모리 관리자가 담당하는 메모리 선언
