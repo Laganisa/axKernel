@@ -52,6 +52,7 @@ typedef struct pcb_t
     // 장치 관련
     struct ctrl_t control[MAX_CONTROL_NUM];
 
+    // 프로세스당 페이지 테이블
     struct page_t *page_i;
 
 } __attribute__((aligned(8))) pcb_t;

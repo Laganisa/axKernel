@@ -54,6 +54,8 @@ uint64_t mm_find(MMv5_stack *stack, uint16_t val16, uint16_t indi_addr);
 // 전역 구조체 선언
 #define mm_stack (*(MMv5_stack *)MM_ADDR_START)
 #define mm_substack mm_stack
-uint64_t mm_page(MMv5_stack *stack, uint64_t vaddr);
+
+// 페이지 로직
+uint64_t mm_page(uint64_t vaddr);
 
 #endif

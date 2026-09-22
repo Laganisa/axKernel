@@ -71,6 +71,7 @@ uint8_t insert(bpt_node *root, char *name, uint16_t value)
             leaf->djb2_hash_Key[i] = leaf->djb2_hash_Key[i - 1];
             leaf->data[i] = leaf->data[i - 1];
         }
+
         leaf->fnv1a_hash_key[pos] = key1;
         leaf->djb2_hash_Key[pos] = key2;
         leaf->data[pos] = value;

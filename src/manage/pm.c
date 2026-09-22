@@ -2,6 +2,7 @@
 #include "handler/_sync.h"
 #include "manage/_mm.h"
 #include "global/_debug.h"
+#include "global/_alloc.h"
 
 extern void _proc(pcb_t *); // proc와 연결
 extern dcb_t uart_device;
@@ -21,7 +22,16 @@ void pm_init()
     이 프로세스를 생성한 부모 프로세스의 id 값을 받고
     생성함
 */
-pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
+
+/// @brief
+/// @param obj
+/// @param entry
+/// @param parid
+/// @return
+pcb_t *pm_creat(
+    PMv1_object *obj,
+    uint64_t entry,
+    uint8_t parid)
 {
     int16_t id = -1;
 
@@ -71,6 +81,20 @@ pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
     // 자신의 주소를 알아내고
     uint64_t real_addr = mm_find(&mm_stack, new_proc->mm_addr, 0);
 
+    // 프로세스에 들어갈 페이지 테이블
+    new_proc->page_i = (page_t *)heap_alloc(sizeof(page_t));
+
+    // 페이지 테이블 초기화
+    new_proc->page_i->is_full = 0;
+    new_proc->page_i->num = 0;
+    new_proc->page_i->is_leaf = 0;
+
+    for (int i = 0; i < 512; i++)
+    {
+        new_proc->page_i->pages[i] = NULL;
+    }
+
+    // 프로세스 데이터 넣기
     for (int i = 0; i < 31; i++)
     {
         new_proc->regs.reg_x[i] = 0; // x0~x30 초기화
@@ -81,6 +105,7 @@ pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid)
 
     // new_proc->regs.spsr = (entry == 0) ? 0x3c0 : 0x3c5;        // 인셉션 레벨 분기
     new_proc->regs.spsr = (entry == 0) ? 0x340 : 0x3c5;
+
     return new_proc;
 }
 
@@ -92,30 +117,76 @@ pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
     return pm_creat(obj, (uint64_t)task, parid);
 }
 
+static inline uint64_t aarch64_rev64(uint64_t val)
+{
+    uint64_t result;
+    __asm__ volatile("rev %0, %1" : "=r"(result) : "r"(val));
+    return result;
+}
+
 // TODO:
 // 어떤 타입을 리턴할지 미정
-uint64_t mm_page(MMv5_stack *stack, uint64_t vaddr)
+uint64_t mm_page(uint64_t vaddr)
 {
-    uint64_t temp = vaddr;
+    uint64_t addr = vaddr >> 12;
+    uint16_t offset = vaddr & 0xFFF;
 
-    // 프로세스에 있는 최신걸 가져오기
+    // 현재 프로세스에 있는 페이지 테이블을 가져오기
     pcb_t *now_proc = get_current_proc_addr();
 
     // 이거 sll로 해서 MM stack 쪽엔 root를 두어야지
-    page_t *page = stack->pages;
+    page_t *now_page = now_proc->page_i;
 
-    // 현재
-    while (temp >= 0x1FF)
+    uint64_t temp;
+
+    // L0 -> L1 -> L2 순서로 상위 비트부터 페이지 인덱스를 가져옴
+
+    // L0
+    temp = (addr >> 18) & 0x1FF;
+
+    if (now_page == NULL)
     {
-        temp = ((temp << 9) | (temp >> 55)) & 0x1FF;
-        page = page->pages[temp];
+        return 0;
     }
 
-    // 고른 마지막 페이지가
-    if (page->is_full)
+    if (now_page->is_leaf)
     {
-        // 새로운 페이지 찾기 로직
+        return 0;
     }
 
-    return (page->frame[temp] << 4) | temp;
+    now_page = now_page->pages[temp];
+
+    if (now_page == NULL)
+    {
+        return 0;
+    }
+
+    // L1
+    temp = (addr >> 9) & 0x1FF;
+
+    if (now_page->is_leaf)
+    {
+        return 0;
+    }
+
+    now_page = now_page->pages[temp];
+
+    if (now_page == NULL)
+    {
+        return 0;
+    }
+
+    // L2
+    temp = addr & 0x1FF;
+
+    // 고른 마지막 페이지가 리프가 아니라면?
+    // L0 -> L1 -> L2 로 온다음
+    if (!(now_page->is_leaf))
+    {
+        return 0;
+    }
+
+    uint64_t result = now_page->frame[temp] + offset;
+
+    return result;
 }
