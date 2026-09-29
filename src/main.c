@@ -45,7 +45,7 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_MASTER_FLAG 1
+#define B_MASTER_FLAG 2
 
 // 커널 함수
 void master(uint64_t dtb_addr)
@@ -90,7 +90,10 @@ void devo_main(void)
 {
     puts("devo main\n");
 
-    dump("val", mm_page(&mm_stack, 0x1000));
+    gpu_init();
+
+    ltrs(16, 16, "AxKernel!");
+    // dump("val", mm_page(&mm_stack, 0x1000));
 }
 
 #define B_MAIN_FLAG 5

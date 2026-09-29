@@ -34,12 +34,15 @@ typedef struct FMv3_record
     uint16_t cur_ptr; // 보고 있는 주소 읽을때 씀(아직 쓰지 않음)
     uint16_t all_num; // 전체 파일 수
 
-    // bp tree의 루트 노드
+    // bpt의 루트 노드
     struct bpt_node *root;
+
+    // bpt의 디렉토리 루트 노드
+    struct bpt_node *dir_root;
 
     /*
         meta data arr
-        동적할당을 생각중이긴 함s
+        동적할당을 생각중이긴 함
     */
     struct fcb_t FMv3_mem[MAX_FILE_NUM];
 
@@ -75,7 +78,7 @@ uint32_t fm_read(
     void *buf, uint32_t size, uint32_t offset);
 
 // 파일 열기
-fcb_t *fm_open(void);
+// fcb_t *fm_open(void);
 // 파일 닫기
 
 #endif

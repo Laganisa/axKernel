@@ -602,26 +602,7 @@ static uint64_t breakpoint_el0_handle(
 
     return 0;
 }
-static uint64_t breakpoint_el0_handle(
-    uint64_t arg8,
-    uint64_t arg1,
-    uint64_t arg2,
-    uint64_t arg3,
-    uint64_t arg4,
-    uint64_t arg5)
-{
-    enter("breakpoint_el0_handle");
 
-    reg_far_el1();
-    reg_elr_el1();
-    reg_esr_el1();
-
-    log("Kernel Panic!");
-
-    full_stop();
-
-    return 0;
-}
 static uint64_t breakpoint_el1_handle(
     uint64_t arg8,
     uint64_t arg1,

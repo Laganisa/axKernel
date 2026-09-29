@@ -62,7 +62,7 @@ void queue_init(queue *this, uint8_t *buffer, uint32_t size)
 
 #pragma region stack
 
-static void queue_push(queue *this, uint8_t data)
+static void stack_push(queue *this, uint8_t data)
 {
     if (this->count >= this->size)
         return;
@@ -76,7 +76,7 @@ static void queue_push(queue *this, uint8_t data)
         this->head = 0;
 }
 
-static uint8_t queue_pop(queue *this)
+static uint8_t stack_pop(queue *this)
 {
     if (this->count == 0)
         return 0;

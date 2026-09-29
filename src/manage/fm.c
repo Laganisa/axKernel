@@ -58,6 +58,21 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
     return new_file;
 }
 
+fcb_t *fm_delete(FMv3_record *reco, char *name)
+{
+    // 권한 확인
+    uint16_t *file_index = bpt_search(reco->root, name);
+
+    if (file_index == NULL)
+    {
+        return NULL;
+    }
+    // 현재 파일의 권한이 삭제가 가능한지
+    reco->FMv3_mem[*file_index].auth = 0;
+
+    return bpt_delete(reco->root, name);
+}
+
 void fm_execute(FMv3_record *reco)
 {
     if (reco == NULL)
