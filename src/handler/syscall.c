@@ -75,6 +75,25 @@ static uint64_t brk_call(
     uint64_t arg4,
     uint64_t arg5)
 {
+    if (current_proc == NULL || current_proc->heap_start == 0)
+    {
+        return (uint64_t)-1;
+    }
+
+    if (arg1 == 0)
+    {
+        return current_proc->heap_break;
+    }
+
+    if (current_proc->heap_break > current_proc->heap_limit ||
+        arg1 > current_proc->heap_limit - current_proc->heap_break)
+    {
+        return (uint64_t)-1;
+    }
+
+    uint64_t old_break = current_proc->heap_break;
+    current_proc->heap_break += arg1;
+    return old_break;
 }
 
 // 자신이 프로세스 점유를 남에게 빌려주는 시스템 콜

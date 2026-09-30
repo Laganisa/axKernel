@@ -49,9 +49,12 @@
 
 // V2 파일 관리자 - 1MB 파일 지원
 #define MAX_FILE_SIZE 0x100000 // 최대 파일 크기: 1MB
+
+/*
 #define MAX_DIR_SIZE 0x200000  // 디렉토리당 최대 크기: 2MB
 #define MAX_FCB_file 0x10      // FCB 최대 수 (16개)
 #define MAX_FCB_dir 0x04       // 디렉토리 최대 수 4개
+*/
 
 // V3 파일 관리자
 #define MAX_FILE_NUM 0x1000                 // 최대 파일 수
@@ -59,6 +62,7 @@
 #define FM_EXEC_MODE_DIRECT 0ULL
 #define FM_EXEC_MODE_IMAGE 1ULL
 #define MAX_BPT_NODE_NUM 4
+#define MAX_DIR_FILE_NUM 0x10 // 디렉토리당 최대 파일 수
 
 #pragma endregion
 

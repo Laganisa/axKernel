@@ -68,7 +68,7 @@ void master(uint64_t dtb_addr)
 #endif
 }
 
-void foo(void)
+static void foo(void)
 {
     puts("devo main\n");
 
@@ -83,6 +83,11 @@ void foo(void)
 
     blk_init();
     */
+
+    while (1)
+    {
+        ;
+    }
 }
 
 // 임시 함수로 빼기전 개발용 매인
@@ -90,9 +95,8 @@ void devo_main(void)
 {
     puts("devo main\n");
 
-    gpu_init();
+    foo();
 
-    ltrs(16, 16, "AxKernel!");
     // dump("val", mm_page(&mm_stack, 0x1000));
 }
 

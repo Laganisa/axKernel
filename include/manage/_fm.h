@@ -5,6 +5,7 @@
 #include "_sect.h"
 #include "_defs.h"
 
+// 파일 제어 블럭 타입
 typedef struct fcb_t
 {
     // 파일 이름 (8 bytes)
@@ -19,13 +20,38 @@ typedef struct fcb_t
     uint16_t is_alloc : 1; // 할당 여부
     uint16_t is_lock : 1;  // 누가 읽고 있는지 확인
 
+    uint16_t YYYY : 7;
+    uint16_t MM : 4;
+    uint16_t DD : 5;
+
     uint8_t checksum; // 체크섬
+
+} fcb_t;
+
+// 디렉토리 제어 블럭 엔트리
+typedef struct fcb_e
+{
+    // 디렉토리 이름 (8 bytes)
+    // /0 또한 포함
+    int8_t alias[MAX_FILE_NAME + 1];
+
+    // 디렉토리 안에 있는 파일 id
+    uint16_t files[MAX_DIR_FILE_NUM];
+
+    uint16_t p_fid : 6; // 부모 디렉토리 id
+    uint16_t fid : 6;   // 디렉토리 id
+    uint16_t depth : 4; // 디렉토리 깊이 (0~2)
+
+    uint16_t auth : 10;   // 권한
+    uint16_t padding : 6; // 패딩
 
     uint16_t YYYY : 7;
     uint16_t MM : 4;
     uint16_t DD : 5;
 
-} fcb_t;
+    uint8_t checksum; // 체크섬
+
+} fcb_e;
 
 // 파일 관리자 구조체 V3
 typedef struct FMv3_record
@@ -54,6 +80,7 @@ typedef struct fm_exec_hdr_t
     uint64_t mode;
     uint64_t entry;
     uint64_t image_size;
+
 } fm_exec_hdr_t;
 
 #define fm_record ((FMv3_record *)FM_ADDR_START)

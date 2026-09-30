@@ -61,6 +61,8 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
 fcb_t *fm_delete(FMv3_record *reco, char *name)
 {
     // 권한 확인
+    // TODO: 권한 확인 로직 추가 필요
+    /*
     uint16_t *file_index = bpt_search(reco->root, name);
 
     if (file_index == NULL)
@@ -69,6 +71,7 @@ fcb_t *fm_delete(FMv3_record *reco, char *name)
     }
     // 현재 파일의 권한이 삭제가 가능한지
     reco->FMv3_mem[*file_index].auth = 0;
+    */
 
     return bpt_delete(reco->root, name);
 }

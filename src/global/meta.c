@@ -3,6 +3,8 @@
 #include "global/_debug.h"
 #include "tools/_asm.h"
 
+#define PROC_STACK_RESERVE (16 * 1024ULL)
+
 extern pcb_t *current_proc;
 
 /*
@@ -192,6 +194,16 @@ static pcb_t *elf_load_image(
         load_base = (load_base + align_mask) & ~align_mask;
     }
 
+    uint64_t process_size = INITIAL_PROC_SIZE << 10;
+    uint64_t heap_limit = real_addr + process_size - PROC_STACK_RESERVE;
+    uint64_t image_end = load_base + (max_vaddr - min_vaddr);
+    uint64_t heap_start = (image_end + 15) & ~15ULL;
+
+    if (heap_start > heap_limit)
+    {
+        return 0;
+    }
+
     for (uint16_t i = 0; i < ehdr->e_phnum; i++)
     {
         elf_phdr_t *phdr = (elf_phdr_t *)(image + ehdr->e_phoff + (i * sizeof(elf_phdr_t)));
@@ -201,7 +213,7 @@ static pcb_t *elf_load_image(
         }
 
         uint64_t seg_offset = phdr->p_vaddr - min_vaddr;
-        if (seg_offset + phdr->p_memsz > (INITIAL_PROC_SIZE << 10))
+        if (load_base - real_addr + seg_offset + phdr->p_memsz > process_size - PROC_STACK_RESERVE)
         {
             return 0;
         }
@@ -221,6 +233,9 @@ static pcb_t *elf_load_image(
     }
 
     proc->regs.elr_el1 = load_base + (ehdr->e_entry - min_vaddr);
+    proc->heap_start = heap_start;
+    proc->heap_break = heap_start;
+    proc->heap_limit = heap_limit;
     return proc;
 }
 
@@ -246,12 +261,12 @@ pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
-        return pm_creat(obj, hdr->entry, parid);
+        return pm_create(obj, hdr->entry, parid);
     }
 
     if (hdr->mode == FM_EXEC_MODE_IMAGE)
     {
-        pcb_t *proc = pm_creat(obj, 0, parid);
+        pcb_t *proc = pm_create(obj, 0, parid);
 
         if (proc == 0)
         {

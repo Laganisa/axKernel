@@ -45,6 +45,9 @@ typedef struct pcb_t
     uint8_t p_id;     // 부모의 id
     uint16_t mm_addr; // 메모리 주소
     uint8_t state;    // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
+    uint64_t heap_start;
+    uint64_t heap_break;
+    uint64_t heap_limit;
 
     // 메시지 관련
     struct proc_msg_t msgs;
@@ -91,7 +94,7 @@ typedef struct PMv1_object
 // init 만들기
 void pm_init();
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid);
-pcb_t *pm_creat(PMv1_object *obj, uint64_t entry, uint8_t parid);
+pcb_t *pm_create(PMv1_object *obj, uint64_t entry, uint8_t parid);
 // uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);
 // uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);

@@ -22,13 +22,7 @@ void pm_init()
     이 프로세스를 생성한 부모 프로세스의 id 값을 받고
     생성함
 */
-
-/// @brief
-/// @param obj
-/// @param entry
-/// @param parid
-/// @return
-pcb_t *pm_creat(
+pcb_t *pm_create(
     PMv1_object *obj,
     uint64_t entry,
     uint8_t parid)
@@ -57,6 +51,9 @@ pcb_t *pm_creat(
     new_proc->id = id;      // 프로세스의 id를 할당된 pid로 변경
     new_proc->p_id = parid; // 부모 id를 수정함
     new_proc->state = 0;
+    new_proc->heap_start = 0;
+    new_proc->heap_break = 0;
+    new_proc->heap_limit = 0;
 
     // 프로세스 메시지
     new_proc->msgs.from = NULL;
@@ -82,6 +79,7 @@ pcb_t *pm_creat(
     uint64_t real_addr = mm_find(&mm_stack, new_proc->mm_addr, 0);
 
     // 프로세스에 들어갈 페이지 테이블
+    // TODO: 프로세스당 페이지 테이블을 만들기
     new_proc->page_i = (page_t *)heap_alloc(sizeof(page_t));
 
     // 페이지 테이블 초기화
@@ -114,7 +112,7 @@ pcb_t *pm_creat(
 */
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
 {
-    return pm_creat(obj, (uint64_t)task, parid);
+    return pm_create(obj, (uint64_t)task, parid);
 }
 
 static inline uint64_t aarch64_rev64(uint64_t val)
