@@ -135,4 +135,15 @@ fcb_e *fm_dir_create(
 
 uint8_t fm_dir_delete(FMv3_record *reco, char *name);
 
+// 나중에 스태틱으로 박을 예정
+uint8_t fm_dir_in(
+    FMv3_record *reco,
+    fcb_e *dir,
+    uint16_t file_id);
+
+uint8_t fm_dir_out(
+    FMv3_record *reco,
+    fcb_e *dir,
+    uint16_t file_id);
+
 #endif

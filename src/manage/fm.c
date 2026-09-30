@@ -49,6 +49,8 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
         new_file->alias[i] = name[i];
     }
 
+    new_file->alias[MAX_FILE_NAME] = '\0';
+
     new_file->is_alloc = 1;
     new_file->lens = size >> 10;
     new_file->fid = (uint16_t)reco->all_file_num;
@@ -86,15 +88,18 @@ fcb_e *fm_dir_create(
     uint16_t auth)
 {
 
+    // 파일 초과 검사
     if (reco->all_dir_num >= MAX_FILE_NUM)
         return NULL;
 
-    fcb_e *new_dir = &(reco->FMv3_dir_mem[reco->all_dir_num]);
+    fcb_e *new_dir =
+        &(reco->FMv3_dir_mem[reco->all_dir_num]);
 
-    uint16_t value = reco->all_file_num;
+    uint16_t value = reco->all_dir_num;
 
-    // 파일 삽입
-    int ret = bpt_insert(reco->root, name, value);
+    // 디렉토리 삽입
+    int ret = bpt_insert(
+        reco->dir_root, name, value);
 
     if (ret == 0)
     {
@@ -113,8 +118,26 @@ fcb_e *fm_dir_create(
     }
 
     new_dir->alias[MAX_FILE_NAME] = '\0';
-    new_dir->p_fid = p_fid;
-    new_dir->depth = depth;
+
+    if (depth > 2 || depth < 0)
+    {
+        return NULL; // 디렉토리 깊이 제한
+    }
+    else if (depth == 0)
+    {
+        new_dir->p_fid = 0; // 루트 디렉토리
+    }
+    else
+    {
+        new_dir->p_fid = p_fid;
+    }
+
+    for (int i = 0; i < MAX_DIR_FILE_NUM; i++)
+    {
+        // 루트 파일을 가리키도록 초기화
+        new_dir->files[i] = 0;
+    }
+
     new_dir->fid = (uint16_t)reco->all_dir_num;
     new_dir->auth = auth;
 
@@ -126,6 +149,8 @@ fcb_e *fm_dir_create(
 // 디렉토리 삭제
 uint8_t fm_dir_delete(FMv3_record *reco, char *name)
 {
+    // TODO: 권한 확인 로직 추가 필요
+    return bpt_delete(reco->dir_root, name);
 }
 
 void fm_execute(FMv3_record *reco)
@@ -201,8 +226,54 @@ uint32_t fm_read(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint3
     return size;
 }
 
+// 성공 여부를 반환함
+// 디렉토리에 파일을 추가하거나 제거하는 함수
+uint8_t fm_dir_in(
+    FMv3_record *reco,
+    fcb_e *dir,
+    uint16_t file_id)
+{
+    // TODO: 권한 확인 로직 추가 필요
+
+    // 디렉토리 검사
+    if (dir == NULL)
+    {
+        return 0; // 디렉토리 구조체가 NULL
+    }
+
+    // file_id 검사
+    if (file_id >= reco->all_file_num)
+    {
+        return 0; // 파일 ID가 유효하지 않음
+    }
+
+    dir->files[file_id] = file_id;
+    return 1;
+}
+
+uint8_t fm_dir_out(
+    FMv3_record *reco,
+    fcb_e *dir,
+    uint16_t file_id)
+{
+    // TODO: 권한 확인 로직 추가 필요
+
+    if (dir == NULL)
+    {
+        return 0; // 디렉토리 구조체가 NULL
+    }
+    if (file_id >= reco->all_file_num)
+    {
+        return 0; // 파일 ID가 유효하지 않음
+    }
+
+    dir->files[file_id] = 0; // 파일 ID 제거
+    return 1;
+}
+
 // 파일 목록 조회
 // 주어진 경로의 디렉토리 내 파일 목록을 출력
+// TODO: 나중에 하기!
 void fm_list(FMv3_record *reco, int8_t *path)
 {
 }
@@ -216,7 +287,19 @@ fcb_t *fm_find(FMv3_record *reco, char *name)
     {
         return &(reco->FMv3_mem[ret]);
     }
-    return 0;
+    return NULL;
+}
+
+fcb_t *fm_dir_find(FMv3_record *reco, char *name)
+{
+    uint16_t ret = bpt_search(reco->dir_root, name);
+
+    if (ret != 0)
+    {
+        return &(reco->FMv3_dir_mem[ret]);
+    }
+
+    return NULL;
 }
 
 void *fm_data_addr(FMv3_record *reco, fcb_t *file)

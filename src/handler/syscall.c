@@ -362,7 +362,43 @@ static uint64_t file_del_call(
     return fm_delete(fm_record, name);
 }
 
-static uint64_t dir_creat_call(
+static uint64_t dir_in_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    fcb_e *dir = (fcb_e *)arg1;
+    uint16_t file_id = (uint16_t)arg2;
+
+    return fm_dir_in(fm_record, dir, file_id);
+}
+
+static uint64_t dir_out_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    fcb_e *dir = (fcb_e *)arg1;
+    uint16_t file_id = (uint16_t)arg2;
+
+    return fm_dir_out(fm_record, dir, file_id);
+}
+
+static uint64_t dir_create_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -375,6 +411,12 @@ static uint64_t dir_creat_call(
         dump("arg3", arg3);
     */
     // TODO:
+    char *name = (char *)arg1;
+    uint32_t p_fid = (uint32_t)arg2;
+    uint16_t depth = (uint16_t)arg3;
+    uint16_t auth = (uint16_t)arg4;
+
+    return fm_dir_create(fm_record, name, p_fid, depth, auth);
 }
 
 static uint64_t dir_del_call(
@@ -390,36 +432,9 @@ static uint64_t dir_del_call(
         dump("arg3", arg3);
     */
     // TODO:
-}
+    char *name = (char *)arg1;
 
-static uint64_t disk_load_call(
-    uint64_t arg1,
-    uint64_t arg2,
-    uint64_t arg3,
-    uint64_t arg4,
-    uint64_t arg5)
-{
-    /*
-        dump("arg1", arg1);
-        dump("arg2", arg2);
-        dump("arg3", arg3);
-    */
-    // TODO:
-}
-
-static uint64_t disk_store_call(
-    uint64_t arg1,
-    uint64_t arg2,
-    uint64_t arg3,
-    uint64_t arg4,
-    uint64_t arg5)
-{
-    /*
-        dump("arg1", arg1);
-        dump("arg2", arg2);
-        dump("arg3", arg3);
-    */
-    // TODO:
+    return fm_dir_delete(fm_record, name);
 }
 
 #pragma endregion
@@ -600,13 +615,59 @@ static uint64_t l2_find_call(
 
 #pragma endregion
 
-static uint64_t (*call_table[40])(
+#pragma region virtio_call
+
+static uint64_t disk_load_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+static uint64_t disk_store_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+#pragma endregion
+
+static uint64_t reserved_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    return (uint64_t)-1;
+}
+
+static uint64_t (*call_table[64])(
     uint64_t,
     uint64_t,
     uint64_t,
     uint64_t,
     uint64_t) = {
+
     /* General */
+    [SYS_RESERVED0] = reserved_call,
     [SYS_EXIT] = exit_call,
     [SYS_ABORT] = abort_call,
     [SYS_BRK] = brk_call,
@@ -620,23 +681,69 @@ static uint64_t (*call_table[40])(
     [SYS_CLOSE] = close_call,
     [SYS_FILE_CREAT] = file_creat_call,
     [SYS_FILE_DEL] = file_del_call,
-    [SYS_DIR_CREAT] = dir_creat_call,
+    [SYS_DIR_IN] = reserved_call,
+    [SYS_DIR_OUT] = reserved_call,
+    [SYS_DIR_CREAT] = dir_create_call,
     [SYS_DIR_DEL] = dir_del_call,
-    [SYS_DISK_LOAD] = disk_load_call,
-    [SYS_DISK_STORE] = disk_store_call,
 
     /*IPC*/
     [SYS_IPC_SEND] = ipc_send_call,
     [SYS_IPC_RECE] = ipc_rece_call,
+    [SYS_RESERVED26] = reserved_call,
+    [SYS_RESERVED27] = reserved_call,
+    [SYS_RESERVED28] = reserved_call,
+    [SYS_RESERVED29] = reserved_call,
+    [SYS_RESERVED30] = reserved_call,
+    [SYS_RESERVED31] = reserved_call,
 
     /* Process */
     [SYS_PROC_CREAT] = proc_creat_call,
     [SYS_PROC_DEL] = proc_del_call,
+    [SYS_RESERVED18] = reserved_call,
+    [SYS_RESERVED19] = reserved_call,
+    [SYS_RESERVED20] = reserved_call,
+    [SYS_RESERVED21] = reserved_call,
+    [SYS_RESERVED22] = reserved_call,
+    [SYS_RESERVED23] = reserved_call,
 
     /* Network */
     [SYS_L2_SEND] = l2_send_call,
     [SYS_L2_RECE] = l2_rece_call,
-    [SYS_L2_FIND] = l2_find_call};
+    [SYS_L2_FIND] = l2_find_call,
+    [SYS_RESERVED35] = reserved_call,
+    [SYS_RESERVED36] = reserved_call,
+    [SYS_RESERVED37] = reserved_call,
+    [SYS_RESERVED38] = reserved_call,
+    [SYS_RESERVED39] = reserved_call,
+
+    /* Info */
+    [SYS_RESERVED40] = reserved_call,
+    [SYS_RESERVED41] = reserved_call,
+    [SYS_RESERVED42] = reserved_call,
+    [SYS_RESERVED43] = reserved_call,
+    [SYS_RESERVED44] = reserved_call,
+    [SYS_RESERVED45] = reserved_call,
+    [SYS_RESERVED46] = reserved_call,
+    [SYS_RESERVED47] = reserved_call,
+
+    /* Virtio */
+    [SYS_DISK_LOAD] = disk_load_call,
+    [SYS_DISK_STORE] = disk_store_call,
+    [SYS_RESERVED50] = reserved_call,
+    [SYS_RESERVED51] = reserved_call,
+    [SYS_RESERVED52] = reserved_call,
+    [SYS_RESERVED53] = reserved_call,
+    [SYS_RESERVED54] = reserved_call,
+    [SYS_RESERVED55] = reserved_call,
+    [SYS_RESERVED56] = reserved_call,
+    [SYS_RESERVED57] = reserved_call,
+    [SYS_RESERVED58] = reserved_call,
+    [SYS_RESERVED59] = reserved_call,
+    [SYS_RESERVED60] = reserved_call,
+    [SYS_RESERVED61] = reserved_call,
+    [SYS_RESERVED62] = reserved_call,
+    [SYS_RESERVED63] = reserved_call,
+};
 
 uint64_t svc_a64_handle(
     uint64_t syscall_num,
@@ -647,7 +754,7 @@ uint64_t svc_a64_handle(
     uint64_t arg5)
 {
 
-    if (call_table[syscall_num] != NULL)
+    if (syscall_num < 64 && call_table[syscall_num] != NULL)
     {
         uint64_t ret = call_table[syscall_num](
             arg1,
