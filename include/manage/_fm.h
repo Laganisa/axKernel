@@ -53,12 +53,14 @@ typedef struct fcb_e
 
 } fcb_e;
 
-// 파일 관리자 구조체 V3
+/// @brief 파일 관리자 구조체 V3
 typedef struct FMv3_record
 {
     uint64_t *base;   // 바닥 주소
     uint16_t cur_ptr; // 보고 있는 주소 읽을때 씀(아직 쓰지 않음)
-    uint16_t all_num; // 전체 파일 수
+
+    uint16_t all_file_num; // 전체 파일 수
+    uint16_t all_dir_num;  // 전체 디렉토리 수
 
     // bpt의 루트 노드
     struct bpt_node *root;
@@ -67,10 +69,11 @@ typedef struct FMv3_record
     struct bpt_node *dir_root;
 
     /*
-        meta data arr
+        메타 데이터 배열
         동적할당을 생각중이긴 함
     */
-    struct fcb_t FMv3_mem[MAX_FILE_NUM];
+    struct fcb_t FMv3_mem[MAX_FILE_NUM];    // 파일 메타데이터 배열
+    struct fcb_e FMv3_dir_mem[MAX_DIR_NUM]; // 디렉토리 메타데이터 배열
 
 } FMv3_record;
 
@@ -93,19 +96,43 @@ fcb_t *fm_find(FMv3_record *reco, char *name);
 void fm_list(FMv3_record *reco, int8_t *path);
 
 // 파일 생성 & 삭제
-fcb_t *fm_create(FMv3_record *reco, char *path, uint32_t size, uint16_t auth);
-fcb_t *fm_delete(FMv3_record *reco, char *path);
+fcb_t *fm_create(
+    FMv3_record *reco,
+    char *path,
+    uint32_t size,
+    uint16_t auth);
+
+uint8_t fm_delete(
+    FMv3_record *reco,
+    char *path);
 
 // 파일 쓰기 & 읽기
 uint32_t fm_write(
-    FMv3_record *reco, fcb_t *file,
-    void *buf, uint32_t size, uint32_t offset);
+    FMv3_record *reco,
+    fcb_t *file,
+    void *buf,
+    uint32_t size,
+    uint32_t offset);
+
 uint32_t fm_read(
-    FMv3_record *reco, fcb_t *file,
-    void *buf, uint32_t size, uint32_t offset);
+    FMv3_record *reco,
+    fcb_t *file,
+    void *buf,
+    uint32_t size,
+    uint32_t offset);
 
 // 파일 열기
 // fcb_t *fm_open(void);
 // 파일 닫기
+
+// 디렉토리 생성 & 삭제
+fcb_e *fm_dir_create(
+    FMv3_record *reco,
+    char *name,
+    uint32_t p_fid,
+    uint16_t depth,
+    uint16_t auth);
+
+uint8_t fm_dir_delete(FMv3_record *reco, char *name);
 
 #endif

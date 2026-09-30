@@ -357,6 +357,9 @@ static uint64_t file_del_call(
         dump("arg3", arg3);
     */
     // TODO:
+
+    char *name = (char *)arg1;
+    return fm_delete(fm_record, name);
 }
 
 static uint64_t dir_creat_call(

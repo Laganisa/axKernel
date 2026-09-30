@@ -40,6 +40,7 @@ typedef struct virtio_queue_state
     struct virtq_avail *avail;
     struct virtq_used *used;
     unsigned char *storage;
+    uint16_t size;
 } virtio_queue_state;
 
 void vq_setup(
@@ -49,6 +50,30 @@ void vq_setup(
     struct virtio_queue_state *vq);
 
 void vq_init(uint64_t v_base_addr);
+
+uint32_t virtio_mmio_version(uint64_t v_base_addr);
+
+void virtio_mmio_notify_queue(uint64_t v_base_addr, uint16_t q_index);
+
+int vq_setup_v1(
+    uint64_t v_base_addr,
+    uint16_t q_index,
+    uint8_t *storage,
+    struct virtio_queue_state *vq);
+
+void vq_start_v1(uint64_t v_base_addr);
+
+int vq_init_v2(uint64_t v_base_addr);
+
+int vq_setup_v2(
+    uint64_t v_base_addr,
+    uint16_t q_index,
+    uint8_t *storage,
+    struct virtio_queue_state *vq);
+
+void vq_start_v2(uint64_t v_base_addr);
+
+uint32_t virtio_mmio_read_config32(uint64_t v_base_addr, uint32_t offset);
 
 extern virtio_queue_state rx_queue;
 extern virtio_queue_state tx_queue;
@@ -216,6 +241,8 @@ typedef struct __attribute__((packed))
 
 #pragma endregion
 
+#pragma region blk_hdr
+
 extern uint32_t gpu_display_width;
 extern uint32_t gpu_display_height;
 extern volatile uint32_t *gpu_framebuffer;
@@ -238,8 +265,14 @@ int gpu_resource_flush(
 
 void blk_init(void);
 
+#pragma endregion
+
 void virtio_blk_irq_handle(void);
 
 void net_TX_main(void);
+
+extern uint64_t g_virtio_snd_base;
+
+void vsnd_init(void);
 
 #endif

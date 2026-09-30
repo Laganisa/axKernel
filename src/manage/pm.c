@@ -115,12 +115,22 @@ pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
     return pm_create(obj, (uint64_t)task, parid);
 }
 
+// 프로세스 삭제 함수
+pcb_t *pm_delete(
+    PMv1_object *obj,
+    uint64_t entry,
+    uint8_t parid)
+{
+}
+
+/*
 static inline uint64_t aarch64_rev64(uint64_t val)
 {
     uint64_t result;
     __asm__ volatile("rev %0, %1" : "=r"(result) : "r"(val));
     return result;
 }
+*/
 
 // TODO:
 // 어떤 타입을 리턴할지 미정

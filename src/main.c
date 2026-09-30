@@ -25,6 +25,7 @@
 #include "handler/_syscall.h" // 시스템 콜 헨들러
 
 #include "tools/_asm.h" // 어셈블리 함수가 있는 헤더
+#include "tools/_virtio.h"
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);
@@ -70,11 +71,12 @@ void master(uint64_t dtb_addr)
 
 static void foo(void)
 {
-    puts("devo main\n");
+    enter("foo\n");
 
-    gpu_init();
+    // gpu_init();
+    vsnd_init();
 
-    ltrs(16, 16, "AxKernel!");
+    // ltrs(16, 16, "AxKernel!");
 
     // net_TX_main();
 

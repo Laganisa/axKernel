@@ -59,11 +59,13 @@
 // V3 파일 관리자
 #define MAX_FILE_NUM 0x1000                 // 최대 파일 수
 #define FM_EXEC_MAGIC 0x415853504144453BULL // "AXSPADE;"라는 매직넘버
-#define FM_EXEC_MODE_DIRECT 0ULL
-#define FM_EXEC_MODE_IMAGE 1ULL
-#define MAX_BPT_NODE_NUM 4
-#define MAX_DIR_FILE_NUM 0x10 // 디렉토리당 최대 파일 수
 
+#define FM_EXEC_MODE_DIRECT 0ULL // 0이면 직접 실행
+#define FM_EXEC_MODE_IMAGE 1ULL  // 1이면 이미지 실행
+
+#define MAX_BPT_NODE_NUM 4                          // B+트리 노드 최대 수
+#define MAX_DIR_FILE_NUM 0x10                       // 디렉토리당 최대 파일 수
+#define MAX_DIR_NUM MAX_FILE_NUM / MAX_DIR_FILE_NUM // 최대 디렉토리 수
 #pragma endregion
 
 // 장치 관리자 관련

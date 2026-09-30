@@ -94,6 +94,7 @@ char current_node_name[256] = {0};
 uint64_t g_virtio_net_base = 0;
 uint64_t g_virtio_gpu_base = 0;
 uint64_t g_virtio_blk_base = 0;
+uint64_t g_virtio_snd_base = 0;
 
 uint32_t g_virtio_net_irq;
 uint32_t g_virtio_gpu_irq;
@@ -123,6 +124,7 @@ void parse_dtb_tokens(uint64_t dtb_addr)
     bool is_net = 0;
     bool is_gpu = 0;
     bool is_blk = 0;
+    bool is_snd = 0;
 
     while (1)
     {
@@ -139,6 +141,7 @@ void parse_dtb_tokens(uint64_t dtb_addr)
             is_net = 0;
             is_gpu = 0;
             is_blk = 0;
+            is_snd = 0;
 
             uint32_t len = fdt_strnlen(node_name, 256) + 1;
             p = (uint32_t *)((uint8_t *)p + fdt_align(len));
@@ -173,6 +176,14 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                     dump("Virtio_BLK_IRQ", (uint64_t)node_irq_num);
                 }
             }
+            else if (is_snd && node_mmio_addr != 0)
+            {
+                g_virtio_snd_base = node_mmio_addr;
+                if (has_irq)
+                {
+                    dump("Virtio_SND_IRQ", (uint64_t)node_irq_num);
+                }
+            }
         }
         else if (token == FDT_PROP)
         {
@@ -193,6 +204,12 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                     volatile uint32_t *device_id_reg = (volatile uint32_t *)(mmio_addr + 0x008);
                     uint32_t device_id = *device_id_reg;
 
+                    if (device_id != 0)
+                    {
+                        dump("Virtio_Device_At", mmio_addr);
+                        dump("Virtio_Device_ID", device_id);
+                    }
+
                     if (device_id == 1)
                     {
                         dump("Found_Virtio_Net_At", mmio_addr);
@@ -207,6 +224,11 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                     {
                         dump("Found_Virtio_GPU_At", mmio_addr);
                         is_gpu = 1;
+                    }
+                    else if (device_id == 25)
+                    {
+                        dump("Found_Virtio_SND_At", mmio_addr);
+                        is_snd = 1;
                     }
                 }
             }
