@@ -46,7 +46,7 @@ extern dcb_t nic_device;
 
 #pragma endregion
 
-#define B_MASTER_FLAG 2
+#define B_MASTER_FLAG 1
 
 // 커널 함수
 void master(uint64_t dtb_addr)
@@ -73,6 +73,7 @@ static void foo(void)
 {
     enter("foo\n");
 
+    vhid_init();
     // gpu_init();
     vsnd_init();
 
@@ -97,12 +98,13 @@ void devo_main(void)
 {
     puts("devo main\n");
 
-    foo();
+    kshell();
+    //     foo();
 
     // dump("val", mm_page(&mm_stack, 0x1000));
 }
 
-#define B_MAIN_FLAG 5
+#define B_MAIN_FLAG 2
 
 void kernel_main(void)
 {

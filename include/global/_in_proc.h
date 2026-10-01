@@ -5,6 +5,7 @@
 
 void ROOT(void);
 void INIT(void);
+void kshell(void);
 
 void temp_posi0(void);
 void temp_posi1(void);

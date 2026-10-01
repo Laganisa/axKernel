@@ -45,6 +45,7 @@ typedef struct pcb_t
     uint8_t p_id;     // 부모의 id
     uint16_t mm_addr; // 메모리 주소
     uint8_t state;    // 프로세스 상태(00 : 활성화, 01 : 휴면 상태, 10 : 정지 상태, 11 : 좀비 상태)
+
     uint64_t heap_start;
     uint64_t heap_break;
     uint64_t heap_limit;

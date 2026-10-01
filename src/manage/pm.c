@@ -51,6 +51,7 @@ pcb_t *pm_create(
     new_proc->id = id;      // 프로세스의 id를 할당된 pid로 변경
     new_proc->p_id = parid; // 부모 id를 수정함
     new_proc->state = 0;
+
     new_proc->heap_start = 0;
     new_proc->heap_break = 0;
     new_proc->heap_limit = 0;

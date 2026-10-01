@@ -1,6 +1,7 @@
 #include "global/_in_proc.h"
 #include "global/_io.h"
 #include "tools/_asm.h"
+#include "global/_debug.h"
 
 /*
     pid 0 : 루트 프로세스
@@ -9,6 +10,8 @@
 void ROOT(void)
 {
     // 루트 프로세스
+    // 에러가 나면 이 프로세스를 실행함
+    // 커널 초기화 및 재실행 등 진짜 심각 한 상황일 때
 }
 
 /*
@@ -18,6 +21,36 @@ void ROOT(void)
 void INIT(void)
 {
     enable_irq();
+}
+
+// 기초적인 커널 내장 쉘
+void kshell(void)
+{
+    enter("kernel in shell");
+
+    char prompt[64];
+
+    while (1)
+    {
+        gets(prompt, 63);
+
+        if (strcmp(prompt, "exit") == 0)
+        {
+            puts("exit shell\n");
+            break;
+        }
+        else if (strcmp(prompt, "help") == 0)
+        {
+            puts("help: show this message\n");
+            puts("exit: exit shell\n");
+        }
+        else
+        {
+            puts("Unknown command: ");
+            puts(prompt);
+            puts("\n");
+        }
+    }
 }
 
 /*

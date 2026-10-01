@@ -84,22 +84,8 @@ void vq_init(uint64_t v_base_addr)
     VIRTIO_TOT_REG(v_base_addr, 0x070) = VIRTIO_STATUS_ACKNOWLEDGE;
     VIRTIO_TOT_REG(v_base_addr, 0x070) |= VIRTIO_STATUS_DRIVER;
 
-    uint32_t host_features = VIRTIO_TOT_REG(v_base_addr, 0x010);
-
     VIRTIO_TOT_REG(v_base_addr, 0x020) = 0;
-    VIRTIO_TOT_REG(v_base_addr, 0x024) = 0;
     VIRTIO_TOT_REG(v_base_addr, 0x028) = 4096;
-
-    VIRTIO_TOT_REG(v_base_addr, 0x070) |= VIRTIO_STATUS_FEATURES_OK;
-
-    puts("host features successfully\n");
-
-    if ((VIRTIO_TOT_REG(v_base_addr, 0x070) &
-         VIRTIO_STATUS_FEATURES_OK) == 0)
-    {
-        puts("FEATURES_OK rejected\n");
-        return;
-    }
 }
 
 uint32_t virtio_mmio_version(uint64_t v_base_addr)

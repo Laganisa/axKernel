@@ -47,11 +47,11 @@
 
 #pragma region virtq
 
-// 1. DTB 파싱으로 얻은 주소를 저장할 전역 변수 선언 (extern)
+// DTB 파싱으로 얻은 주소를 저장할 전역 변수 선언 (extern)
 extern uint64_t g_virtio_net_base;
 extern uint64_t g_virtio_gpu_base;
 
-// 2. 런타임 변수 주소 계산을 위한 인라인 함수 정의
+// 런타임 변수 주소 계산을 위한 인라인 함수 정의
 static inline volatile uint32_t *virtio_total_reg_ptr(uint64_t base_addr, uint32_t offset)
 {
     return (volatile uint32_t *)(uintptr_t)(base_addr + offset);
@@ -72,7 +72,7 @@ static inline volatile uint32_t *virtio_blk_reg_ptr(uint32_t offset)
     return (volatile uint32_t *)(uintptr_t)(g_virtio_gpu_base + offset);
 }
 
-// 3. 인라인 함수를 활용하도록 매크로 변경
+// 인라인 함수를 활용하도록 매크로 변경
 #define VIRTIO_TOT_REG(base_addr, offset) (*virtio_total_reg_ptr(base_addr, offset))
 #define VIRTIO_NET_REG(offset) (*virtio_net_reg_ptr(offset))
 #define VIRTIO_GPU_REG(offset) (*virtio_gpu_reg_ptr(offset))

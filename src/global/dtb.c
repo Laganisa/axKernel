@@ -1,6 +1,7 @@
 #include "_types.h"
 #include "global/_io.h"
 #include "global/_debug.h"
+#include "tools/_virtio.h"
 
 /*
     dtb 파서 함수
@@ -95,6 +96,8 @@ uint64_t g_virtio_net_base = 0;
 uint64_t g_virtio_gpu_base = 0;
 uint64_t g_virtio_blk_base = 0;
 uint64_t g_virtio_snd_base = 0;
+uint64_t g_virtio_input_bases[VIRTIO_INPUT_MAX_DEVICES] = {0};
+uint32_t g_virtio_input_count = 0;
 
 uint32_t g_virtio_net_irq;
 uint32_t g_virtio_gpu_irq;
@@ -125,6 +128,7 @@ void parse_dtb_tokens(uint64_t dtb_addr)
     bool is_gpu = 0;
     bool is_blk = 0;
     bool is_snd = 0;
+    bool is_input = 0;
 
     while (1)
     {
@@ -142,6 +146,7 @@ void parse_dtb_tokens(uint64_t dtb_addr)
             is_gpu = 0;
             is_blk = 0;
             is_snd = 0;
+            is_input = 0;
 
             uint32_t len = fdt_strnlen(node_name, 256) + 1;
             p = (uint32_t *)((uint8_t *)p + fdt_align(len));
@@ -182,6 +187,19 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                 if (has_irq)
                 {
                     dump("Virtio_SND_IRQ", (uint64_t)node_irq_num);
+                }
+            }
+            else if (is_input && node_mmio_addr != 0)
+            {
+                if (g_virtio_input_count < VIRTIO_INPUT_MAX_DEVICES)
+                {
+                    uint32_t input_index = g_virtio_input_count++;
+                    g_virtio_input_bases[input_index] = node_mmio_addr;
+                    dump("Found_Virtio_Input_At", node_mmio_addr);
+                }
+                else
+                {
+                    puts("VirtIO input device limit reached\n");
                 }
             }
         }
@@ -229,6 +247,11 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                     {
                         dump("Found_Virtio_SND_At", mmio_addr);
                         is_snd = 1;
+                    }
+                    else if (device_id == 18)
+                    {
+                        dump("Found_Virtio_Input_At", mmio_addr);
+                        is_input = 1;
                     }
                 }
             }

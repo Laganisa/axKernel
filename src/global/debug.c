@@ -64,7 +64,7 @@ void full_stop(void)
     puts("\ninf loop\n");
     while (1)
     {
-        ;
+        asm volatile("wfe");
     }
 }
 

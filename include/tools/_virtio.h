@@ -79,6 +79,7 @@ extern virtio_queue_state rx_queue;
 extern virtio_queue_state tx_queue;
 
 #define VIRTIO_QUEUE_SIZE 256
+#define VIRTIO_INPUT_MAX_DEVICES 4
 
 #define VIRTIO_DESC_BYTES (16 * VIRTIO_QUEUE_SIZE)
 #define VIRTIO_AVAIL_BYTES (4 + 2 * VIRTIO_QUEUE_SIZE)
@@ -100,7 +101,7 @@ static inline void virtio_mb(void)
 
 void *get_ring_buffer_addr(void);
 
-void setup_virtqueue(int queue_index);
+// void setup_virtqueue(int queue_index);
 
 #define VIRTIO_GPU_FORMAT_B8G8R8A8_UNORM 1
 
@@ -274,5 +275,26 @@ void net_TX_main(void);
 extern uint64_t g_virtio_snd_base;
 
 void vsnd_init(void);
+
+typedef struct virtio_input_event
+{
+    uint16_t type;
+    uint16_t code;
+    uint32_t value;
+} virtio_input_event_t;
+
+#define VIRTIO_INPUT_EV_SYN 0
+#define VIRTIO_INPUT_EV_KEY 1
+#define VIRTIO_INPUT_EV_REL 2
+#define VIRTIO_INPUT_EV_ABS 3
+#define VIRTIO_INPUT_REL_X 0
+#define VIRTIO_INPUT_REL_Y 1
+
+extern uint64_t g_virtio_input_bases[VIRTIO_INPUT_MAX_DEVICES];
+extern uint32_t g_virtio_input_count;
+
+void vhid_init(void);
+/* Returns 1 for an event, 0 when none is pending, or -1 on invalid input. */
+int vhid_get_event(virtio_input_event_t *event, uint32_t *device_index);
 
 #endif
