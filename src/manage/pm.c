@@ -124,15 +124,6 @@ pcb_t *pm_delete(
 {
 }
 
-/*
-static inline uint64_t aarch64_rev64(uint64_t val)
-{
-    uint64_t result;
-    __asm__ volatile("rev %0, %1" : "=r"(result) : "r"(val));
-    return result;
-}
-*/
-
 // TODO:
 // 어떤 타입을 리턴할지 미정
 uint64_t mm_page(uint64_t vaddr)

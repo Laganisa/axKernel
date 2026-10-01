@@ -100,22 +100,17 @@ void log(const char *name)
     }
 }
 
-void flow(const char type)
+void flow(const uint8_t type)
 {
     if (type == 0)
     {
         log("flow pass");
     }
-    else if (type == 1)
-    {
-        puts("[Debug] ");
-        puts("flow test #1");
-        puts("\n");
-    }
     else
     {
         puts("[Debug] ");
-        puts("flow test #2");
+        puts("flow test #");
+        put_hex2(type);
         puts("\n");
     }
 }

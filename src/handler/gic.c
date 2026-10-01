@@ -64,6 +64,7 @@ void gic_init(void)
     asm volatile("dsb sy");
     asm volatile("isb");
 
+    /*
     dump("GIC DIST CTRL",
          GIC_DIST_CTRL);
 
@@ -72,6 +73,7 @@ void gic_init(void)
 
     dump("GIC IRQ79 TARGET",
          GIC_DIST_REG8(0x84F));
+        */
 
     enable_irq();
 }

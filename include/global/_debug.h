@@ -9,7 +9,7 @@ void dump(const char *name, uint64_t val);
 void full_stop(void);
 void enter(const char *name);
 void log(const char *name);
-void flow(const char type);
+void flow(const uint8_t type);
 void exit(const char *name);
 void for_dump(const char *name, uint64_t *val, uint8_t num);
 

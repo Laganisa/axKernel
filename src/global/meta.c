@@ -20,11 +20,11 @@ pcb_t *proc_turn(
 {
 
     // 헤더 설정
-    fm_exec_hdr_t task;
-    task.magic = FM_EXEC_MAGIC;
-    task.mode = (mod == 0) ? FM_EXEC_MODE_DIRECT : FM_EXEC_MODE_IMAGE;
-    task.entry = (mod == 0) ? (uint64_t)entry_point : 0;
-    task.image_size = 0;
+    fm_exec_hdr_t new_hdr;
+    new_hdr.magic = FM_EXEC_MAGIC;
+    new_hdr.mode = (mod == 0) ? FM_EXEC_MODE_DIRECT : FM_EXEC_MODE_IMAGE;
+    new_hdr.entry = (mod == 0) ? (uint64_t)entry_point : 0;
+    new_hdr.image_size = 0;
 
     // IMAGE 모드일 때 바이너리 파일 기록
     if (mod == 1)
@@ -42,6 +42,8 @@ pcb_t *proc_turn(
 
         if (entry_point == (void *)_task_shell_start)
         {
+            flow(5);
+
             uint64_t shell_size = *((uint64_t *)_task_shell_size);
 
             // ELF 이미지와 FM 헤더를 함께 저장
@@ -50,8 +52,10 @@ pcb_t *proc_turn(
             dump("total size", total_size);
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
-            task.image_size = shell_size;
-            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+            file_dump("file", fil);
+
+            new_hdr.image_size = shell_size;
+            fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
 
@@ -67,8 +71,8 @@ pcb_t *proc_turn(
             dump("total size", total_size);
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
-            task.image_size = bridge_size;
-            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+            new_hdr.image_size = bridge_size;
+            fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_bridge_start, (uint32_t)bridge_size, sizeof(fm_exec_hdr_t));
 
@@ -85,8 +89,8 @@ pcb_t *proc_turn(
 
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
-            task.image_size = compiler_size;
-            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+            new_hdr.image_size = compiler_size;
+            fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_compiler_start, (uint32_t)compiler_size, sizeof(fm_exec_hdr_t));
 
@@ -96,7 +100,7 @@ pcb_t *proc_turn(
 
     // 기본 동작
     fcb_t *fil = fm_create(reco, name, 1024, 0);
-    fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+    fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
     return mata_exec_file(reco, &pm_object, name, 0);
 }
 
@@ -134,6 +138,10 @@ static pcb_t *elf_load_image(
     uint8_t *image,
     uint32_t image_size)
 {
+
+    dump("proc", (uint64_t)proc);
+    dump("image", (uint64_t)image);
+    dump("image_size", (uint64_t)image_size);
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 
@@ -242,22 +250,28 @@ static pcb_t *elf_load_image(
 // 파일 실행
 pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
 {
-
     fcb_t *file = fm_find(reco, path);
 
     fm_exec_hdr_t *hdr;
 
     if (file == 0)
     {
-        return 0;
+
+        return NULL;
     }
+
+    flow(0);
 
     hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
 
     if (hdr->magic != FM_EXEC_MAGIC)
     {
-        return 0;
+        dump("magic", hdr->magic);
+        log("magic error");
+        return NULL;
     }
+
+    flow(3);
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
@@ -270,17 +284,17 @@ pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint
 
         if (proc == 0)
         {
-            return 0;
+            return NULL;
         }
 
         if (elf_load_image(proc, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size) == 0)
         {
-            return 0;
+            return NULL;
         }
 
         return proc;
     }
-    return 0;
+    return NULL;
 }
 
 pcb_t *schedule_proc(pcb_t *proc)

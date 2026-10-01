@@ -90,7 +90,7 @@ typedef struct fm_exec_hdr_t
 
 void fm_init(uint64_t *addr);
 void fm_execute(FMv3_record *reco);
-void *fm_data_addr(FMv3_record *reco, fcb_t *file);
+fm_exec_hdr_t *fm_data_addr(FMv3_record *reco, fcb_t *file);
 
 fcb_t *fm_find(FMv3_record *reco, char *name);
 void fm_list(FMv3_record *reco, int8_t *path);
