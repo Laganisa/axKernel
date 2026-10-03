@@ -15,7 +15,7 @@ extern uint32_t g_virtio_net_irq;
 extern uint32_t g_virtio_gpu_irq;
 extern uint32_t g_virtio_blk_irq;
 
-// 시스템 타이  머: 두 타이머 인터럽트 간의 시간을 tick으로 나타낸거
+// 시스템 타이머: 두 타이머 인터럽트 간의 시간을 tick으로 나타낸거
 static uint64_t system_tick = 0;
 
 pcb_t *current_proc = 0;

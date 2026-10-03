@@ -18,6 +18,9 @@ pcb_t *proc_turn(
     void *entry_point,
     uint8_t mod)
 {
+    dump("name", (uint64_t)name);
+    dump("entry_point", (uint64_t)entry_point);
+    dump("mod", (uint64_t)mod);
 
     // 헤더 설정
     fm_exec_hdr_t new_hdr;
@@ -58,6 +61,8 @@ pcb_t *proc_turn(
             fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
+
+            flow(5);
 
             return mata_exec_file(reco, &pm_object, name, 0);
         }
@@ -248,21 +253,29 @@ static pcb_t *elf_load_image(
 }
 
 // 파일 실행
-pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
+pcb_t *mata_exec_file(
+    FMv3_record *reco,
+    PMv1_object *obj,
+    int8_t path[27],
+    uint8_t parid)
 {
+    enter("mata_exec_file");
+
     fcb_t *file = fm_find(reco, path);
 
     fm_exec_hdr_t *hdr;
 
     if (file == 0)
     {
-
+        log("file zero error");
         return NULL;
     }
 
     flow(0);
 
     hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
+
+    dump("read_dst_addr", (uint64_t)hdr);
 
     if (hdr->magic != FM_EXEC_MAGIC)
     {

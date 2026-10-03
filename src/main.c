@@ -75,7 +75,7 @@ static void foo(void)
 
     vhid_init();
     // gpu_init();
-    vsnd_init();
+    // vsnd_init();
 
     // ltrs(16, 16, "AxKernel!");
 
@@ -98,8 +98,8 @@ void devo_main(void)
 {
     puts("devo main\n");
 
-    kshell();
-    //     foo();
+    // kshell();
+    foo();
 
     // dump("val", mm_page(&mm_stack, 0x1000));
 }
@@ -161,7 +161,12 @@ void kernel_main(void)
 #elif B_MAIN_FLAG == 2
 
     // 쉘 테스트 로직
-    pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
+    pcb_t *shell_proc = proc_turn(
+        fm_record,
+        "shel.bin",
+        _task_shell_start,
+        1);
+
     pm_awake(&pm_object, 0, shell_proc);
 
     proc_dump("shell proc", shell_proc);

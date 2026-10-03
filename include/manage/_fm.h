@@ -56,7 +56,9 @@ typedef struct fcb_e
 /// @brief 파일 관리자 구조체 V3
 typedef struct FMv3_record
 {
-    uint64_t *base;   // 바닥 주소
+    uint64_t *base; // 바닥 주소
+    uint8_t *data_pool;
+
     uint16_t cur_ptr; // 보고 있는 주소 읽을때 씀(아직 쓰지 않음)
 
     uint16_t all_file_num; // 전체 파일 수
@@ -93,6 +95,7 @@ void fm_execute(FMv3_record *reco);
 fm_exec_hdr_t *fm_data_addr(FMv3_record *reco, fcb_t *file);
 
 fcb_t *fm_find(FMv3_record *reco, char *name);
+fcb_e *fm_dir_find(FMv3_record *reco, char *name);
 void fm_list(FMv3_record *reco, int8_t *path);
 
 // 파일 생성 & 삭제

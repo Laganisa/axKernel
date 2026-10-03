@@ -2,6 +2,7 @@
 #include "global/_io.h"
 #include "manage/_mm.h"
 #include "tools/_asm.h"
+#include "tools/_fs.h"
 #include "global/_debug.h"
 #include "global/_alloc.h"
 #include "tools/_hash.h"
@@ -157,12 +158,12 @@ void fm_execute(FMv3_record *reco)
 {
     if (reco == NULL)
     {
-        return NULL; // 파일 관리자 미초기화
+        return; // 파일 관리자 미초기화
     }
 
     if (reco->base == NULL)
     {
-        return NULL; // 베이스 주소 미설정
+        return; // 베이스 주소 미설정
     }
 
     // 파일 개수와 마지막 주소 검증
@@ -183,6 +184,8 @@ void fm_execute(FMv3_record *reco)
 
 uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset)
 {
+    flow(7);
+
     if (file == 0)
     {
         return 0;
@@ -200,7 +203,16 @@ uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint
     }
 
     uint8_t *dst_addr = (uint8_t *)fm_data_addr(reco, file) + offset;
+
+    dump("dst_addr", (uint64_t)dst_addr);
+    dump("size", size);
+    dump("offset", offset);
+    dump("file_size", file_size);
+
     memcpy(dst_addr, (uint8_t *)buf, size);
+
+    flow(8);
+
     return size;
 }
 
@@ -281,24 +293,24 @@ void fm_list(FMv3_record *reco, int8_t *path)
 // 파일 찾기
 fcb_t *fm_find(FMv3_record *reco, char *name)
 {
-    uint16_t ret = bpt_search(reco->root, name);
+    uint16_t *ret = bpt_search(reco->root, name);
 
-    if (ret != 0)
+    if (ret != NULL)
     {
         flow(1);
-        return &(reco->FMv3_mem[ret]);
+        return &(reco->FMv3_mem[*ret]);
     }
 
     return NULL;
 }
 
-fcb_t *fm_dir_find(FMv3_record *reco, char *name)
+fcb_e *fm_dir_find(FMv3_record *reco, char *name)
 {
-    uint16_t ret = bpt_search(reco->dir_root, name);
+    uint16_t *ret = bpt_search(reco->dir_root, name);
 
-    if (ret != 0)
+    if (ret != NULL)
     {
-        return &(reco->FMv3_dir_mem[ret]);
+        return &(reco->FMv3_dir_mem[*ret]);
     }
 
     return NULL;
@@ -306,6 +318,8 @@ fcb_t *fm_dir_find(FMv3_record *reco, char *name)
 
 fm_exec_hdr_t *fm_data_addr(FMv3_record *reco, fcb_t *file)
 {
+    // return (fm_exec_hdr_t *)(reco->data_pool + ((uint32_t)file->fid * MAX_FILE_SIZE));
+
     fm_exec_hdr_t *new_hdr;
     new_hdr = (fm_exec_hdr_t *)((uint8_t *)reco->base + ((uint32_t)file->fid * MAX_FILE_SIZE));
     return new_hdr;
