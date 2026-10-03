@@ -18,9 +18,11 @@ pcb_t *proc_turn(
     void *entry_point,
     uint8_t mod)
 {
+    /*
     dump("name", (uint64_t)name);
     dump("entry_point", (uint64_t)entry_point);
     dump("mod", (uint64_t)mod);
+    */
 
     // 헤더 설정
     fm_exec_hdr_t new_hdr;
@@ -45,24 +47,18 @@ pcb_t *proc_turn(
 
         if (entry_point == (void *)_task_shell_start)
         {
-            flow(5);
 
             uint64_t shell_size = *((uint64_t *)_task_shell_size);
 
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + shell_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
-            dump("total size", total_size);
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
-
-            file_dump("file", fil);
 
             new_hdr.image_size = shell_size;
             fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
-
-            flow(5);
 
             return mata_exec_file(reco, &pm_object, name, 0);
         }
@@ -259,7 +255,6 @@ pcb_t *mata_exec_file(
     int8_t path[27],
     uint8_t parid)
 {
-    enter("mata_exec_file");
 
     fcb_t *file = fm_find(reco, path);
 
@@ -271,11 +266,7 @@ pcb_t *mata_exec_file(
         return NULL;
     }
 
-    flow(0);
-
     hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
-
-    dump("read_dst_addr", (uint64_t)hdr);
 
     if (hdr->magic != FM_EXEC_MAGIC)
     {
@@ -283,8 +274,6 @@ pcb_t *mata_exec_file(
         log("magic error");
         return NULL;
     }
-
-    flow(3);
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {

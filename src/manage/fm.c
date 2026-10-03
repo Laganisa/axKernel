@@ -184,8 +184,6 @@ void fm_execute(FMv3_record *reco)
 
 uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset)
 {
-    flow(7);
-
     if (file == 0)
     {
         return 0;
@@ -203,16 +201,7 @@ uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint
     }
 
     uint8_t *dst_addr = (uint8_t *)fm_data_addr(reco, file) + offset;
-
-    dump("dst_addr", (uint64_t)dst_addr);
-    dump("size", size);
-    dump("offset", offset);
-    dump("file_size", file_size);
-
     memcpy(dst_addr, (uint8_t *)buf, size);
-
-    flow(8);
-
     return size;
 }
 
@@ -297,7 +286,7 @@ fcb_t *fm_find(FMv3_record *reco, char *name)
 
     if (ret != NULL)
     {
-        flow(1);
+
         return &(reco->FMv3_mem[*ret]);
     }
 

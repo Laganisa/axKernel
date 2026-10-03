@@ -167,8 +167,8 @@ static uint64_t read_call(
     uint64_t arg4,
     uint64_t arg5)
 {
-    // ! 근데 이거 길이 입력 방식이 필요할 듯
-    // TODO:
+    enter("sys_read");
+
     int fd = (int)arg1;
     char *buf = (char *)arg2;
     size_t count = (size_t)arg3;
@@ -176,22 +176,47 @@ static uint64_t read_call(
 
     if (count == 0)
     {
+        exit("sys_read");
         return 0;
+    }
+
+    if (buf == NULL || fd < 0 || fd >= MAX_CONTROL_NUM ||
+        current_proc->control[fd].is_ctrl_alloc == 0)
+    {
+        exit("sys_read");
+        return (uint64_t)-1;
     }
 
     // 장치 읽기일 경우
     if (current_proc->control[fd].is_file == 0)
     {
-        char c = getchar();
+        size_t read_bytes = 0;
+        for (size_t i = 0; i < count; i++)
+        {
+            char c = getchar();
+            buf[i] = c;
+            read_bytes++;
 
-        putchar(c);
+            if (c == '\n' || c == '\r')
+            {
+                putchar('\n');
+                break;
+            }
 
-        buf[0] = c;
-        return 1;
+            putchar(c);
+        }
+
+        exit("sys_read");
+        return read_bytes;
     }
     // 파일 읽기일 경우
     else
     {
+        if (count > (size_t)(uint32_t)-1)
+        {
+            exit("sys_read");
+            return (uint64_t)-1;
+        }
 
         if (offset >= current_proc->control[fd].file_offset)
         {
@@ -201,17 +226,17 @@ static uint64_t read_call(
         uint32_t read_bytes = fm_read(
             fm_record,
             current_proc->control[fd].use_file,
-            (void *)buf,
-            arg3,
+            buf,
+            (uint32_t)count,
             offset);
 
         if (read_bytes > 0)
         {
-            current_proc->control[fd].file_offset += 1;
-            return 0;
+            current_proc->control[fd].file_offset += read_bytes;
         }
 
-        return -1;
+        exit("sys_read");
+        return read_bytes;
     }
 }
 
@@ -484,6 +509,8 @@ static uint64_t ipc_send_call(
     uint64_t arg4,
     uint64_t arg5)
 {
+    enter("ipc_send_call");
+
     uint8_t *data = (uint8_t *)arg1;
     uint8_t len = (uint8_t)arg2;
     uint8_t towho = (uint8_t)arg3;
@@ -502,7 +529,7 @@ static uint64_t ipc_rece_call(
     uint64_t arg4,
     uint64_t arg5)
 {
-    enter("ipc");
+    enter("ipc_rece_call");
 
     uint8_t *addr = (uint8_t *)arg1;
 

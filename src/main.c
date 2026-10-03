@@ -136,97 +136,102 @@ void kernel_main(void)
         나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
 
-#ifdef defined B_MAIN_FLAG
+    if (B_MAIN_FLAG == 1)
+    {
+        // 프로세스 전환 테스트 로직
 
-#elif B_MAIN_FLAG == 1
-    // 프로세스 전환 테스트 로직
+        pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
 
-    pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
+        pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
+        pm_awake(&pm_object, 0, proc2);
 
-    pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
-    pm_awake(&pm_object, 0, proc2);
+        proc_dump("proc1", proc1);
+        proc_dump("proc2", proc2);
 
-    proc_dump("proc1", proc1);
-    proc_dump("proc2", proc2);
+        /*
+            프로세스 전환
+        */
 
-    /*
-        프로세스 전환
-    */
+        dump("1", pm_object.lowbuf[0]);
 
-    dump("1", pm_object.lowbuf[0]);
+        current_proc = proc1;
+        _proc(proc1);
+    }
+    else if (B_MAIN_FLAG == 2)
+    {
 
-    current_proc = proc1;
-    _proc(proc1);
+        // 쉘 테스트 로직
+        pcb_t *shell_proc = proc_turn(
+            fm_record,
+            "shel.bin",
+            _task_shell_start,
+            1);
 
-#elif B_MAIN_FLAG == 2
+        pm_awake(&pm_object, 0, shell_proc);
 
-    // 쉘 테스트 로직
-    pcb_t *shell_proc = proc_turn(
-        fm_record,
-        "shel.bin",
-        _task_shell_start,
-        1);
+        proc_dump("shell proc", shell_proc);
 
-    pm_awake(&pm_object, 0, shell_proc);
+        current_proc = shell_proc;
+        _proc(shell_proc);
+    }
+    else if (B_MAIN_FLAG == 3)
+    {
+        // 브릿지 테스트 로직
 
-    proc_dump("shell proc", shell_proc);
+        pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
+        pm_awake(&pm_object, 0, brdge_proc);
 
-    current_proc = shell_proc;
-    _proc(shell_proc);
+        proc_dump("brdge proc", brdge_proc);
 
-#elif B_MAIN_FLAG == 3
-    // 브릿지 테스트 로직
+        current_proc = brdge_proc;
+        _proc(brdge_proc);
+    }
+    else if (B_MAIN_FLAG == 4)
+    {
+        // 컴파일러 테스트 로직
 
-    pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
-    pm_awake(&pm_object, 0, brdge_proc);
+        pcb_t *compil_proc = proc_turn(
+            fm_record,
+            "compil.bin",
+            _task_compiler_start,
+            1);
 
-    proc_dump("brdge proc", brdge_proc);
+        pm_awake(&pm_object, 0, compil_proc);
 
-    current_proc = brdge_proc;
-    _proc(brdge_proc);
+        proc_dump("compil proc", compil_proc);
 
-#elif B_MAIN_FLAG == 4
-    // 컴파일러 테스트 로직
+        current_proc = compil_proc;
+        _proc(compil_proc);
+    }
+    else if (B_MAIN_FLAG == 5)
+    {
+        // ipc 테스트 로직
 
-    pcb_t *compil_proc = proc_turn(
-        fm_record,
-        "compil.bin",
-        _task_compiler_start,
-        1);
+        /*
+            쉘이랑 브릿지 2개를 띄워서 테스트
+        */
 
-    pm_awake(&pm_object, 0, compil_proc);
+        pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
+        pm_awake(&pm_object, 0, shell_proc);
 
-    proc_dump("compil proc", compil_proc);
+        pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
 
-    current_proc = compil_proc;
-    _proc(compil_proc);
+        // pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
+        // pm_awake(&pm_object, 0, bridge_proc);
 
-#elif B_MAIN_FLAG == 5
+        proc_dump("shell_proc", shell_proc);
+        proc_dump("bridge proc", bridge_proc);
 
-    // ipc 테스트 로직
+        // full_stop();
 
-    /*
-        쉘이랑 브릿지 2개를 띄워서 테스트
-    */
+        current_proc = bridge_proc;
 
-    pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
-    pm_awake(&pm_object, 0, shell_proc);
+        enable_irq();
 
-    pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
-
-    // pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
-    // pm_awake(&pm_object, 0, bridge_proc);
-
-    proc_dump("shell_proc", shell_proc);
-    proc_dump("bridge proc", bridge_proc);
-
-    // full_stop();
-
-    current_proc = bridge_proc;
-
-    enable_irq();
-
-    _proc(bridge_proc);
-
-#endif
+        _proc(bridge_proc);
+    }
+    else
+    {
+        log("B_MAIN_FLAG is not defined\n");
+    }
 }

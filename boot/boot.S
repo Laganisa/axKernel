@@ -16,6 +16,12 @@ el1_entry:
     ldr x0, =stack_top
     mov sp, x0
 
+    // EL0/EL1에서 FP/Advanced SIMD 사용 허용
+    mrs x0, CPACR_EL1
+    orr x0, x0, #(3 << 20)
+    msr CPACR_EL1, x0
+    isb
+
     msr DAIFClr, #0xf
 
     // VBAR 초기화
