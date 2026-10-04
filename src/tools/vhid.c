@@ -1,6 +1,7 @@
 #include "_macro.h"
 #include "global/_debug.h"
 #include "tools/_virtio.h"
+#include "global/_io.h"
 
 #define VIRTIO_INPUT_EVENT_QUEUE 0
 #define VIRTIO_INPUT_STATUS_QUEUE 1

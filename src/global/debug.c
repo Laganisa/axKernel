@@ -62,6 +62,7 @@ void full_stop(void)
     disable_irq();
 
     puts("\ninf loop\n");
+
     while (1)
     {
         asm volatile("wfe");

@@ -104,7 +104,7 @@ void devo_main(void)
     // dump("val", mm_page(&mm_stack, 0x1000));
 }
 
-#define B_MAIN_FLAG 2
+#define B_MAIN_FLAG 4
 
 void kernel_main(void)
 {

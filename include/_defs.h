@@ -28,7 +28,7 @@
 
 #define MAX_PCB_SIZE 0x100     // 최대 pcb 수 256개 0은 pid 0 운영체제 꺼
 #define MAX_PCB_BITSIZE 0x04   // 최대 pcb bit 수 4개 이유는 1비트당 하나의 프로세서이니까
-#define INITIAL_PROC_SIZE 0x80 // 초기 프로세스 할당 크기
+#define INITIAL_PROC_SIZE 1024 // 초기 프로세스 할당 크기(단위 KB) 초기 128
 #define PROC_SIGNAL 0xFF       // low q를 확인할 차례라는 시그널
 #define PMV1_MAX_PROC 0xFF     // 프로세스 최대 수
 #define MAX_PTP_MSGBOX 0x10    // 프로세스간 메시지 통신 개수 제한, 이유 : 이러면 딱 1KB

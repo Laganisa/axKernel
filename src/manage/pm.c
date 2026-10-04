@@ -103,7 +103,7 @@ pcb_t *pm_create(
     new_proc->regs.sp = real_addr + (INITIAL_PROC_SIZE << 10); // sp
 
     // new_proc->regs.spsr = (entry == 0) ? 0x3c0 : 0x3c5;        // 인셉션 레벨 분기
-    new_proc->regs.spsr = (entry == 0) ? 0x340 : 0x3c5;
+    new_proc->regs.spsr = (entry == 0) ? 0x340 : 0x3c5; // 인셉션 레벨 분기
 
     return new_proc;
 }

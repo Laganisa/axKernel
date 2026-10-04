@@ -139,10 +139,11 @@ static pcb_t *elf_load_image(
     uint8_t *image,
     uint32_t image_size)
 {
-
+    /*
     dump("proc", (uint64_t)proc);
     dump("image", (uint64_t)image);
     dump("image_size", (uint64_t)image_size);
+    */
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 

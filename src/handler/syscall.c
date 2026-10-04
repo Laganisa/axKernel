@@ -30,6 +30,9 @@ static uint64_t exit_call(
     uint64_t arg5)
 {
     enter("sys_exit");
+
+    full_stop();
+
     // arg1: exit code
     // ! 아직은 그 인자에 대하여 사용하지 않음
     {
@@ -167,7 +170,6 @@ static uint64_t read_call(
     uint64_t arg4,
     uint64_t arg5)
 {
-    enter("sys_read");
 
     int fd = (int)arg1;
     char *buf = (char *)arg2;
@@ -176,14 +178,14 @@ static uint64_t read_call(
 
     if (count == 0)
     {
-        exit("sys_read");
+
         return 0;
     }
 
     if (buf == NULL || fd < 0 || fd >= MAX_CONTROL_NUM ||
         current_proc->control[fd].is_ctrl_alloc == 0)
     {
-        exit("sys_read");
+
         return (uint64_t)-1;
     }
 
@@ -206,7 +208,6 @@ static uint64_t read_call(
             putchar(c);
         }
 
-        exit("sys_read");
         return read_bytes;
     }
     // 파일 읽기일 경우
@@ -215,6 +216,7 @@ static uint64_t read_call(
         if (count > (size_t)(uint32_t)-1)
         {
             exit("sys_read");
+            log("!");
             return (uint64_t)-1;
         }
 
