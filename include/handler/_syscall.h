@@ -19,7 +19,7 @@
 
 #define SYS_OPEN 8
 #define SYS_CLOSE 9
-#define SYS_FILE_CREAT 10
+#define SYS_FILE_CREATE 10
 #define SYS_FILE_DEL 11
 #define SYS_DIR_IN 12
 #define SYS_DIR_OUT 13

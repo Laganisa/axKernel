@@ -348,7 +348,7 @@ static uint64_t close_call(
     return 1;
 }
 
-static uint64_t file_creat_call(
+static uint64_t file_create_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -708,7 +708,7 @@ static uint64_t (*call_table[64])(
     /* File */
     [SYS_OPEN] = open_call,
     [SYS_CLOSE] = close_call,
-    [SYS_FILE_CREAT] = file_creat_call,
+    [SYS_FILE_CREATE] = file_create_call,
     [SYS_FILE_DEL] = file_del_call,
     [SYS_DIR_IN] = reserved_call,
     [SYS_DIR_OUT] = reserved_call,
