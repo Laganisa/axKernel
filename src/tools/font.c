@@ -1,6 +1,8 @@
 #include "tools/_font.h"
 #include "tools/_virtio.h"
 #include "tools/_utils.h"
+#include "global/_io.h"
+#include "manage/_gm.h"
 
 #pragma region ascii
 
@@ -1090,19 +1092,9 @@ void ltr(uint32_t x,
         {
             if ((glyph[row] >> (7 - col)) & 1)
             {
-                draw_pixel(x + col, y + row, 0xFFFFFFFF);
+                gm_pixel(x + col, y + row, 0xFFFFFFFF);
             }
         }
-    }
-
-    if (gpu_transfer_to_host_2d(
-            x,
-            y,
-            8,
-            8) < 0)
-    {
-        puts("GPU partial transfer failed\n");
-        return;
     }
 
     if (gpu_resource_flush(
@@ -1126,6 +1118,11 @@ void ltrs(uint32_t x,
     // 글자 처리
 
     uint16_t len = kstrlen(string);
+
+    if (len == 0)
+    {
+        return;
+    }
 
     for (int i = 0; i < len; i++)
     {
@@ -1153,23 +1150,13 @@ void ltrs(uint32_t x,
             {
                 if ((glyph[row] >> (7 - col)) & 1)
                 {
-                    draw_pixel(x + (8 * i) + col, y + row, 0xFFFFFFFF);
+                    gm_pixel(x + (8 * i) + col, y + row, 0xFFFFFFFF);
                 }
             }
         }
     }
 
     uint32_t total_width = len * 8;
-
-    if (gpu_transfer_to_host_2d(
-            x,
-            y,
-            total_width,
-            8) < 0)
-    {
-        puts("GPU partial transfer failed\n");
-        return;
-    }
 
     if (gpu_resource_flush(
             x,

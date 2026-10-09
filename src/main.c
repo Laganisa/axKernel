@@ -43,10 +43,11 @@ extern uint8_t _task_bridge_start[];
 extern uint64_t _task_bridge_size[];
 
 extern dcb_t nic_device;
+void devo_main(void);
 
 #pragma endregion
 
-#define B_MASTER_FLAG 1
+#define B_MASTER_FLAG 2
 
 // 커널 함수
 void master(uint64_t dtb_addr)
@@ -98,10 +99,19 @@ void devo_main(void)
 {
     puts("devo main\n");
 
-    // kshell();
-    foo();
+    kshell();
 
-    // dump("val", mm_page(&mm_stack, 0x1000));
+    heap_init();
+    gpu_init();
+
+    ltrs(16, 16, "AxKernel!");
+
+    /*
+    gm_rect(40, 40, 120, 60, 0xFFFF0000);
+    gm_copy(40, 40, 159, 99);
+    gm_paste(180, 40);
+    gm_line(40, 120, 300, 120, 0xFFFFFFFF);
+    */
 }
 
 #define B_MAIN_FLAG 4

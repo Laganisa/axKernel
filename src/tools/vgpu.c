@@ -15,6 +15,8 @@
 #define GPU_DEFAULT_WIDTH 640
 #define GPU_DEFAULT_HEIGHT 360
 
+#define GPU_FRAMEBUFFER_BASE 0x41000000
+
 #define GPU_CMD_SLOT_SIZE 4096
 #define GPU_CMD_SLOT_COUNT 8
 
@@ -30,8 +32,14 @@ static uint32_t gpu_queue_size = 0;
 uint32_t gpu_display_width = GPU_DEFAULT_WIDTH;
 uint32_t gpu_display_height = GPU_DEFAULT_HEIGHT;
 
-/* Framebuffer (고정 주소을 직접 가리키는 포인터) */
-volatile uint32_t *gpu_framebuffer = (volatile uint32_t *)0x41000000;
+/* Two contiguous framebuffers share one Virtio GPU resource. */
+static volatile uint32_t *gpu_framebuffer_storage =
+    (volatile uint32_t *)GPU_FRAMEBUFFER_BASE;
+volatile uint32_t *gpu_framebuffer =
+    (volatile uint32_t *)GPU_FRAMEBUFFER_BASE;
+
+static uint32_t gpu_front_buffer = 0;
+static uint32_t gpu_back_buffer = 1;
 
 /* GPU Command/Response Slots */
 static unsigned char
@@ -80,6 +88,11 @@ static int gpu_submit_control(
     void *resp,
     uint32_t resp_size)
 {
+    if (gpu_queue_size < 2)
+    {
+        puts("GPU queue is not initialized\n");
+        return -1;
+    }
 
     VIRTIO_GPU_QUEUE_SEL = 0;
 
@@ -96,7 +109,7 @@ static int gpu_submit_control(
         avail_idx % gpu_queue_size;
 
     uint16_t head =
-        (ring_index * 2) % gpu_queue_size;
+        (ring_index % (gpu_queue_size / 2)) * 2;
 
     uint16_t next_desc =
         (head + 1) % gpu_queue_size;
@@ -233,7 +246,7 @@ static int gpu_create_resource(void)
     cmd.resource_id = GPU_RESOURCE_ID;
     cmd.format = VIRTIO_GPU_FORMAT_B8G8R8A8_UNORM;
     cmd.width = gpu_display_width;
-    cmd.height = gpu_display_height;
+    cmd.height = gpu_display_height * 2;
 
     if (gpu_submit_control(
             &cmd,
@@ -274,6 +287,7 @@ static int gpu_attach_backing(void)
     uint32_t total_bytes =
         gpu_display_width *
         gpu_display_height *
+        2 *
         sizeof(uint32_t);
 
     cmd->hdr.type =
@@ -288,7 +302,7 @@ static int gpu_attach_backing(void)
     cmd->num_entries = 1;
 
     entry->addr =
-        (uint64_t)(uintptr_t)gpu_framebuffer;
+        (uint64_t)(uintptr_t)gpu_framebuffer_storage;
 
     entry->length =
         total_bytes;
@@ -314,7 +328,7 @@ static int gpu_attach_backing(void)
     return 0;
 }
 
-static int gpu_set_scanout(void)
+static int gpu_set_scanout(uint32_t y)
 {
     virtio_gpu_set_scanout_t cmd;
     virtio_gpu_ctrl_hdr_t resp;
@@ -329,7 +343,7 @@ static int gpu_set_scanout(void)
     cmd.hdr.padding = 0;
 
     cmd.r.x = 0;
-    cmd.r.y = 0;
+    cmd.r.y = y;
     cmd.r.width = gpu_display_width;
     cmd.r.height = gpu_display_height;
 
@@ -411,6 +425,25 @@ int gpu_resource_flush(
     uint32_t width,
     uint32_t height)
 {
+    if (x > gpu_display_width ||
+        width > gpu_display_width - x ||
+        y > gpu_display_height ||
+        height > gpu_display_height - y)
+    {
+        puts("GPU flush rectangle is out of bounds\n");
+        return -1;
+    }
+
+    if (gpu_transfer_to_host_2d(
+            0,
+            0,
+            gpu_display_width,
+            gpu_display_height) < 0)
+    {
+        puts("GPU full-frame transfer failed\n");
+        return -1;
+    }
+
     virtio_gpu_resource_flush_t cmd;
     virtio_gpu_ctrl_hdr_t resp;
 
@@ -425,10 +458,11 @@ int gpu_resource_flush(
     cmd.hdr.ctx_id = 0;
     cmd.hdr.padding = 0;
 
-    cmd.r.x = x;
-    cmd.r.y = y;
-    cmd.r.width = width;
-    cmd.r.height = height;
+    cmd.r.x = 0;
+    cmd.r.y =
+        gpu_back_buffer * gpu_display_height;
+    cmd.r.width = gpu_display_width;
+    cmd.r.height = gpu_display_height;
 
     cmd.resource_id = GPU_RESOURCE_ID;
     cmd.padding = 0;
@@ -448,6 +482,31 @@ int gpu_resource_flush(
         dump("GPU resource flush response", resp.type);
         return -1;
     }
+
+    if (gpu_set_scanout(gpu_back_buffer * gpu_display_height) < 0)
+    {
+        puts("GPU set scanout failed\n");
+        return -1;
+    }
+
+    uint32_t pixel_count =
+        gpu_display_width * gpu_display_height;
+
+    gpu_front_buffer = gpu_back_buffer;
+    gpu_back_buffer = 1 - gpu_front_buffer;
+
+    volatile uint32_t *front =
+        gpu_framebuffer_storage + gpu_front_buffer * pixel_count;
+    volatile uint32_t *back =
+        gpu_framebuffer_storage + gpu_back_buffer * pixel_count;
+
+    for (uint32_t i = 0; i < pixel_count; ++i)
+    {
+        back[i] = front[i];
+    }
+
+    gpu_framebuffer = back;
+
     return 0;
 }
 
@@ -471,12 +530,13 @@ int gpu_transfer_to_host_2d(
     cmd.hdr.padding = 0;
 
     cmd.r.x = x;
-    cmd.r.y = y;
+    cmd.r.y =
+        y + gpu_back_buffer * gpu_display_height;
     cmd.r.width = width;
     cmd.r.height = height;
 
     cmd.offset =
-        ((uint64_t)y * gpu_display_width + x) *
+        ((uint64_t)cmd.r.y * gpu_display_width + x) *
         sizeof(uint32_t);
 
     cmd.resource_id = GPU_RESOURCE_ID;
@@ -511,16 +571,46 @@ void gpu_init(void)
 
     vq_setup(g_virtio_gpu_base, 0, gpu_queue_storage, &gpu_queue);
 
+    if (gpu_queue.size < 2)
+    {
+        puts("GPU queue has too few descriptors\n");
+        return;
+    }
+
+    gpu_queue_size = gpu_queue.size;
+    gpu_used_idx = gpu_queue.used->idx;
+
     if (gpu_get_display_info() < 0)
     {
         puts("GPU display info failed\n");
         return;
     }
 
+    uint64_t pixel_count =
+        (uint64_t)gpu_display_width * gpu_display_height;
+
+    if (gpu_display_width == 0 ||
+        gpu_display_height == 0 ||
+        gpu_display_height > ((uint32_t)-1) / 2 ||
+        pixel_count * 2 * sizeof(uint32_t) >
+            (uint64_t)((uint32_t)-1))
+    {
+        puts("GPU framebuffer size is too large\n");
+        return;
+    }
+
+    uint32_t framebuffer_bytes =
+        (uint32_t)(pixel_count * 2 * sizeof(uint32_t));
+
     memset(
-        (void *)gpu_framebuffer,
+        (void *)gpu_framebuffer_storage,
         0,
-        (size_t)(gpu_display_width * gpu_display_height * sizeof(uint32_t)));
+        framebuffer_bytes);
+
+    gpu_front_buffer = 0;
+    gpu_back_buffer = 1;
+    gpu_framebuffer =
+        gpu_framebuffer_storage + pixel_count;
 
     if (gpu_create_resource() < 0)
     {
@@ -534,7 +624,7 @@ void gpu_init(void)
         return;
     }
 
-    if (gpu_set_scanout() < 0)
+    if (gpu_set_scanout(gpu_front_buffer * gpu_display_height) < 0)
     {
         puts("GPU set scanout failed\n");
         return;

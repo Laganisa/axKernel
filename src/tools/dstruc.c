@@ -62,44 +62,38 @@ void queue_init(queue *this, uint8_t *buffer, uint32_t size)
 
 #pragma region stack
 
-static void stack_push(queue *this, uint8_t data)
+static void stack_push(stack *this, uint8_t data)
 {
     if (this->count >= this->size)
         return;
 
     this->buffer[this->head] = data;
-
     this->head++;
     this->count++;
-
-    if (this->head >= this->size)
-        this->head = 0;
 }
 
-static uint8_t stack_pop(queue *this)
+static uint8_t stack_pop(stack *this)
 {
     if (this->count == 0)
         return 0;
 
-    uint8_t data = this->buffer[this->tail];
-
-    this->tail++;
+    this->head--;
     this->count--;
 
-    if (this->tail >= this->size)
-        this->tail = 0;
-
-    return data;
+    return this->buffer[this->head];
 }
 
-static uint8_t stack_empty(queue *this)
+static uint8_t stack_empty(stack *this)
 {
     return this->count == 0;
 }
 
-// peek 는 없음
+static uint8_t stack_full(stack *this)
+{
+    return this->count >= this->size;
+}
 
-void stack_init(queue *this, uint8_t *buffer, uint32_t size)
+void stack_init(stack *this, uint8_t *buffer, uint32_t size)
 {
     this->buffer = buffer;
 
@@ -109,10 +103,10 @@ void stack_init(queue *this, uint8_t *buffer, uint32_t size)
     this->tail = 0;
     this->count = 0;
 
-    this->push = queue_push;
-    this->pop = queue_pop;
-    this->empty = queue_empty;
-    this->full = queue_full;
+    this->push = stack_push;
+    this->pop = stack_pop;
+    this->empty = stack_empty;
+    this->full = stack_full;
 }
 
 #pragma endregion

@@ -34,13 +34,13 @@ typedef struct stack
     uint32_t count;
 
     // 함수
-    void (*push)(struct queue *, uint8_t);
-    uint8_t (*pop)(struct queue *);
-    uint8_t (*empty)(struct queue *);
-    uint8_t (*full)(struct queue *);
+    void (*push)(struct stack *, uint8_t);
+    uint8_t (*pop)(struct stack *);
+    uint8_t (*empty)(struct stack *);
+    uint8_t (*full)(struct stack *);
 } stack;
 
 // 자료구조 초기화 함수
-void stack_init(queue *this, uint8_t *buffer, uint32_t size);
+void stack_init(stack *this, uint8_t *buffer, uint32_t size);
 
 #endif

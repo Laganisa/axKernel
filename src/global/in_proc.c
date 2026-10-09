@@ -23,36 +23,6 @@ void INIT(void)
     enable_irq();
 }
 
-// 기초적인 커널 내장 쉘
-void kshell(void)
-{
-    enter("kernel in shell");
-
-    char prompt[64];
-
-    while (1)
-    {
-        gets(prompt, 63);
-
-        if (strcmp(prompt, "exit") == 0)
-        {
-            puts("exit shell\n");
-            break;
-        }
-        else if (strcmp(prompt, "help") == 0)
-        {
-            puts("help: show this message\n");
-            puts("exit: exit shell\n");
-        }
-        else
-        {
-            puts("Unknown command: ");
-            puts(prompt);
-            puts("\n");
-        }
-    }
-}
-
 /*
     임시로 자리를 맡은 프로세스
 */
