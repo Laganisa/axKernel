@@ -23,7 +23,7 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
 {
     // 파일 검사
     if (size > MAX_FILE_SIZE)
-        return 0;
+        return NULL;
 
     if (reco->all_file_num >= MAX_FILE_NUM)
         return NULL;
@@ -35,15 +35,22 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
     // 파일 삽입
     int ret = bpt_insert(reco->root, name, value);
 
+    flow(1);
+
     if (ret == 0)
     {
         return NULL;
     }
 
+    flow(1);
+
     if (new_file == NULL)
     {
-        return 0;
+        flow(2);
+        return NULL;
     }
+
+    flow(1);
 
     for (int i = 0; i < MAX_FILE_NAME; i++)
     {
@@ -307,8 +314,6 @@ fcb_e *fm_dir_find(FMv3_record *reco, char *name)
 
 fm_exec_hdr_t *fm_data_addr(FMv3_record *reco, fcb_t *file)
 {
-    // return (fm_exec_hdr_t *)(reco->data_pool + ((uint32_t)file->fid * MAX_FILE_SIZE));
-
     fm_exec_hdr_t *new_hdr;
     new_hdr = (fm_exec_hdr_t *)((uint8_t *)reco->base + ((uint32_t)file->fid * MAX_FILE_SIZE));
     return new_hdr;

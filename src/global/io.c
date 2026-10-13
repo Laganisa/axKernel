@@ -167,3 +167,14 @@ char *strstr(const char *s, const char *sub)
     }
     return 0;
 }
+
+uint64_t str_to_uint(const char *str)
+{
+    uint64_t val = 0;
+    while (*str >= '0' && *str <= '9')
+    {
+        val = val * 10 + (*str - '0');
+        str++;
+    }
+    return val;
+}

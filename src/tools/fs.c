@@ -208,6 +208,7 @@ uint8_t bpt_insert(bpt_node *root, char *name, uint16_t value)
     uint64_t fnv_key = fnv1a_hash_64(name);
     uint64_t djb_key = djb2_hash_64(name);
     bpt_node *leaf = search_leaf(root, fnv_key);
+
     if (leaf == NULL)
     {
         return 0;
