@@ -25,48 +25,71 @@ enum shell_incode
     SCRI_INCO = 1649,
 };
 
+static stack dir_path;
+static uint8_t path_buf[3];
+
+static fcb_e *kcurrent_dir(void)
+{
+    if (dir_path.empty(&dir_path))
+    {
+        return NULL;
+    }
+
+    uint8_t dir_id = dir_path.buffer[dir_path.head - 1];
+    if (dir_id >= fm_record->all_dir_num)
+    {
+        return NULL;
+    }
+
+    return &(fm_record->FMv3_dir_mem[dir_id]);
+}
+
 // 현재 작업 경로를 나타내는 로직
-// 스택에서 요소씩 꺼내고 출력
+// 스택에 저장된 경로 요소를 루트부터 출력
 static void kpath()
 {
-    // 꺼내고 출력 반복
-    while (1)
+    puts("ax:");
+    puts("/");
+
+    for (uint32_t i = 0; i < dir_path.count; i++)
     {
+        uint8_t dir_id = dir_path.buffer[i];
+        if (dir_id >= fm_record->all_dir_num)
+        {
+            puts("(invalid path)");
+            return;
+        }
+
+        if (i != 0)
+        {
+            puts("/");
+        }
+        puts(fm_record->FMv3_dir_mem[dir_id].alias);
     }
+    puts("> ");
 }
 
 // 메모리
-static uint8_t mem_split(char *args)
+static uint8_t mem_split(char **args)
 {
     uint8_t ret;
     uint64_t hash_check = fnv1a_hash_64(args[0]);
     uint64_t targs[6] = {0};
 
-    /*
+    for (int i = 0; i < 6; i++)
+    {
+        targs[i] = str_to_uint(args[i]);
+    }
+
     switch (hash_check)
     {
-    // 힙 공간 보기
-    case:
-
-        break;
-        // 페이지 테이블 보기
-    case:
-
-        break;
-        // 프로새스 정보
-    case:
-
-        break;
-        // 프로세스 상태(생명주기) 변경
-    case:
-
-        break;
 
     default:
+        puts("Syntax : mem {command} {args}\n");
         ret = COMM_ERR;
         break;
     }
-*/
+
     return ret;
 }
 
@@ -77,33 +100,42 @@ static uint8_t proc_split(char **args)
     uint64_t hash_check = fnv1a_hash_64(args[0]);
     uint64_t targs[6] = {0};
 
-    /*
+    for (int i = 0; i < 6; i++)
+    {
+        targs[i] = str_to_uint(args[i]);
+    }
+
     switch (hash_check)
     {
-        // 프로세스 생성
-    case:
+    // 프로세스 생성
+    case 0xF5A2F5190CAEA09C:
 
-    break;
+        break;
+
     // 프로세스 삭제
-case:
+    case 0xCA9A2418F461F5CA:
 
-    break;
-    // 프로새스 정보
-case:
+        break;
 
-    break;
-    // 프로세스 상태(생명주기) 변경
-case:
+    // 프로세스 정보
+    case 0xF5D6A8C57AB94F05:
 
-    break;
+        break;
+        // 프로세스 상태(생명주기) 변경
+    case 0xF5FAF8190CF91B8B:
 
-default:
-    ret = COMM_ERR;
-    break;
-}
-    */
+        break;
+
+    default:
+        puts("Syntax : proc {command} {args}\n");
+        ret = COMM_ERR;
+        break;
+    }
+
     return ret;
 }
+
+#pragma region 파일
 
 // 파일
 /*
@@ -120,13 +152,25 @@ default:
     disk_crt
 */
 
-// 디렉토리랑 현재 깊이를 전달 받게 수정
-static uint8_t file_split(char **args)
+// 현재 디렉토리와 깊이를 기준으로 파일 명령을 처리
+static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 {
-    uint8_t ret;
+    uint8_t ret = COMM_OK;
 
     uint64_t hash_check = fnv1a_hash_64(args[0]);
     uint64_t targs[6] = {0};
+    for (int i = 0; i < 6; i++)
+    {
+        targs[i] = str_to_uint(args[i]);
+    }
+
+    // 누적 OR 으로 나중에 인자 개수 판별
+    uint8_t prefix_targs[6] = {0};
+
+    for (int i = 5; i >= 0; i--)
+    {
+        prefix_targs[i] = targs[i] | (i < 5 ? prefix_targs[i + 1] : 0);
+    }
 
     fcb_t *now_fcb = NULL;
     fcb_e *now_dir_fcb = NULL;
@@ -135,16 +179,12 @@ static uint8_t file_split(char **args)
     {
     // 파일 생성 명령
     case 0xF5A2F5190CAEA09C:
-        targs[2] = str_to_uint(args[2]);
-        targs[3] = str_to_uint(args[3]);
-        targs[4] = str_to_uint(args[4]);
-        targs[5] = str_to_uint(args[5]);
 
         // 예외 처리
         // 생성파일의 크기가 너무 작거나 클때
-        if (targs[4] | targs[5] != 0)
+        if (prefix_targs[4] != 0)
         {
-            puts("form : file crt {name} {size(B)} {auth}\n");
+            puts("Syntax : file crt {name/path} {size(B)} {auth}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -167,12 +207,28 @@ static uint8_t file_split(char **args)
 
     // 파일 삭제
     case 0xCA9A2418F461F5CA:
+
+        if (prefix_targs[2] != 0)
+        {
+            puts("Syntax : file del {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
         fm_delete(fm_record, args[1]);
         ret = COMM_OK;
         break;
 
     // 파일 정보
     case 0xf5d6a8c57ab94f05:
+
+        if (prefix_targs[2] != 0)
+        {
+            puts("Syntax : file info {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
         now_fcb = fm_find(fm_record, args[1]);
 
         if (now_fcb == NULL)
@@ -205,35 +261,62 @@ static uint8_t file_split(char **args)
         break;
 
     // 파일의 디렉토리간 이동
-    case 0xF5FAF8190CF91B8B:
-        break;
-    // 파일 권한 수정
-    case 0x5DC77A84260A774F:
-        break;
+    case 0x08A95007B550372A:
 
-    // 디렉토리 생성
-    case 0x2268A5C380EEAA08:
-        targs[2] = str_to_uint(args[2]);
-        targs[3] = str_to_uint(args[3]);
-        targs[4] = str_to_uint(args[4]);
-
-        // 예외 처리
-        // 생성파일의 크기가 너무 작거나 클때
-        if (0)
+        if (prefix_targs[5] != 0)
         {
-            puts("form : file dir_crt {name} {size(B)} {auth}\n");
+            puts("Syntax : file mv {src dir name/path} {name/path} {dst dir name/path}\n");
             ret = ARGS_ERR;
             break;
         }
 
-        now_fcb = fm_dir_create(
+        now_fcb = fm_find(fm_record, args[2]);
+        now_dir_fcb = fm_dir_find(fm_record, args[1]);
+        fm_dir_out(fm_record, now_dir_fcb, now_fcb->fid);
+        now_dir_fcb = fm_dir_find(fm_record, args[3]);
+        fm_dir_in(fm_record, now_dir_fcb, now_fcb->fid);
+        break;
+    // 파일 권한 수정
+    case 0xF5FAF8190CF91B8B:
+
+        if ((prefix_targs[2] != 0) || (targs[2] > 512))
+        {
+            puts("Syntax : file chg {name/path} {chg auth}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        now_fcb = fm_find(fm_record, args[1]);
+
+        now_fcb->auth = targs[2];
+
+        break;
+
+    // 디렉토리 생성
+    case 0x2268A5C380EEAA08:
+
+        if (prefix_targs[4] != 0)
+        {
+            puts("Syntax : file dir_crt {name/path} {size(B)} {auth}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        if (current_dir == NULL || depth >= 2)
+        {
+            puts("Directory depth limit reached\n");
+            ret = COMM_ERR;
+            break;
+        }
+
+        now_dir_fcb = fm_dir_create(
             fm_record,
             args[1],
-            (uint32_t)targs[2],
-            (uint32_t)targs[3],
-            (uint16_t)targs[4]);
+            current_dir->fid,
+            (uint16_t)(depth + 1),
+            (uint16_t)targs[2]);
 
-        if (now_fcb == NULL)
+        if (now_dir_fcb == NULL)
         {
             ret = COMM_ERR;
         }
@@ -245,12 +328,26 @@ static uint8_t file_split(char **args)
 
     // 디렉토리 삭제
     case 0x3BB72CC38F126296:
+        if (prefix_targs[2] != 0)
+        {
+            puts("Syntax : file dir_del {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
         fm_dir_delete(fm_record, args[1]);
         ret = COMM_OK;
         break;
 
         // 디렉토리 정보
     case 0x04B54668DC76A7A9:
+
+        if (prefix_targs[2] != 0)
+        {
+            puts("Syntax : file dir_info {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
         now_dir_fcb = fm_dir_find(fm_record, args[1]);
 
         if (now_dir_fcb == NULL)
@@ -277,12 +374,39 @@ static uint8_t file_split(char **args)
         else
         {
             puts("files\n");
+            puts("----------\n");
             for (int i = 0; i < now_dir_fcb->dir_num; i++)
             {
-                char *names = &(fm_record->FMv3_mem[now_dir_fcb->files[i]]).alias;
-                puts(names);
+                uint32_t file_pos = now_dir_fcb->files[i];
+                fcb_t *now_file = &(fm_record->FMv3_mem[file_pos]);
+                puts("name : ");
+                puts(now_file->alias);
+                puts("  auth : ");
+                put_uint((uint64_t)now_file->auth);
                 puts("\n");
             }
+            puts("----------\n");
+        }
+
+        if (now_dir_fcb->dir_dnum == 0)
+        {
+            puts("dir not found\n");
+        }
+        else
+        {
+            puts("\ndirs\n");
+            puts("----------\n");
+            for (int i = 0; i < now_dir_fcb->dir_dnum; i++)
+            {
+                uint32_t dir_pos = now_dir_fcb->dirs[i];
+                fcb_t *now_dir = &(fm_record->FMv3_dir_mem[dir_pos]);
+                puts("dir name : ");
+                puts(now_dir->alias);
+                puts("  auth : ");
+                put_uint((uint64_t)now_dir->auth);
+                puts("\n");
+            }
+            puts("----------\n");
         }
 
         puts("YYYY : ");
@@ -295,11 +419,100 @@ static uint8_t file_split(char **args)
         break;
 
     // 디렉토리의 디렉토리간 이동
-    case 0x22C0B8C381394027:
+    case 0xD6D3BF44B76F3946:
+        if (prefix_targs[5] != 0)
+        {
+            puts("Syntax : file dir_mv {name/path} {dst dir name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        now_dir_fcb = fm_dir_find(fm_record, args[1]);
+        fcb_e *new_dir_fcb = fm_dir_find(fm_record, args[2]);
+
+        now_dir_fcb->p_fid = new_dir_fcb->fid;
+        new_dir_fcb->dirs[new_dir_fcb->dir_dnum] = now_fcb->fid;
+        new_dir_fcb->dir_dnum++;
+
         break;
 
     // 디렉토리 권한 수정
-    case 0x36AA60224FAA08BB:
+    case 0x22C0B8C381394027:
+        if ((prefix_targs[3] != 0) || targs[3] > 512)
+        {
+            puts("Syntax : file dir_chg {name/path} {auth}\n");
+        }
+
+        now_dir_fcb = fm_dir_find(fm_record, args[1]);
+        now_dir_fcb->auth = targs[2];
+        break;
+
+    // 스코프 변화
+    // 즉 디렉토리 이동
+    case 0x822687195CCFB219:
+        if (args[1] == NULL || args[3] != NULL)
+        {
+            puts("Syntax : file scp {in {dir name/path}|out}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        if (current_dir == NULL)
+        {
+            puts("Current directory unavailable\n");
+            ret = COMM_ERR;
+            break;
+        }
+
+        switch (fnv1a_hash_64(args[1]))
+        {
+        // 하위 디렉토리로 이동
+        case 0x08B73807B55C4BBE:
+            if (args[2] == NULL)
+            {
+                puts("Syntax : file scp in {dir name/path}\n");
+                ret = ARGS_ERR;
+                break;
+            }
+
+            now_dir_fcb = fm_dir_find(fm_record, args[2]);
+            if (now_dir_fcb == NULL ||
+                now_dir_fcb->p_fid != current_dir->fid ||
+                now_dir_fcb->depth != depth + 1 ||
+                dir_path.full(&dir_path))
+            {
+                puts("Directory not found in current path\n");
+                ret = COMM_ERR;
+                break;
+            }
+
+            dir_path.push(&dir_path, (uint8_t)now_dir_fcb->fid);
+            break;
+
+        // 상위 디렉토리로 이동
+        case 0x19F79B1921BBCFFF:
+            if (args[2] != NULL)
+            {
+                puts("Syntax : file scp out\n");
+                ret = ARGS_ERR;
+                break;
+            }
+
+            if (dir_path.count <= 1)
+            {
+                puts("Already at root directory\n");
+                ret = COMM_ERR;
+                break;
+            }
+
+            dir_path.pop(&dir_path);
+            break;
+
+        default:
+            puts("Syntax : file scp {in {dir name/path}|out}\n");
+            ret = ARGS_ERR;
+            break;
+        }
         break;
 
         // 나중에 디스크 관리
@@ -308,6 +521,7 @@ static uint8_t file_split(char **args)
         */
 
     default:
+        puts("Syntax : file {command} {args}\n");
         ret = COMM_ERR;
         break;
     }
@@ -315,47 +529,71 @@ static uint8_t file_split(char **args)
     return ret;
 }
 
-// 장치
-static uint8_t dev_split(char *args)
+#pragma endregion
+
+#pragma region 장치
+
+/*
+    장치
+
+    con
+    dcon
+    info
+    open
+    close
+*/
+static uint8_t dev_split(char **args)
 {
     uint8_t ret;
     uint64_t hash_check = fnv1a_hash_64(args[0]);
     uint64_t targs[6] = {0};
 
-    /*
+    for (int i = 0; i < 6; i++)
+    {
+        targs[i] = str_to_uint(args[i]);
+    }
+
     switch (hash_check)
     {
-        // 장치 추가
-    case:
+    // 장치 연결
+    case 0xF604F1190D01642B:
 
         break;
-        // 장치 삭제
-    case:
+
+    // 장치 분리
+    case 0x73A50667267E3819:
 
         break;
-        // 장치 정보
-    case:
+
+    // 장치 정보
+    case 0xF5D6A8C57AB94F05:
 
         break;
-        // 장치 열기
-    case:
+
+    // 장치 열기
+    case 0xF84F97B4633670E9:
 
         break;
-        // 장치 닫기
-    case:
+
+    // 장치 닫기
+    case 0x9EC2699513C0F9C3:
 
         break;
+
     default:
+        puts("Syntax : dev {command} {args}\n");
         ret = COMM_ERR;
         break;
     }
-*/
+
     return ret;
 }
 
+#pragma endregion
+
 // 시스템 처리
 // 사실 잡다한 것들 용도
-static uint8_t sys_split(char *args)
+static uint8_t sys_split(char **args)
 {
     uint8_t ret;
 
@@ -471,7 +709,9 @@ check:
     else if (incode == 1553 &&
              ((con >> 2) & 0b1))
     {
-        ret = file_split(command);
+        fcb_e *current_dir = kcurrent_dir();
+        uint8_t depth = dir_path.count == 0 ? 0 : (uint8_t)(dir_path.count - 1);
+        ret = file_split(command, current_dir, depth);
     }
     // 장치
     else if (incode == 1673 &&
@@ -523,9 +763,16 @@ void kshell(void)
     disable_irq();
 
     // 경로 설정
-    stack dir_path;
-    uint8_t path_buf[10];
-    stack_init(&dir_path, path_buf, 9);
+    stack_init(&dir_path, path_buf, sizeof(path_buf));
+    fcb_e *root_dir = fm_dir_find(fm_record, "root");
+
+    if (root_dir == NULL)
+    {
+        puts("Shell root directory unavailable\n");
+        return;
+    }
+
+    dir_path.push(&dir_path, (uint8_t)root_dir->fid);
 
     enter("kernel in shell");
 
@@ -533,9 +780,8 @@ void kshell(void)
 
     while (1)
     {
-        puts("ax:");
         // 경로 출력하고
-        // kpath();
+        kpath();
 
         // 입력 받고
         gets(prompt, 63);

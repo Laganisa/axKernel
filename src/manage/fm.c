@@ -64,7 +64,7 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
 
     // 넣어주고
     fcb_e *dir = fm_dir_find(fm_record, "root");
-    fm_dir_in(fm_record, dir, (uint16_t)reco->all_file_num);
+    fm_dir_in(fm_record, dir, new_file->fid);
 
     return new_file;
 }
@@ -127,6 +127,18 @@ fcb_e *fm_dir_create(
 
     new_dir->alias[MAX_FILE_NAME] = '\0';
 
+    for (int i = 0; i < MAX_DIR_FILE_NUM; i++)
+    {
+        // 루트 파일을 가리키도록 초기화
+        new_dir->files[i] = 0;
+    }
+
+    for (int i = 0; i < MAX_DIR_FILE_NUM; i++)
+    {
+        // 루트 폴더을 가리키도록 초기화
+        new_dir->dirs[i] = 0;
+    }
+
     if (depth > 2 || depth < 0)
     {
         return NULL; // 디렉토리 깊이 제한
@@ -138,17 +150,17 @@ fcb_e *fm_dir_create(
     else
     {
         new_dir->p_fid = p_fid;
+        fcb_e *up_dir = &(reco->FMv3_dir_mem[p_fid]);
+        up_dir->dirs[up_dir->dir_dnum] = (uint16_t)reco->all_dir_num;
+        up_dir->dir_dnum++;
     }
 
-    for (int i = 0; i < MAX_DIR_FILE_NUM; i++)
-    {
-        // 루트 파일을 가리키도록 초기화
-        new_dir->files[i] = 0;
-    }
+    new_dir->depth = depth;
 
     new_dir->fid = (uint16_t)reco->all_dir_num;
     new_dir->auth = auth;
     new_dir->dir_num = 0;
+    new_dir->dir_dnum = 0;
 
     reco->all_dir_num += 1;
 
@@ -256,7 +268,7 @@ uint8_t fm_dir_in(
         return 0; // 파일 ID가 유효하지 않음
     }
 
-    dir->files[file_id] = file_id;
+    dir->files[dir->dir_num] = file_id;
     dir->dir_num++;
     return 1;
 }
