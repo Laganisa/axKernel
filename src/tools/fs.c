@@ -2,6 +2,7 @@
 #include "global/_alloc.h"
 #include "tools/_hash.h"
 #include "tools/_fs.h"
+#include "global/_debug.h"
 
 static void clear(bpt_node *node)
 {

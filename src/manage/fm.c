@@ -12,8 +12,10 @@ void fm_init(uint64_t *addr)
     fm_record->base = addr;
     fm_record->cur_ptr = 0;
     fm_record->all_file_num = 1;
+    fm_record->all_dir_num = 1;
     fm_record->root = create_node(1);
     fm_record->dir_root = create_node(1);
+    fm_dir_create(fm_record, "root", 0, 0, 777);
 }
 
 /*
@@ -35,22 +37,16 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
     // 파일 삽입
     int ret = bpt_insert(reco->root, name, value);
 
-    flow(1);
-
     if (ret == 0)
     {
         return NULL;
     }
-
-    flow(1);
 
     if (new_file == NULL)
     {
         flow(2);
         return NULL;
     }
-
-    flow(1);
 
     for (int i = 0; i < MAX_FILE_NAME; i++)
     {
@@ -65,6 +61,10 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
     new_file->auth = auth;
 
     reco->all_file_num += 1;
+
+    // 넣어주고
+    fcb_e *dir = fm_dir_find(fm_record, "root");
+    fm_dir_in(fm_record, dir, (uint16_t)reco->all_file_num);
 
     return new_file;
 }
@@ -148,6 +148,7 @@ fcb_e *fm_dir_create(
 
     new_dir->fid = (uint16_t)reco->all_dir_num;
     new_dir->auth = auth;
+    new_dir->dir_num = 0;
 
     reco->all_dir_num += 1;
 
@@ -250,12 +251,13 @@ uint8_t fm_dir_in(
     }
 
     // file_id 검사
-    if (file_id >= reco->all_file_num)
+    if (file_id > reco->all_file_num)
     {
         return 0; // 파일 ID가 유효하지 않음
     }
 
     dir->files[file_id] = file_id;
+    dir->dir_num++;
     return 1;
 }
 

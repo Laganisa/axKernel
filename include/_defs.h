@@ -64,7 +64,7 @@
 #define FM_EXEC_MODE_IMAGE 1ULL  // 1이면 이미지 실행
 
 #define MAX_BPT_NODE_NUM 4                          // B+트리 노드 최대 수
-#define MAX_DIR_FILE_NUM 0x10                       // 디렉토리당 최대 파일 수
+#define MAX_DIR_FILE_NUM 16                         // 디렉토리당 최대 파일 수
 #define MAX_DIR_NUM MAX_FILE_NUM / MAX_DIR_FILE_NUM // 최대 디렉토리 수
 #pragma endregion
 

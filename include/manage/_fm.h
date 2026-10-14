@@ -43,7 +43,7 @@ typedef struct fcb_e
     uint16_t depth : 4; // 디렉토리 깊이 (0~2)
 
     uint16_t auth : 10;   // 권한
-    uint16_t padding : 6; // 패딩
+    uint16_t dir_num : 6; // 디랙토리 내부 파일 수
 
     uint16_t YYYY : 7;
     uint16_t MM : 4;

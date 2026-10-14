@@ -39,15 +39,69 @@ static void kpath()
 static uint8_t mem_split(char *args)
 {
     uint8_t ret;
+    uint64_t hash_check = fnv1a_hash_64(args[0]);
+    uint64_t targs[6] = {0};
 
+    /*
+    switch (hash_check)
+    {
+    // 힙 공간 보기
+    case:
+
+        break;
+        // 페이지 테이블 보기
+    case:
+
+        break;
+        // 프로새스 정보
+    case:
+
+        break;
+        // 프로세스 상태(생명주기) 변경
+    case:
+
+        break;
+
+    default:
+        ret = COMM_ERR;
+        break;
+    }
+*/
     return ret;
 }
 
 // 프로세스
-static uint8_t proc_split(char *args)
+static uint8_t proc_split(char **args)
 {
     uint8_t ret;
+    uint64_t hash_check = fnv1a_hash_64(args[0]);
+    uint64_t targs[6] = {0};
 
+    /*
+    switch (hash_check)
+    {
+        // 프로세스 생성
+    case:
+
+    break;
+    // 프로세스 삭제
+case:
+
+    break;
+    // 프로새스 정보
+case:
+
+    break;
+    // 프로세스 상태(생명주기) 변경
+case:
+
+    break;
+
+default:
+    ret = COMM_ERR;
+    break;
+}
+    */
     return ret;
 }
 
@@ -65,6 +119,8 @@ static uint8_t proc_split(char *args)
 
     disk_crt
 */
+
+// 디렉토리랑 현재 깊이를 전달 받게 수정
 static uint8_t file_split(char **args)
 {
     uint8_t ret;
@@ -73,6 +129,7 @@ static uint8_t file_split(char **args)
     uint64_t targs[6] = {0};
 
     fcb_t *now_fcb = NULL;
+    fcb_e *now_dir_fcb = NULL;
 
     switch (hash_check)
     {
@@ -80,11 +137,14 @@ static uint8_t file_split(char **args)
     case 0xF5A2F5190CAEA09C:
         targs[2] = str_to_uint(args[2]);
         targs[3] = str_to_uint(args[3]);
+        targs[4] = str_to_uint(args[4]);
+        targs[5] = str_to_uint(args[5]);
 
         // 예외 처리
         // 생성파일의 크기가 너무 작거나 클때
-        if (0)
+        if (targs[4] | targs[5] != 0)
         {
+            puts("form : file crt {name} {size(B)} {auth}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -117,6 +177,7 @@ static uint8_t file_split(char **args)
 
         if (now_fcb == NULL)
         {
+            puts("file not found\n");
             ret = COMM_ERR;
             break;
         }
@@ -124,11 +185,13 @@ static uint8_t file_split(char **args)
         puts("file name : ");
         puts(now_fcb->alias);
         puts("\n");
-        puts("file len(byte): ");
+        puts("file len(KB): ");
         put_uint((uint64_t)now_fcb->lens);
-        puts("  file id: ");
+        puts("\n");
+        puts("file id: ");
         put_uint((uint64_t)now_fcb->fid);
-        puts("  file auth : ");
+        puts("\n");
+        puts("file auth : ");
         put_uint((uint64_t)now_fcb->auth);
         puts("\n");
 
@@ -141,21 +204,111 @@ static uint8_t file_split(char **args)
         puts("\n");
         break;
 
+    // 파일의 디렉토리간 이동
+    case 0xF5FAF8190CF91B8B:
+        break;
+    // 파일 권한 수정
+    case 0x5DC77A84260A774F:
+        break;
+
     // 디렉토리 생성
     case 0x2268A5C380EEAA08:
+        targs[2] = str_to_uint(args[2]);
+        targs[3] = str_to_uint(args[3]);
+        targs[4] = str_to_uint(args[4]);
 
+        // 예외 처리
+        // 생성파일의 크기가 너무 작거나 클때
+        if (0)
+        {
+            puts("form : file dir_crt {name} {size(B)} {auth}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        now_fcb = fm_dir_create(
+            fm_record,
+            args[1],
+            (uint32_t)targs[2],
+            (uint32_t)targs[3],
+            (uint16_t)targs[4]);
+
+        if (now_fcb == NULL)
+        {
+            ret = COMM_ERR;
+        }
+        else
+        {
+            ret = COMM_OK;
+        }
         break;
 
     // 디렉토리 삭제
     case 0x3BB72CC38F126296:
-
+        fm_dir_delete(fm_record, args[1]);
+        ret = COMM_OK;
         break;
-    // 디렉토리 정보
+
+        // 디렉토리 정보
     case 0x04B54668DC76A7A9:
+        now_dir_fcb = fm_dir_find(fm_record, args[1]);
 
+        if (now_dir_fcb == NULL)
+        {
+            ret = COMM_ERR;
+            break;
+        }
+
+        puts("dir name : ");
+        puts(now_dir_fcb->alias);
+        puts("\n");
+
+        puts("dir id: ");
+        put_uint((uint64_t)now_dir_fcb->fid);
+        puts("\n");
+        puts("dir auth : ");
+        put_uint((uint64_t)now_dir_fcb->auth);
+        puts("\n");
+
+        if (now_dir_fcb->dir_num == 0)
+        {
+            puts("file not found\n");
+        }
+        else
+        {
+            puts("files\n");
+            for (int i = 0; i < now_dir_fcb->dir_num; i++)
+            {
+                char *names = &(fm_record->FMv3_mem[now_dir_fcb->files[i]]).alias;
+                puts(names);
+                puts("\n");
+            }
+        }
+
+        puts("YYYY : ");
+        put_uint((uint64_t)now_dir_fcb->YYYY);
+        puts("  MM : ");
+        put_uint((uint64_t)now_dir_fcb->MM);
+        puts("  DD : ");
+        put_uint((uint64_t)now_dir_fcb->DD);
+        puts("\n");
         break;
+
+    // 디렉토리의 디렉토리간 이동
+    case 0x22C0B8C381394027:
+        break;
+
+    // 디렉토리 권한 수정
+    case 0x36AA60224FAA08BB:
+        break;
+
+        // 나중에 디스크 관리
+        /*
+
+        */
 
     default:
+        ret = COMM_ERR;
         break;
     }
 
@@ -166,7 +319,37 @@ static uint8_t file_split(char **args)
 static uint8_t dev_split(char *args)
 {
     uint8_t ret;
+    uint64_t hash_check = fnv1a_hash_64(args[0]);
+    uint64_t targs[6] = {0};
 
+    /*
+    switch (hash_check)
+    {
+        // 장치 추가
+    case:
+
+        break;
+        // 장치 삭제
+    case:
+
+        break;
+        // 장치 정보
+    case:
+
+        break;
+        // 장치 열기
+    case:
+
+        break;
+        // 장치 닫기
+    case:
+
+        break;
+    default:
+        ret = COMM_ERR;
+        break;
+    }
+*/
     return ret;
 }
 
@@ -337,6 +520,7 @@ check:
 // 기초적인 커널 내장 쉘
 void kshell(void)
 {
+    disable_irq();
 
     // 경로 설정
     stack dir_path;

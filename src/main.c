@@ -97,16 +97,33 @@ static void foo(void)
 // 임시 함수로 빼기전 개발용 매인
 void devo_main(void)
 {
+    // 하드웨어 초기화
+    uart_init();
+    // 인터럽트 초기화
+    irq_init();
+    // 동적할당 초기화
+    heap_init();
+
+    // 자료구조 초기화
+
+    // 관리자 초기화
+    mm_init(&mm_stack, USER_PROC_START);
+    fm_init((uint64_t *)USER_FILE_START);
+    pm_init();
+
+    nm_init();
+
     puts("devo main\n");
 
     kshell();
 
+    /*
     heap_init();
     gpu_init();
 
     ltrs(16, 16, "AxKernel!");
 
-    /*
+
     gm_rect(40, 40, 120, 60, 0xFFFF0000);
     gm_copy(40, 40, 159, 99);
     gm_paste(180, 40);
