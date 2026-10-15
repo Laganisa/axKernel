@@ -51,7 +51,7 @@ void devo_main(void);
 
 #pragma endregion
 
-#define B_MASTER_FLAG 2
+#define B_MASTER_FLAG 1
 
 // 커널 함수
 void master(uint64_t dtb_addr)
@@ -78,7 +78,6 @@ static void foo(void)
 {
     enter("foo\n");
 
-    vhid_init();
     // gpu_init();
     // vsnd_init();
 
@@ -92,6 +91,15 @@ static void foo(void)
     blk_init();
     */
 
+    /*
+    ltrs(16, 16, "AxKernel!");
+
+    gm_rect(40, 40, 120, 60, 0xFFFF0000);
+    gm_copy(40, 40, 159, 99);
+    gm_paste(180, 40);
+    gm_line(40, 120, 300, 120, 0xFFFFFFFF);
+    */
+
     while (1)
     {
         ;
@@ -101,56 +109,21 @@ static void foo(void)
 // 임시 함수로 빼기전 개발용 매인
 void devo_main(void)
 {
-    // 하드웨어 초기화
-    uart_init();
-    // 인터럽트 초기화
-    irq_init();
-    // 동적할당 초기화
-    heap_init();
-
-    // 자료구조 초기화
-
-    // 관리자 초기화
-    mm_init(&mm_stack, USER_PROC_START);
-    fm_init((uint64_t *)USER_FILE_START);
-    pm_init();
-
-    nm_init();
-
-#if DEBUG_DISPLAY_FLAG == 1
-    gpu_init();
-#endif
-
     puts("devo main\n");
-
-    // kshell();
-
-    pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", kshell, 0);
-
-    proc_dump("proc1", proc1);
-
-    current_proc = proc1;
-    _proc(proc1);
-
-    /*
-    ltrs(16, 16, "AxKernel!");
-
-    gm_rect(40, 40, 120, 60, 0xFFFF0000);
-    gm_copy(40, 40, 159, 99);
-    gm_paste(180, 40);
-    gm_line(40, 120, 300, 120, 0xFFFFFFFF);
-    */
 }
 
-#define B_MAIN_FLAG 4
+#define B_MAIN_FLAG 6
 
 void kernel_main(void)
 {
 
+    disable_irq();
+
     // 하드웨어 초기화
     uart_init();
     // 인터럽트 초기화
     irq_init();
+    vhid_init();
     // 동적할당 초기화
     heap_init();
 
@@ -166,6 +139,10 @@ void kernel_main(void)
     /*
         그래픽을 사용하여 부팅 로그를 만들기
     */
+
+#if DEBUG_DISPLAY_FLAG == 1
+    gpu_init();
+#endif
 
     puts("Booting AxKernel!\n");
 
@@ -193,6 +170,7 @@ void kernel_main(void)
         dump("1", pm_object->lowbuf[0]);
 
         current_proc = proc1;
+        enable_irq();
         _proc(proc1);
     }
     else if (B_MAIN_FLAG == 2)
@@ -210,6 +188,7 @@ void kernel_main(void)
         proc_dump("shell proc", shell_proc);
 
         current_proc = shell_proc;
+        enable_irq();
         _proc(shell_proc);
     }
     else if (B_MAIN_FLAG == 3)
@@ -222,6 +201,7 @@ void kernel_main(void)
         proc_dump("brdge proc", brdge_proc);
 
         current_proc = brdge_proc;
+        enable_irq();
         _proc(brdge_proc);
     }
     else if (B_MAIN_FLAG == 4)
@@ -239,6 +219,7 @@ void kernel_main(void)
         proc_dump("compil proc", compil_proc);
 
         current_proc = compil_proc;
+        enable_irq();
         _proc(compil_proc);
     }
     else if (B_MAIN_FLAG == 5)
@@ -267,6 +248,16 @@ void kernel_main(void)
         enable_irq();
 
         _proc(bridge_proc);
+    }
+    else if (B_MAIN_FLAG == 6)
+    {
+        pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", kshell, 0);
+
+        proc_dump("proc1", proc1);
+
+        current_proc = proc1;
+        enable_irq();
+        _proc(proc1);
     }
     else
     {

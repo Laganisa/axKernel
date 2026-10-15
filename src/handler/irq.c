@@ -52,6 +52,13 @@ void irq_handler_main(pcb_t *proc)
 
         _proc(current_proc);
     }
+    else if (vhid_irq_handle(irq_nr))
+    {
+        GIC_CPU_EOI = iar;
+        enable_irq();
+
+        _proc(proc);
+    }
     // 네트워크 인터럽트
     // 나중에 만들기
     else if (irq_nr == g_virtio_net_irq)

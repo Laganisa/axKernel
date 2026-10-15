@@ -97,6 +97,7 @@ uint64_t g_virtio_gpu_base = 0;
 uint64_t g_virtio_blk_base = 0;
 uint64_t g_virtio_snd_base = 0;
 uint64_t g_virtio_input_bases[VIRTIO_INPUT_MAX_DEVICES] = {0};
+uint32_t g_virtio_input_irqs[VIRTIO_INPUT_MAX_DEVICES] = {0};
 uint32_t g_virtio_input_count = 0;
 
 uint32_t g_virtio_net_irq;
@@ -195,6 +196,12 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                 {
                     uint32_t input_index = g_virtio_input_count++;
                     g_virtio_input_bases[input_index] = node_mmio_addr;
+                    g_virtio_input_irqs[input_index] =
+                        has_irq ? node_irq_num : 0;
+                    if (has_irq)
+                    {
+                        dump("Virtio_Input_IRQ", node_irq_num);
+                    }
                     dump("Found_Virtio_Input_At", node_mmio_addr);
                 }
                 else

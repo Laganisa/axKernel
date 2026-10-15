@@ -291,9 +291,13 @@ typedef struct virtio_input_event
 #define VIRTIO_INPUT_REL_Y 1
 
 extern uint64_t g_virtio_input_bases[VIRTIO_INPUT_MAX_DEVICES];
+extern uint32_t g_virtio_input_irqs[VIRTIO_INPUT_MAX_DEVICES];
 extern uint32_t g_virtio_input_count;
 
 void vhid_init(void);
+/* Returns 1 when a character is available, 0 when empty, or a negative error. */
+int vhid_getchar(int8_t *character);
+int vhid_irq_handle(uint32_t irq);
 /* Returns 1 for an event, 0 when none is pending, or -1 on invalid input. */
 int vhid_get_event(virtio_input_event_t *event, uint32_t *device_index);
 

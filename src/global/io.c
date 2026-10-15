@@ -1,5 +1,6 @@
 #include "manage/_fm.h"
 #include "_macro.h"
+#include "tools/_virtio.h"
 
 /*
     커널용 입출력 함수들
@@ -34,13 +35,26 @@ void puts(const int8_t *s)
 // 문자 입력 (UART에서 수신 대기)
 int8_t getchar(void)
 {
-    // UART_FR 레지스터 4번 비트: RX FIFO empty
-    // 데이터가 올 때까지 대기
-    while (*UART0_FR & (1 << 4))
+    while (1)
     {
-        // UART가 데이터를 기다리는 중
+        int8_t character;
+        int result = vhid_getchar(&character);
+        if (result > 0)
+        {
+            return character;
+        }
+        if (!(*UART0_FR & (1 << 4)))
+        {
+            return (int8_t)*UART0_DR;
+        }
+
+        uint64_t daif;
+        __asm__ volatile("mrs %0, daif" : "=r"(daif));
+        if ((daif & (1ULL << 7)) == 0)
+        {
+            __asm__ volatile("wfi");
+        }
     }
-    return *UART0_DR;
 }
 
 // 문자열 입력 (Enter까지 받음)

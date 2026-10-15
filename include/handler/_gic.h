@@ -10,5 +10,6 @@ void gic_enable_irq(uint32_t irq);
 void gic_disable_irq(uint32_t irq);
 
 void gic_set_priority(uint32_t irq, uint8_t priority);
+void gic_set_target_cpu0(uint32_t irq);
 
 #endif

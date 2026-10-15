@@ -40,6 +40,4 @@ void irq_init(void)
     gic_enable_irq(VIRTIO_IRQ);
 
     timer_init();
-
-    enable_irq();
 }
