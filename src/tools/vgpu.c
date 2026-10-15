@@ -19,6 +19,7 @@
 
 #define GPU_CMD_SLOT_SIZE 4096
 #define GPU_CMD_SLOT_COUNT 8
+#define VIRTQ_AVAIL_F_NO_INTERRUPT 1U
 
 static unsigned char gpu_queue_storage[VIRTIO_QUEUE_STORAGE]
     __attribute__((aligned(4096)));
@@ -52,14 +53,15 @@ static unsigned char
 
 static int gpu_wait_used(void)
 {
-    log("!!!!");
     int timeout = 10000000;
+    volatile struct virtq_used *used =
+        (volatile struct virtq_used *)gpu_queue.used;
 
     while (1)
     {
         virtio_mb();
 
-        if (gpu_queue.used->idx != gpu_used_idx)
+        if (used->idx != gpu_used_idx)
             break;
 
         if (--timeout == 0)
@@ -76,11 +78,9 @@ static int gpu_wait_used(void)
         VIRTIO_GPU_INTERRUPT_ACK = irq_status;
     }
 
-    uint16_t new_used_idx = gpu_queue.used->idx;
+    uint16_t new_used_idx = used->idx;
 
     gpu_used_idx = new_used_idx;
-
-    log("!!!!");
 
     return 0;
 }
@@ -181,6 +181,7 @@ static int gpu_submit_control(
      */
     gpu_queue.avail->ring[ring_index] =
         head;
+    gpu_queue.avail->flags |= VIRTQ_AVAIL_F_NO_INTERRUPT;
 
     virtio_mb();
 
@@ -202,8 +203,9 @@ static int gpu_submit_control(
     /*
      * Used 확인
      */
-    uint16_t current_used_idx =
-        gpu_queue.used->idx;
+    volatile struct virtq_used *used =
+        (volatile struct virtq_used *)gpu_queue.used;
+    uint16_t current_used_idx = used->idx;
 
     uint16_t used_ring_index =
         (current_used_idx - 1) % gpu_queue_size;
@@ -211,7 +213,7 @@ static int gpu_submit_control(
     virtio_mb();
 
     struct virtq_used_elem used_elem =
-        gpu_queue.used->ring[used_ring_index];
+        used->ring[used_ring_index];
 
     if (used_elem.id != head)
     {
@@ -386,8 +388,6 @@ static int gpu_get_display_info(void)
     cmd.ctx_id = 0;
     cmd.padding = 0;
 
-    log("!? asdf");
-
     if (gpu_submit_control(
             &cmd,
             sizeof(cmd),
@@ -397,8 +397,6 @@ static int gpu_get_display_info(void)
         puts("GPU get display info submit failed\n");
         return -1;
     }
-
-    log("!? asdf");
 
     if (resp.hdr.type != VIRTIO_GPU_RESP_OK_DISPLAY_INFO)
     {
@@ -574,17 +572,34 @@ void gpu_init(void)
         return;
     }
 
-    vq_init(g_virtio_gpu_base);
+    uint32_t version = virtio_mmio_version(g_virtio_gpu_base);
+    if (version != 1)
+    {
+        dump("Unsupported GPU MMIO version (expected v1)", version);
+        return;
+    }
 
-    vq_setup(g_virtio_gpu_base, 0, gpu_queue_storage, &gpu_queue);
+    vq_init(g_virtio_gpu_base);
+    int queue_result = vq_setup_v1(
+        g_virtio_gpu_base,
+        0,
+        gpu_queue_storage,
+        &gpu_queue);
+    if (queue_result < 0)
+    {
+        puts("GPU queue setup failed\n");
+        return;
+    }
+
+    gpu_queue.avail->flags |= VIRTQ_AVAIL_F_NO_INTERRUPT;
+    virtio_mb();
+    vq_start_v1(g_virtio_gpu_base);
 
     if (gpu_queue.size < 2)
     {
         puts("GPU queue has too few descriptors\n");
         return;
     }
-
-    log("! asdf");
 
     gpu_queue_size = gpu_queue.size;
     gpu_used_idx = gpu_queue.used->idx;
@@ -594,8 +609,6 @@ void gpu_init(void)
         puts("GPU display info failed\n");
         return;
     }
-
-    log("! asdf");
 
     uint64_t pixel_count =
         (uint64_t)gpu_display_width * gpu_display_height;
@@ -609,8 +622,6 @@ void gpu_init(void)
         puts("GPU framebuffer size is too large\n");
         return;
     }
-
-    log("! asdf");
 
     uint32_t framebuffer_bytes =
         (uint32_t)(pixel_count * 2 * sizeof(uint32_t));

@@ -123,7 +123,7 @@ void devo_main(void)
 
     puts("devo main\n");
 
-    kshell();
+    // kshell();
 
     pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", kshell, 0);
 
