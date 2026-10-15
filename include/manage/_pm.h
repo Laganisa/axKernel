@@ -101,6 +101,10 @@ pcb_t *pm_create(PMv1_object *obj, uint64_t entry, uint8_t parid);
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);
 pcb_t *pm_run(PMv1_object *obj);
 void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc);
+pcb_t *pm_delete(
+    PMv1_object *obj,
+    uint64_t entry,
+    uint8_t parid);
 
 void ptp(
     PMv1_object *obj,
@@ -110,6 +114,6 @@ void ptp(
     uint8_t len);
 
 // 전역 구조체 선언
-#define pm_object (*(PMv1_object *)PM_ADDR_START)
+#define pm_object ((PMv1_object *)PM_ADDR_START)
 
 #endif

@@ -12,8 +12,8 @@ extern dcb_t uart_device;
 */
 void pm_init()
 {
-    queue_init(&(pm_object.lowqueue), pm_object.lowbuf, 255);
-    queue_init(&(pm_object.highqueue), pm_object.highbuf, 255);
+    queue_init(&(pm_object->lowqueue), pm_object->lowbuf, 255);
+    queue_init(&(pm_object->highqueue), pm_object->highbuf, 255);
 }
 
 /*

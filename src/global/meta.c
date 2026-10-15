@@ -60,7 +60,7 @@ pcb_t *proc_turn(
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, &pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0);
         }
         if (entry_point == (void *)_task_bridge_start)
         {
@@ -77,7 +77,7 @@ pcb_t *proc_turn(
 
             fm_write(reco, fil, _task_bridge_start, (uint32_t)bridge_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, &pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0);
         }
         if (entry_point == (void *)_task_compiler_start)
         {
@@ -95,14 +95,14 @@ pcb_t *proc_turn(
 
             fm_write(reco, fil, _task_compiler_start, (uint32_t)compiler_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, &pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0);
         }
     }
 
     // 기본 동작
     fcb_t *fil = fm_create(reco, name, 1024, 0);
     fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
-    return mata_exec_file(reco, &pm_object, name, 0);
+    return mata_exec_file(reco, pm_object, name, 0);
 }
 
 static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
@@ -304,19 +304,19 @@ pcb_t *schedule_proc(pcb_t *proc)
 {
 
     // 다음 프로세스를 큐에서 꺼냄
-    pcb_t *next = pm_run(&pm_object);
+    pcb_t *next = pm_run(pm_object);
 
     // ! 수정하기
     // 다른 프로세스를 꺼내는 상황
     if (next->state == (uint8_t)PROC_SIGNAL)
     {
-        pm_awake(&pm_object, 0, proc); // 현재 proc를 넣고
+        pm_awake(pm_object, 0, proc); // 현재 proc를 넣고
         mm_free(&mm_stack, &mm_substack, proc->mm_addr);
-        current_proc = pm_run(&pm_object); // 다른걸 꺼내자
+        current_proc = pm_run(pm_object); // 다른걸 꺼내자
     }
     else
     {
-        pm_awake(&pm_object, 0, proc);
+        pm_awake(pm_object, 0, proc);
         current_proc = next;
     }
 

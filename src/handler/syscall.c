@@ -39,8 +39,8 @@ static uint64_t exit_call(
         pcb_t *current = get_current_proc_addr();
         pcb_t *next;
 
-        pm_awake(&pm_object, 1, current);
-        next = pm_run(&pm_object);
+        pm_awake(pm_object, 1, current);
+        next = pm_run(pm_object);
 
         // 다음 값이 무었인지 확인하기
         dump("next", next);
@@ -120,8 +120,8 @@ static uint64_t setup_call(
     enter("setup");
     uint8_t *addr = (uint8_t *)arg1;
     uint8_t rule = (uint8_t)arg2;
-    pm_object.proto_arr[current_proc->id].rule = rule;
-    pm_object.proto_arr[current_proc->id].addr = addr;
+    pm_object->proto_arr[current_proc->id].rule = rule;
+    pm_object->proto_arr[current_proc->id].addr = addr;
     exit("setup");
     return 1;
 }
@@ -519,8 +519,8 @@ static uint64_t ipc_send_call(
 
     uint8_t who = current_proc->id;
 
-    ptp(&pm_object, who, towho, data, len);
-    *(pm_object.proto_arr[towho].addr) = 3;
+    ptp(pm_object, who, towho, data, len);
+    *(pm_object->proto_arr[towho].addr) = 3;
     return 1;
 }
 

@@ -23,6 +23,8 @@ enum shell_incode
 static stack dir_path;
 static uint8_t path_buf[3];
 
+#pragma region shell 내부 함수
+
 static fcb_e *kcurrent_dir(void)
 {
     if (dir_path.empty(&dir_path))
@@ -99,6 +101,24 @@ static uint16_t fputs_color(const char *s, uint32_t color)
 #endif
 }
 
+static void fput_uint(uint64_t n)
+{
+    int8_t buf[21];
+    int32_t i = 19;
+    buf[20] = '\0';
+
+    if (n == 0)
+        buf[i--] = '0';
+
+    while (n > 0 && i >= 0)
+    {
+        buf[i--] = (n % 10) + '0';
+        n /= 10;
+    }
+
+    fputs(&buf[i + 1]);
+}
+
 static uint16_t fputs(const char *s)
 {
     return fputs_color(s, 0xFFFFFFFF);
@@ -133,6 +153,8 @@ static void kpath()
     }
     fputs("> ");
 }
+
+#pragma endregion
 
 // 메모리
 static uint8_t mem_split(char **args)
@@ -170,11 +192,25 @@ static uint8_t proc_split(char **args)
         targs[i] = str_to_uint(args[i]);
     }
 
+    // 누적 OR 으로 나중에 인자 개수 판별
+    uint8_t prefix_targs[6] = {0};
+
+    for (int i = 5; i >= 0; i--)
+    {
+        prefix_targs[i] = targs[i] | (i < 5 ? prefix_targs[i + 1] : 0);
+    }
+
     switch (hash_check)
     {
     // 프로세스 생성
     case 0xF5A2F5190CAEA09C:
-
+        if (prefix_targs[3] != 0)
+        {
+            fputs_error("Syntax : file crt {entry}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+        pm_create(pm_object, 1, 1);
         break;
 
     // 프로세스 삭제
@@ -307,21 +343,21 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         fputs((const char *)now_fcb->alias);
         fputs("\n");
         fputs("file len(KB): ");
-        put_uint((uint64_t)now_fcb->lens);
+        fput_uint((uint64_t)now_fcb->lens);
         fputs("\n");
         fputs("file id: ");
-        put_uint((uint64_t)now_fcb->fid);
+        fput_uint((uint64_t)now_fcb->fid);
         fputs("\n");
         fputs("file auth : ");
-        put_uint((uint64_t)now_fcb->auth);
+        fput_uint((uint64_t)now_fcb->auth);
         fputs("\n");
 
         fputs("YYYY : ");
-        put_uint((uint64_t)now_fcb->YYYY);
+        fput_uint((uint64_t)now_fcb->YYYY);
         fputs("  MM : ");
-        put_uint((uint64_t)now_fcb->MM);
+        fput_uint((uint64_t)now_fcb->MM);
         fputs("  DD : ");
-        put_uint((uint64_t)now_fcb->DD);
+        fput_uint((uint64_t)now_fcb->DD);
         fputs("\n");
         break;
 
@@ -426,10 +462,10 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         fputs("\n");
 
         fputs("dir id: ");
-        put_uint((uint64_t)now_dir_fcb->fid);
+        fput_uint((uint64_t)now_dir_fcb->fid);
         fputs("\n");
         fputs("dir auth : ");
-        put_uint((uint64_t)now_dir_fcb->auth);
+        fput_uint((uint64_t)now_dir_fcb->auth);
         fputs("\n");
 
         if (now_dir_fcb->dir_num == 0)
@@ -447,7 +483,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
                 fputs("name : ");
                 fputs((const char *)now_file->alias);
                 fputs("  auth : ");
-                put_uint((uint64_t)now_file->auth);
+                fput_uint((uint64_t)now_file->auth);
                 fputs("\n");
             }
             fputs("----------\n");
@@ -468,18 +504,18 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
                 fputs("dir name : ");
                 fputs((const char *)now_dir->alias);
                 fputs("  auth : ");
-                put_uint((uint64_t)now_dir->auth);
+                fput_uint((uint64_t)now_dir->auth);
                 fputs("\n");
             }
             fputs("----------\n");
         }
 
         fputs("YYYY : ");
-        put_uint((uint64_t)now_dir_fcb->YYYY);
+        fput_uint((uint64_t)now_dir_fcb->YYYY);
         fputs("  MM : ");
-        put_uint((uint64_t)now_dir_fcb->MM);
+        fput_uint((uint64_t)now_dir_fcb->MM);
         fputs("  DD : ");
-        put_uint((uint64_t)now_dir_fcb->DD);
+        fput_uint((uint64_t)now_dir_fcb->DD);
         fputs("\n");
         break;
 
