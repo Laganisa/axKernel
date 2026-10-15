@@ -1,10 +1,5 @@
-#include "global/_in_proc.h"
-#include "global/_io.h"
-#include "tools/_asm.h"
-#include "global/_debug.h"
-#include "tools/_font.h"
-#include "tools/_dstruc.h"
-#include "tools/_hash.h"
+#include "frm/ksh.h"
+#include "frm/kedt.h"
 
 enum shell_ret
 {
@@ -42,6 +37,16 @@ static fcb_e *kcurrent_dir(void)
     }
 
     return &(fm_record->FMv3_dir_mem[dir_id]);
+}
+
+void fput()
+{
+
+#if defined(display)
+
+#else if defined(put)
+
+#endif
 }
 
 // 현재 작업 경로를 나타내는 로직
@@ -431,7 +436,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         fcb_e *new_dir_fcb = fm_dir_find(fm_record, args[2]);
 
         now_dir_fcb->p_fid = new_dir_fcb->fid;
-        new_dir_fcb->dirs[new_dir_fcb->dir_dnum] = now_fcb->fid;
+        new_dir_fcb->dirs[new_dir_fcb->dir_dnum] = now_dir_fcb->fid;
         new_dir_fcb->dir_dnum++;
 
         break;
@@ -553,6 +558,14 @@ static uint8_t dev_split(char **args)
         targs[i] = str_to_uint(args[i]);
     }
 
+    // 누적 OR 으로 나중에 인자 개수 판별
+    uint8_t prefix_targs[6] = {0};
+
+    for (int i = 5; i >= 0; i--)
+    {
+        prefix_targs[i] = targs[i] | (i < 5 ? prefix_targs[i + 1] : 0);
+    }
+
     switch (hash_check)
     {
     // 장치 연결
@@ -596,6 +609,46 @@ static uint8_t dev_split(char **args)
 static uint8_t sys_split(char **args)
 {
     uint8_t ret;
+    uint64_t hash_check = fnv1a_hash_64(args[0]);
+    uint64_t targs[6] = {0};
+
+    for (int i = 0; i < 6; i++)
+    {
+        targs[i] = str_to_uint(args[i]);
+    }
+
+    // 누적 OR 으로 나중에 인자 개수 판별
+    uint8_t prefix_targs[6] = {0};
+
+    for (int i = 5; i >= 0; i--)
+    {
+        prefix_targs[i] = targs[i] | (i < 5 ? prefix_targs[i + 1] : 0);
+    }
+
+    fcb_t *now_fcb = NULL;
+
+    switch (hash_check)
+    {
+    // 에디터 연결
+    case 0xC2CE0F18F0367E08:
+        if (prefix_targs[2] != 0)
+        {
+            puts("Syntax : sys edt {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        now_fcb = fm_find(fm_record, args[1]);
+
+        kedt(now_fcb);
+
+        break;
+
+    default:
+        puts("Syntax : sys {command} {args}\n");
+        ret = COMM_ERR;
+        break;
+    }
 
     return ret;
 }

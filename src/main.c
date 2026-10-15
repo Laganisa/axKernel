@@ -27,6 +27,10 @@
 #include "tools/_asm.h" // 어셈블리 함수가 있는 헤더
 #include "tools/_virtio.h"
 
+// 내장 커널 펌웨어 헤더
+#include "frm/ksh.h" // 커널 쉘 헤더
+#include "frm/ked.h" // 커널 에디터 헤더
+
 extern void _proc(pcb_t *);
 extern void vector_table(void);
 
