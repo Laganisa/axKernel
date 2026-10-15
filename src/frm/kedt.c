@@ -11,6 +11,6 @@ void kedt(fcb_t *file)
         gets(prompt, 63);
 
         // 입력을 정규화 및 적용
-        ksplit(prompt);
+        // ksplit(prompt);
     }
 }

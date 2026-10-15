@@ -1,6 +1,9 @@
 #ifndef __KERNEL_DEFS_H__
 #define __KERNEL_DEFS_H__
 
+// 전역 디버깅 플래그 관련
+#define DEBUG_DISPLAY_FLAG 1
+
 // 인터럽트 관련
 #define enable_irq() asm volatile("msr daifclr, #2")
 #define disable_irq() asm volatile("msr daifset, #2")

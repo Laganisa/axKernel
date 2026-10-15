@@ -28,8 +28,8 @@
 #include "tools/_virtio.h"
 
 // 내장 커널 펌웨어 헤더
-#include "frm/ksh.h" // 커널 쉘 헤더
-#include "frm/ked.h" // 커널 에디터 헤더
+#include "frm/ksh.h"  // 커널 쉘 헤더
+#include "frm/kedt.h" // 커널 에디터 헤더
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);
@@ -117,16 +117,23 @@ void devo_main(void)
 
     nm_init();
 
+#if DEBUG_DISPLAY_FLAG == 1
+    gpu_init();
+#endif
+
     puts("devo main\n");
 
     kshell();
 
+    pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", kshell, 0);
+
+    proc_dump("proc1", proc1);
+
+    current_proc = proc1;
+    _proc(proc1);
+
     /*
-    heap_init();
-    gpu_init();
-
     ltrs(16, 16, "AxKernel!");
-
 
     gm_rect(40, 40, 120, 60, 0xFFFF0000);
     gm_copy(40, 40, 159, 99);

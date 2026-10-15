@@ -32,8 +32,6 @@ pcb_t *get_current_proc_addr()
 // 인터럽트 핸들러
 void irq_handler_main(pcb_t *proc)
 {
-    enter("irq_handler_main");
-
     disable_irq();
 
     // 인터럽트 번호 읽기
@@ -74,8 +72,6 @@ void irq_handler_main(pcb_t *proc)
     }
     else if (irq_nr == g_virtio_gpu_irq)
     {
-        log("gpu");
-
         virtio_gpu_irq_handle();
 
         GIC_CPU_EOI = iar;

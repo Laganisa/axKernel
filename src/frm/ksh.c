@@ -39,39 +39,99 @@ static fcb_e *kcurrent_dir(void)
     return &(fm_record->FMv3_dir_mem[dir_id]);
 }
 
-void fput()
+static uint16_t ksh_yline = 0;
+static uint32_t ksh_xpixel = 0;
+
+static uint16_t fputs_color(const char *s, uint32_t color)
 {
+#if DEBUG_DISPLAY_FLAG == 1
+    char line[128];
+    uint16_t line_len = 0;
+    uint16_t newline_count = 0;
 
-#if defined(display)
+    while (1)
+    {
+        if (s[0] == '\n' || s[0] == '\0' || line_len == sizeof(line) - 1)
+        {
+            line[line_len] = '\0';
+            if (line_len != 0)
+            {
+                ltrs_color(ksh_xpixel, 8 * ksh_yline, line, color);
+                ksh_xpixel += 8 * line_len;
+                line_len = 0;
+            }
 
-#else if defined(put)
+            if (s[0] == '\n')
+            {
+                if (newline_count < 0xFFFF)
+                {
+                    newline_count++;
+                }
+                if (ksh_yline < 0xFFFF)
+                {
+                    ksh_yline++;
+                }
+                ksh_xpixel = 0;
+                s++;
+                continue;
+            }
 
+            if (s[0] == '\0')
+            {
+                return newline_count;
+            }
+        }
+
+        line[line_len++] = *s++;
+    }
+
+#elif DEBUG_DISPLAY_FLAG == 0
+    if (color == 0xFFFF0000)
+    {
+        puts((const int8_t *)"\033[31m");
+    }
+    puts((const int8_t *)s);
+    if (color == 0xFFFF0000)
+    {
+        puts((const int8_t *)"\033[0m");
+    }
+    return 0;
 #endif
+}
+
+static uint16_t fputs(const char *s)
+{
+    return fputs_color(s, 0xFFFFFFFF);
+}
+
+static uint16_t fputs_error(const char *s)
+{
+    return fputs_color(s, 0xFFFF0000);
 }
 
 // 현재 작업 경로를 나타내는 로직
 // 스택에 저장된 경로 요소를 루트부터 출력
 static void kpath()
 {
-    puts("ax:");
-    puts("/");
+    fputs("ax:");
+    fputs("/");
 
     for (uint32_t i = 0; i < dir_path.count; i++)
     {
         uint8_t dir_id = dir_path.buffer[i];
         if (dir_id >= fm_record->all_dir_num)
         {
-            puts("(invalid path)");
+            fputs_error("(invalid path)");
             return;
         }
 
         if (i != 0)
         {
-            puts("/");
+            fputs("/");
         }
-        puts(fm_record->FMv3_dir_mem[dir_id].alias);
+        fputs((const char *)fm_record->FMv3_dir_mem[dir_id].alias);
     }
-    puts("> ");
+    fputs("> ");
 }
 
 // 메모리
@@ -90,7 +150,7 @@ static uint8_t mem_split(char **args)
     {
 
     default:
-        puts("Syntax : mem {command} {args}\n");
+        fputs_error("Syntax : mem {command} {args}\n");
         ret = COMM_ERR;
         break;
     }
@@ -132,7 +192,7 @@ static uint8_t proc_split(char **args)
         break;
 
     default:
-        puts("Syntax : proc {command} {args}\n");
+        fputs_error("Syntax : proc {command} {args}\n");
         ret = COMM_ERR;
         break;
     }
@@ -189,7 +249,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         // 생성파일의 크기가 너무 작거나 클때
         if (prefix_targs[4] != 0)
         {
-            puts("Syntax : file crt {name/path} {size(B)} {auth}\n");
+            fputs_error("Syntax : file crt {name/path} {size(B)} {auth}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -215,7 +275,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 
         if (prefix_targs[2] != 0)
         {
-            puts("Syntax : file del {name/path}\n");
+            fputs_error("Syntax : file del {name/path}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -229,7 +289,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 
         if (prefix_targs[2] != 0)
         {
-            puts("Syntax : file info {name/path}\n");
+            fputs_error("Syntax : file info {name/path}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -238,31 +298,31 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 
         if (now_fcb == NULL)
         {
-            puts("file not found\n");
+            fputs_error("file not found\n");
             ret = COMM_ERR;
             break;
         }
 
-        puts("file name : ");
-        puts(now_fcb->alias);
-        puts("\n");
-        puts("file len(KB): ");
+        fputs("file name : ");
+        fputs((const char *)now_fcb->alias);
+        fputs("\n");
+        fputs("file len(KB): ");
         put_uint((uint64_t)now_fcb->lens);
-        puts("\n");
-        puts("file id: ");
+        fputs("\n");
+        fputs("file id: ");
         put_uint((uint64_t)now_fcb->fid);
-        puts("\n");
-        puts("file auth : ");
+        fputs("\n");
+        fputs("file auth : ");
         put_uint((uint64_t)now_fcb->auth);
-        puts("\n");
+        fputs("\n");
 
-        puts("YYYY : ");
+        fputs("YYYY : ");
         put_uint((uint64_t)now_fcb->YYYY);
-        puts("  MM : ");
+        fputs("  MM : ");
         put_uint((uint64_t)now_fcb->MM);
-        puts("  DD : ");
+        fputs("  DD : ");
         put_uint((uint64_t)now_fcb->DD);
-        puts("\n");
+        fputs("\n");
         break;
 
     // 파일의 디렉토리간 이동
@@ -270,7 +330,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 
         if (prefix_targs[5] != 0)
         {
-            puts("Syntax : file mv {src dir name/path} {name/path} {dst dir name/path}\n");
+            fputs_error("Syntax : file mv {src dir name/path} {name/path} {dst dir name/path}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -286,7 +346,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 
         if ((prefix_targs[2] != 0) || (targs[2] > 512))
         {
-            puts("Syntax : file chg {name/path} {chg auth}\n");
+            fputs_error("Syntax : file chg {name/path} {chg auth}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -298,18 +358,18 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         break;
 
     // 디렉토리 생성
-    case 0x2268A5C380EEAA08:
+    case 0x73430E67262B7B56:
 
         if (prefix_targs[4] != 0)
         {
-            puts("Syntax : file dir_crt {name/path} {size(B)} {auth}\n");
+            fputs_error("Syntax : file dcrt {name/path} {size(B)} {auth}\n");
             ret = ARGS_ERR;
             break;
         }
 
         if (current_dir == NULL || depth >= 2)
         {
-            puts("Directory depth limit reached\n");
+            fputs_error("Directory depth limit reached\n");
             ret = COMM_ERR;
             break;
         }
@@ -332,10 +392,10 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         break;
 
     // 디렉토리 삭제
-    case 0x3BB72CC38F126296:
+    case 0xB0DD41674955CBF4:
         if (prefix_targs[2] != 0)
         {
-            puts("Syntax : file dir_del {name/path}\n");
+            fputs_error("Syntax : file dir_del {name/path}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -344,11 +404,11 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         break;
 
         // 디렉토리 정보
-    case 0x04B54668DC76A7A9:
+    case 0x454A0E9939328967:
 
         if (prefix_targs[2] != 0)
         {
-            puts("Syntax : file dir_info {name/path}\n");
+            fputs_error("Syntax : file dir_info {name/path}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -361,73 +421,73 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
             break;
         }
 
-        puts("dir name : ");
-        puts(now_dir_fcb->alias);
-        puts("\n");
+        fputs("dir name : ");
+        fputs((const char *)now_dir_fcb->alias);
+        fputs("\n");
 
-        puts("dir id: ");
+        fputs("dir id: ");
         put_uint((uint64_t)now_dir_fcb->fid);
-        puts("\n");
-        puts("dir auth : ");
+        fputs("\n");
+        fputs("dir auth : ");
         put_uint((uint64_t)now_dir_fcb->auth);
-        puts("\n");
+        fputs("\n");
 
         if (now_dir_fcb->dir_num == 0)
         {
-            puts("file not found\n");
+            fputs_error("file not found\n");
         }
         else
         {
-            puts("files\n");
-            puts("----------\n");
+            fputs("files\n");
+            fputs("----------\n");
             for (int i = 0; i < now_dir_fcb->dir_num; i++)
             {
                 uint32_t file_pos = now_dir_fcb->files[i];
                 fcb_t *now_file = &(fm_record->FMv3_mem[file_pos]);
-                puts("name : ");
-                puts(now_file->alias);
-                puts("  auth : ");
+                fputs("name : ");
+                fputs((const char *)now_file->alias);
+                fputs("  auth : ");
                 put_uint((uint64_t)now_file->auth);
-                puts("\n");
+                fputs("\n");
             }
-            puts("----------\n");
+            fputs("----------\n");
         }
 
         if (now_dir_fcb->dir_dnum == 0)
         {
-            puts("dir not found\n");
+            fputs_error("dir not found\n");
         }
         else
         {
-            puts("\ndirs\n");
-            puts("----------\n");
+            fputs("\ndirs\n");
+            fputs("----------\n");
             for (int i = 0; i < now_dir_fcb->dir_dnum; i++)
             {
                 uint32_t dir_pos = now_dir_fcb->dirs[i];
                 fcb_t *now_dir = &(fm_record->FMv3_dir_mem[dir_pos]);
-                puts("dir name : ");
-                puts(now_dir->alias);
-                puts("  auth : ");
+                fputs("dir name : ");
+                fputs((const char *)now_dir->alias);
+                fputs("  auth : ");
                 put_uint((uint64_t)now_dir->auth);
-                puts("\n");
+                fputs("\n");
             }
-            puts("----------\n");
+            fputs("----------\n");
         }
 
-        puts("YYYY : ");
+        fputs("YYYY : ");
         put_uint((uint64_t)now_dir_fcb->YYYY);
-        puts("  MM : ");
+        fputs("  MM : ");
         put_uint((uint64_t)now_dir_fcb->MM);
-        puts("  DD : ");
+        fputs("  DD : ");
         put_uint((uint64_t)now_dir_fcb->DD);
-        puts("\n");
+        fputs("\n");
         break;
 
     // 디렉토리의 디렉토리간 이동
-    case 0xD6D3BF44B76F3946:
+    case 0xCAB53A18F478E2E4:
         if (prefix_targs[5] != 0)
         {
-            puts("Syntax : file dir_mv {name/path} {dst dir name/path}\n");
+            fputs_error("Syntax : file dmv {name/path} {dst dir name/path}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -442,10 +502,10 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         break;
 
     // 디렉토리 권한 수정
-    case 0x22C0B8C381394027:
+    case 0x738E0D67266B651D:
         if ((prefix_targs[3] != 0) || targs[3] > 512)
         {
-            puts("Syntax : file dir_chg {name/path} {auth}\n");
+            fputs_error("Syntax : file dchg {name/path} {auth}\n");
         }
 
         now_dir_fcb = fm_dir_find(fm_record, args[1]);
@@ -457,14 +517,14 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
     case 0x822687195CCFB219:
         if (args[1] == NULL || args[3] != NULL)
         {
-            puts("Syntax : file scp {in {dir name/path}|out}\n");
+            fputs_error("Syntax : file scp {in {dir name/path}|out}\n");
             ret = ARGS_ERR;
             break;
         }
 
         if (current_dir == NULL)
         {
-            puts("Current directory unavailable\n");
+            fputs_error("Current directory unavailable\n");
             ret = COMM_ERR;
             break;
         }
@@ -475,7 +535,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         case 0x08B73807B55C4BBE:
             if (args[2] == NULL)
             {
-                puts("Syntax : file scp in {dir name/path}\n");
+                fputs_error("Syntax : file scp in {dir name/path}\n");
                 ret = ARGS_ERR;
                 break;
             }
@@ -486,7 +546,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
                 now_dir_fcb->depth != depth + 1 ||
                 dir_path.full(&dir_path))
             {
-                puts("Directory not found in current path\n");
+                fputs_error("Directory not found in current path\n");
                 ret = COMM_ERR;
                 break;
             }
@@ -498,14 +558,14 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         case 0x19F79B1921BBCFFF:
             if (args[2] != NULL)
             {
-                puts("Syntax : file scp out\n");
+                fputs_error("Syntax : file scp out\n");
                 ret = ARGS_ERR;
                 break;
             }
 
             if (dir_path.count <= 1)
             {
-                puts("Already at root directory\n");
+                fputs_error("Already at root directory\n");
                 ret = COMM_ERR;
                 break;
             }
@@ -514,7 +574,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
             break;
 
         default:
-            puts("Syntax : file scp {in {dir name/path}|out}\n");
+            fputs_error("Syntax : file scp {in {dir name/path}|out}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -526,7 +586,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         */
 
     default:
-        puts("Syntax : file {command} {args}\n");
+        fputs_error("Syntax : file {command} {args}\n");
         ret = COMM_ERR;
         break;
     }
@@ -594,7 +654,7 @@ static uint8_t dev_split(char **args)
         break;
 
     default:
-        puts("Syntax : dev {command} {args}\n");
+        fputs_error("Syntax : dev {command} {args}\n");
         ret = COMM_ERR;
         break;
     }
@@ -633,7 +693,7 @@ static uint8_t sys_split(char **args)
     case 0xC2CE0F18F0367E08:
         if (prefix_targs[2] != 0)
         {
-            puts("Syntax : sys edt {name/path}\n");
+            fputs_error("Syntax : sys edt {name/path}\n");
             ret = ARGS_ERR;
             break;
         }
@@ -645,7 +705,7 @@ static uint8_t sys_split(char **args)
         break;
 
     default:
-        puts("Syntax : sys {command} {args}\n");
+        fputs_error("Syntax : sys {command} {args}\n");
         ret = COMM_ERR;
         break;
     }
@@ -786,26 +846,26 @@ check:
         break;
 
     case UNKNOW_ERR:
-        puts("Invalid category selected\n");
+        fputs_error("Invalid category selected\n");
         break;
 
     // 문법 오류
     case GRMMER_ERR:
-        puts("Grammar error\n");
+        fputs_error("Grammar error\n");
         break;
 
     // 인자 전달 오류
     case ARGS_ERR:
-        puts("Invalid arguments\n");
+        fputs_error("Invalid arguments\n");
         break;
 
     // 명령 오류
     case COMM_ERR:
-        puts("Command error\n");
+        fputs_error("Command error\n");
         break;
     // 그 외 예상치 못한 오류
     default:
-        puts("Unexpected error\n");
+        fputs_error("Unexpected error\n");
         break;
     }
 }
@@ -821,7 +881,7 @@ void kshell(void)
 
     if (root_dir == NULL)
     {
-        puts("Shell root directory unavailable\n");
+        fputs_error("Shell root directory unavailable\n");
         return;
     }
 

@@ -52,6 +52,7 @@ static unsigned char
 
 static int gpu_wait_used(void)
 {
+    log("!!!!");
     int timeout = 10000000;
 
     while (1)
@@ -78,6 +79,8 @@ static int gpu_wait_used(void)
     uint16_t new_used_idx = gpu_queue.used->idx;
 
     gpu_used_idx = new_used_idx;
+
+    log("!!!!");
 
     return 0;
 }
@@ -383,6 +386,8 @@ static int gpu_get_display_info(void)
     cmd.ctx_id = 0;
     cmd.padding = 0;
 
+    log("!? asdf");
+
     if (gpu_submit_control(
             &cmd,
             sizeof(cmd),
@@ -392,6 +397,8 @@ static int gpu_get_display_info(void)
         puts("GPU get display info submit failed\n");
         return -1;
     }
+
+    log("!? asdf");
 
     if (resp.hdr.type != VIRTIO_GPU_RESP_OK_DISPLAY_INFO)
     {
@@ -577,6 +584,8 @@ void gpu_init(void)
         return;
     }
 
+    log("! asdf");
+
     gpu_queue_size = gpu_queue.size;
     gpu_used_idx = gpu_queue.used->idx;
 
@@ -585,6 +594,8 @@ void gpu_init(void)
         puts("GPU display info failed\n");
         return;
     }
+
+    log("! asdf");
 
     uint64_t pixel_count =
         (uint64_t)gpu_display_width * gpu_display_height;
@@ -598,6 +609,8 @@ void gpu_init(void)
         puts("GPU framebuffer size is too large\n");
         return;
     }
+
+    log("! asdf");
 
     uint32_t framebuffer_bytes =
         (uint32_t)(pixel_count * 2 * sizeof(uint32_t));
@@ -629,8 +642,19 @@ void gpu_init(void)
         puts("GPU set scanout failed\n");
         return;
     }
+
+    log("GPU initialized successfully\n");
 }
 
 void virtio_gpu_irq_handle(void)
 {
+    uint32_t status = VIRTIO_GPU_INTERRUPT_STATUS;
+
+    if (status == 0)
+    {
+        return;
+    }
+
+    VIRTIO_GPU_INTERRUPT_ACK = status;
+    virtio_mb();
 }
