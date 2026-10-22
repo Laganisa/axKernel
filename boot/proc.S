@@ -3,13 +3,19 @@
 
 // pcb_t 구조체를 사용
 _proc:
-    // SP
+    // SPSR_EL1의 복귀 모드에 맞는 스택 포인터를 복원
     ldr x1, [x0, #(31 * 8)]
-    msr sp_el0, x1
 
-    // SPSR_EL1
-    ldr x1, [x0, #(32 * 8)]
-    msr spsr_el1, x1
+    ldr x2, [x0, #(32 * 8)]
+    and x3, x2, #0xF
+    cmp x3, #5
+    b.eq 1f
+    msr sp_el0, x1
+    b 2f
+1:
+    msr sp_el1, x1
+2:
+    msr spsr_el1, x2
 
     // ELR_EL1
     ldr x1, [x0, #(33 * 8)]

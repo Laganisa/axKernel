@@ -112,7 +112,7 @@ void devo_main(void)
     puts("devo main\n");
 }
 
-#define B_MAIN_FLAG 6
+#define B_MAIN_FLAG 1
 
 void kernel_main(void)
 {
@@ -124,7 +124,7 @@ void kernel_main(void)
     // 인터럽트 초기화
     irq_init();
     vhid_init();
-    // 동적할당 초기화
+    //  동적할당 초기화
     heap_init();
 
     // 자료구조 초기화

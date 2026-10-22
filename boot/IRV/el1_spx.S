@@ -86,43 +86,41 @@ el1_spx_sync:
 
 
 el1_spx_irq:
-    ldr x9, =0x40024000
-    
-    stp x0, x1, [x9, #0]
+    stp x9, x10, [sp, #-16]!
 
-    ldr x10, =current_proc
-    ldr x10, [x10]
+    ldr x9, =current_proc
+    ldr x9, [x9]
 
-    stp x2,  x3,  [x10, #(2*8)]
-    stp x4,  x5,  [x10, #(4*8)]
-    stp x6,  x7,  [x10, #(6*8)]
-    stp x8,  x9,  [x10, #(8*8)]   
-    
-    mov x11, x10
-    stp x10, x12, [x11, #(10*8)]
-    stp x13, x14, [x11, #(12*8)]
-    stp x15, x16, [x11, #(14*8)]
-    stp x17, x18, [x11, #(16*8)]
-    stp x19, x20, [x11, #(18*8)]
-    stp x21, x22, [x11, #(20*8)]
-    stp x23, x24, [x11, #(22*8)]
-    stp x25, x26, [x11, #(24*8)]
-    stp x27, x28, [x11, #(26*8)]
-    stp x29, x30, [x11, #(28*8)]
+    stp x0,  x1,  [x9, #(0*8)]
+    stp x2,  x3,  [x9, #(2*8)]
+    stp x4,  x5,  [x9, #(4*8)]
+    stp x6,  x7,  [x9, #(6*8)]
+    str x8,       [x9, #(8*8)]
+    ldr x10, [sp]
+    str x10,      [x9, #(9*8)]
+    ldr x10, [sp, #8]
+    str x10,      [x9, #(10*8)]
+    stp x11, x12, [x9, #(11*8)]
+    stp x13, x14, [x9, #(13*8)]
+    stp x15, x16, [x9, #(15*8)]
+    stp x17, x18, [x9, #(17*8)]
+    stp x19, x20, [x9, #(19*8)]
+    stp x21, x22, [x9, #(21*8)]
+    stp x23, x24, [x9, #(23*8)]
+    stp x25, x26, [x9, #(25*8)]
+    stp x27, x28, [x9, #(27*8)]
+    stp x29, x30, [x9, #(29*8)]
 
-    mov x12, sp
-    str x12, [x11, #(31*8)]
+    add x10, sp, #16
+    str x10, [x9, #(31*8)]
 
-    mrs x12, spsr_el1
-    str x12, [x11, #(32*8)]
+    mrs x10, spsr_el1
+    str x10, [x9, #(32*8)]
 
-    mrs x12, elr_el1
-    str x12, [x11, #(33*8)]
+    mrs x10, elr_el1
+    str x10, [x9, #(33*8)]
 
-    ldp x0, x1, [x9, #0]
-    stp x0, x1, [x11, #(0*8)]
-
-    mov x0, x11
+    mov x0, x9
     bl irq_handler_main
 
     b _proc
