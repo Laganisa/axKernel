@@ -9,11 +9,12 @@ _proc:
     ldr x2, [x0, #(32 * 8)]
     and x3, x2, #0xF
     cmp x3, #5
+
     b.eq 1f
-    msr sp_el0, x1
+    msr sp_el1, x1
     b 2f
 1:
-    msr sp_el1, x1
+    msr sp_el0, x1
 2:
     msr spsr_el1, x2
 

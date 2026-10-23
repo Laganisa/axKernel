@@ -167,8 +167,6 @@ void kernel_main(void)
             프로세스 전환
         */
 
-        dump("1", pm_object->lowbuf[0]);
-
         current_proc = proc1;
         enable_irq();
         _proc(proc1);

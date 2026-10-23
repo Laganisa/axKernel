@@ -49,6 +49,7 @@ el1_spx_sync:
 
     mrs x6, esr_el1
     lsr x6, x6, #26
+    and x6, x6, #0x3F
 
     bl sync_handler_main
     

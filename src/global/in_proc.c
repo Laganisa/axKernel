@@ -106,6 +106,7 @@ void task_void()
 
 void task_inf_A()
 {
+    puts("A");
 
     enable_irq();
 
