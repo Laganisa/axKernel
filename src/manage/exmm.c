@@ -10,7 +10,7 @@
     retrun 0: fail
     else 주소
 */
-uint8_t MMv5_regu_push(MMv5_stack *stack, uint8_t val)
+uint16_t MMv5_regu_push(MMv5_stack *stack, uint8_t val)
 {
     // 할당은 항상 sp_top에서 하고
     uint16_t result;

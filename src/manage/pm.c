@@ -71,17 +71,27 @@ pcb_t *pm_create(
     new_proc->control[0].file_offset = 0;        // 파일 오프셋
     new_proc->control[0].is_file = 0;            // 파일을 열지 않음
 
-    // 메모리 로직
-    // 128KB를 할당 리턴 된 메모리 스택 주소를 받음
-    new_proc->mm_addr = mm_creat(&mm_stack, INITIAL_PROC_SIZE);
-
-    // 할당 후 주소를 줌
-    // 자신의 주소를 알아내고
-    uint64_t real_addr = mm_find(&mm_stack, new_proc->mm_addr, 0);
-
     // 프로세스에 들어갈 페이지 테이블
     // TODO: 프로세스당 페이지 테이블을 만들기
     new_proc->page_i = (page_t *)heap_alloc(sizeof(page_t));
+    if (new_proc->page_i == NULL)
+    {
+        obj->is_alloc[id - 1] = 0;
+        dump("Process page table allocation failed", new_proc->id);
+        return NULL;
+    }
+
+    // 프로세스 메모리를 할당하고 시작 주소를 구함
+    uint16_t mm_top_before = mm_stack.sp_top;
+    new_proc->mm_addr = mm_creat(&mm_stack, INITIAL_PROC_SIZE);
+    if (mm_stack.sp_top == mm_top_before)
+    {
+        heap_free(new_proc->page_i);
+        obj->is_alloc[id - 1] = 0;
+        dump("Process memory allocation failed", INITIAL_PROC_SIZE);
+        return NULL;
+    }
+    uint64_t real_addr = mm_find(&mm_stack, new_proc->mm_addr, 0);
 
     // 페이지 테이블 초기화
     new_proc->page_i->is_full = 0;

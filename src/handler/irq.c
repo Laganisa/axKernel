@@ -41,21 +41,20 @@ void irq_handler_main(pcb_t *proc)
     // 타이머 인터럽트
     if (irq_nr == NSPTI)
     {
-        log("time");
+        // log("time");
 
         current_proc = schedule_proc(proc);
 
         asm volatile("msr cntp_tval_el0, %0" : : "r"(frq));
 
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(current_proc);
     }
     else if (vhid_irq_handle(irq_nr))
     {
+        // log("hid");
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(proc);
     }
@@ -73,7 +72,6 @@ void irq_handler_main(pcb_t *proc)
 
         // 인터럽트 처리 후
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(proc);
     }
@@ -82,7 +80,6 @@ void irq_handler_main(pcb_t *proc)
         virtio_gpu_irq_handle();
 
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(proc);
     }
@@ -93,7 +90,6 @@ void irq_handler_main(pcb_t *proc)
         virtio_blk_irq_handle();
 
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(proc);
     }

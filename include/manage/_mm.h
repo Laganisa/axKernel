@@ -40,7 +40,7 @@ typedef struct MMv5_stack
 
 // 함수 선언
 void mm_init(MMv5_stack *stack, uint64_t addr);
-uint8_t MMv5_regu_push(MMv5_stack *stack, uint8_t val);
+uint16_t MMv5_regu_push(MMv5_stack *stack, uint8_t val);
 uint8_t MMv5_regu_substack_push(MMv5_stack *stack, uint8_t val);
 uint8_t MMv5_regu_pop(MMv5_stack *stack, uint16_t val);
 

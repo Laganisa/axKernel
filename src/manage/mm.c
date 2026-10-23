@@ -25,38 +25,34 @@ void mm_init(MMv5_stack *stack, uint64_t addr)
 }
 
 // ! 메모리 관리자 수정 필요
-
 uint16_t mm_creat(MMv5_stack *stack, uint16_t val16)
 {
-
-    // cmd = 0 할당 공간 할당 -> uint16_t 의 스택 포인터 주소 리턴
-    uint8_t data = (val16 >> 6) & 0x7; // 7,8,9로 쪼갠 데이터 즉 많아봤자 512KB
-
-    if (data != 0) // 주어진 범위를 초과하지 않았으면
+    if (stack == NULL || val16 == 0)
     {
-        // ! ufux로 구간 내 비트를 추출하는 로직으로 변경하기
-        asm("clz %w0, %w1" : "=r"(data) : "r"((uint32_t)data)); // 어셈블러 따로 처리하는 함수를 만들어야함
-
-        if (stack->sp_top >= stack->sp_bot)
-        {
-            return 0; // "not enough memory stack"
-        }
-        else
-        {
-            // ! 이것도 위에 바꾸면서 바꾸기
-            data = 37 - data;
-            uint8_t ret = MMv5_regu_push(stack, data); // 메모리 스택 주소를 리턴함
-            return ret;
-        }
-    }
-    else
-    {
-        // ! 아직 비정규로 할당할 함수 제작 하지 않음
-        // 이 함수는 sp_bot에서 부터 아래로 내려가며 할당할 예정
-        // 한번 할당할때 크기는 2비트가 아닌 1바이트 정도로 생각중
+        return 0;
     }
 
-    return 0;
+    // 맵 항목 하나에 128KB 단위를 최대 3개까지 저장
+    uint32_t remaining_units = ((uint32_t)val16 + 127) / 128;
+    uint32_t entry_count = (remaining_units + 2) / 3;
+    uint32_t available_entries = 0xFFFFU - stack->sp_top;
+    uint32_t map_capacity = sizeof(stack->MMv5_mem) * 4U;
+    if (stack->sp_top >= stack->sp_bot ||
+        entry_count > available_entries ||
+        (uint32_t)stack->sp_top + entry_count > map_capacity)
+    {
+        return 0;
+    }
+
+    uint16_t allocation = stack->sp_top;
+    while (remaining_units != 0)
+    {
+        uint8_t units = remaining_units > 3 ? 3 : (uint8_t)remaining_units;
+        MMv5_regu_push(stack, units);
+        remaining_units -= units;
+    }
+
+    return allocation;
 }
 
 /*

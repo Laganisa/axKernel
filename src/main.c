@@ -168,7 +168,6 @@ void kernel_main(void)
         */
 
         current_proc = proc1;
-        enable_irq();
         _proc(proc1);
     }
     else if (B_MAIN_FLAG == 2)
@@ -186,7 +185,6 @@ void kernel_main(void)
         proc_dump("shell proc", shell_proc);
 
         current_proc = shell_proc;
-        enable_irq();
         _proc(shell_proc);
     }
     else if (B_MAIN_FLAG == 3)
@@ -199,7 +197,6 @@ void kernel_main(void)
         proc_dump("brdge proc", brdge_proc);
 
         current_proc = brdge_proc;
-        enable_irq();
         _proc(brdge_proc);
     }
     else if (B_MAIN_FLAG == 4)
@@ -217,7 +214,6 @@ void kernel_main(void)
         proc_dump("compil proc", compil_proc);
 
         current_proc = compil_proc;
-        enable_irq();
         _proc(compil_proc);
     }
     else if (B_MAIN_FLAG == 5)
@@ -243,8 +239,6 @@ void kernel_main(void)
 
         current_proc = bridge_proc;
 
-        enable_irq();
-
         _proc(bridge_proc);
     }
     else if (B_MAIN_FLAG == 6)
@@ -254,7 +248,6 @@ void kernel_main(void)
         proc_dump("proc1", proc1);
 
         current_proc = proc1;
-        enable_irq();
         _proc(proc1);
     }
     else
