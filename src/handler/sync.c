@@ -782,7 +782,7 @@ uint64_t sync_handler_main(
     // 시스템 콜 리턴값을 받을 변수
     uint64_t val;
 
-    dump("!!!", ec);
+    // dump("!!!", ec);
 
     // ec 값에 맞는 함수 실행
     val = ec_table[ec](

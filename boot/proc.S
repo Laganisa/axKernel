@@ -11,10 +11,11 @@ _proc:
     cmp x3, #5
 
     b.eq 1f
-    msr sp_el1, x1
+    msr sp_el0, x1
     b 2f
 1:
-    msr sp_el0, x1
+    msr spsel, #1
+    mov sp, x1
 2:
     msr spsr_el1, x2
 
