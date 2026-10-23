@@ -10,6 +10,10 @@ void putchar(int8_t c);
 void puts(const int8_t *s);
 int8_t getchar(void);
 void gets(int8_t *s, int32_t max_len);
+uint16_t io_puts_color(const char *s, uint32_t color);
+
+extern uint32_t io_console_line;
+extern uint32_t io_console_xpixel;
 
 void put_hex(uint64_t d);
 void put_uint(uint64_t n);

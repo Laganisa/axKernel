@@ -20,9 +20,8 @@
 #include "manage/_nm.h" // 네트워크 관리자 헤더
 #include "manage/_gm.h" // 그래픽 관리자 헤더
 
-#include "handler/_irq.h"     // 인터럽트 헤더 추가
-#include "handler/_sync.h"    // 예외 핸들러 sync
-#include "handler/_syscall.h" // 시스템 콜 헨들러
+#include "handler/_irq.h"  // 인터럽트 헤더 추가
+#include "handler/_sync.h" // 예외 핸들러 sync
 
 #include "tools/_asm.h" // 어셈블리 함수가 있는 헤더
 #include "tools/_virtio.h"
@@ -56,7 +55,9 @@ void devo_main(void);
 // 커널 함수
 void master(uint64_t dtb_addr)
 {
+#if DEBUG_DTB_FLAG == 1
     dump("Passed_DTB_addr", dtb_addr);
+#endif
 
     // dtb 파싱 후 연동
     parse_dtb(dtb_addr);
@@ -112,7 +113,7 @@ void devo_main(void)
     puts("devo main\n");
 }
 
-#define B_MAIN_FLAG 1
+#define B_MAIN_FLAG 6
 
 void kernel_main(void)
 {

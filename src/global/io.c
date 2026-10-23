@@ -1,6 +1,102 @@
 #include "manage/_fm.h"
+#include "global/_io.h"
 #include "_macro.h"
 #include "tools/_virtio.h"
+#include "tools/_font.h"
+
+uint32_t io_console_line;
+uint32_t io_console_xpixel;
+
+#if DEBUG_DISPLAY_FLAG == 1
+#include "manage/_gm.h"
+
+static void io_console_scroll(void)
+{
+    uint32_t text_height = (gpu_display_height / 8) * 8;
+    if (text_height < 8)
+    {
+        return;
+    }
+
+    for (uint32_t y = 8; y < text_height; ++y)
+    {
+        for (uint32_t x = 0; x < gpu_display_width; ++x)
+        {
+            gpu_framebuffer[(y - 8) * gpu_display_width + x] =
+                gpu_framebuffer[y * gpu_display_width + x];
+        }
+    }
+
+    uint32_t last_line = text_height - 8;
+    for (uint32_t y = last_line; y < text_height; ++y)
+    {
+        for (uint32_t x = 0; x < gpu_display_width; ++x)
+        {
+            gpu_framebuffer[y * gpu_display_width + x] = 0xFF000000;
+        }
+    }
+
+    if (gpu_resource_flush(0, 0, gpu_display_width, text_height) < 0)
+    {
+        puts("GPU console scroll failed\n");
+    }
+}
+
+static void io_console_next_line(void)
+{
+    io_console_xpixel = 0;
+    ++io_console_line;
+
+    uint32_t line_count = gpu_display_height / 8;
+    if (line_count != 0 && io_console_line >= line_count)
+    {
+        io_console_scroll();
+        io_console_line = line_count - 1;
+    }
+}
+
+static void io_console_flush_run(
+    char *run,
+    uint32_t *run_len,
+    uint32_t color)
+{
+    if (*run_len == 0)
+    {
+        return;
+    }
+
+    run[*run_len] = '\0';
+    ltrs_color(io_console_xpixel, 8 * io_console_line, run, color);
+    io_console_xpixel += *run_len * 8;
+    *run_len = 0;
+}
+
+static void io_console_erase_char(void)
+{
+    if (io_console_xpixel == 0)
+    {
+        if (io_console_line == 0)
+        {
+            return;
+        }
+        --io_console_line;
+        io_console_xpixel = (gpu_display_width / 8) * 8;
+    }
+
+    if (io_console_xpixel < 8)
+    {
+        return;
+    }
+
+    io_console_xpixel -= 8;
+    gm_rect(
+        io_console_xpixel,
+        8 * io_console_line,
+        8,
+        8,
+        0xFF000000);
+}
+#endif
 
 /*
     커널용 입출력 함수들
@@ -39,6 +135,7 @@ int8_t getchar(void)
     {
         int8_t character;
         int result = vhid_getchar(&character);
+
         if (result > 0)
         {
             return character;
@@ -60,6 +157,11 @@ int8_t getchar(void)
 // 문자열 입력 (Enter까지 받음)
 void gets(int8_t *s, int32_t max_len)
 {
+    if (s == NULL || max_len <= 0)
+    {
+        return;
+    }
+
     int32_t i = 0;
     while (i < max_len - 1)
     {
@@ -68,7 +170,11 @@ void gets(int8_t *s, int32_t max_len)
         // 1. 엔터 처리
         if (c == '\r' || c == '\n')
         {
+#if DEBUG_DISPLAY_FLAG == 0
             putchar('\n');
+#else
+            io_puts_color("\n", 0xFFFFFFFF);
+#endif
             break;
         }
         // 2. 백스페이스 처리 (ASCII 8: \b, 127: DEL)
@@ -77,8 +183,12 @@ void gets(int8_t *s, int32_t max_len)
             if (i > 0)
             {
                 i--;
-                s[i] = '\0';   // 버퍼에서 제거
+                s[i] = '\0'; // 버퍼에서 제거
+#if DEBUG_DISPLAY_FLAG == 0
                 puts("\b \b"); // 화면에서 제거
+#else
+                io_console_erase_char();
+#endif
             }
             // i가 0일 때는 아무것도 안 함 (프롬프트 보호)
         }
@@ -86,10 +196,92 @@ void gets(int8_t *s, int32_t max_len)
         else if (c >= 32 && c < 127)
         {
             s[i++] = c;
+#if DEBUG_DISPLAY_FLAG == 0
             putchar(c); // 백스페이스나 엔터가 아닐 때만 화면에 출력
+#else
+            char character[2] = {(char)c, '\0'};
+            io_puts_color(character, 0xFFFFFFFF);
+#endif
         }
     }
     s[i] = '\0';
+}
+
+uint16_t io_puts_color(const char *s, uint32_t color)
+{
+    if (s == NULL)
+    {
+        puts("Console output string is null\n");
+        return 0;
+    }
+
+#if DEBUG_DISPLAY_FLAG == 1
+    if (gpu_display_width < 8 || gpu_display_height < 8)
+    {
+        puts("GPU console display is too small\n");
+        return 0;
+    }
+
+    char run[128];
+    uint32_t run_len = 0;
+    uint16_t newline_count = 0;
+
+    while (*s != '\0')
+    {
+        if (*s == '\n')
+        {
+            io_console_flush_run(run, &run_len, color);
+            io_console_next_line();
+            if (newline_count < 0xFFFF)
+            {
+                ++newline_count;
+            }
+            ++s;
+            continue;
+        }
+
+        if (*s == '\r')
+        {
+            ++s;
+            continue;
+        }
+
+        if (io_console_xpixel + 8 > gpu_display_width)
+        {
+            io_console_flush_run(run, &run_len, color);
+            io_console_next_line();
+        }
+
+        run[run_len++] = *s++;
+        if (run_len == sizeof(run) - 1)
+        {
+            io_console_flush_run(run, &run_len, color);
+        }
+    }
+
+    io_console_flush_run(run, &run_len, color);
+    return newline_count;
+#else
+    if (color == 0xFFFF0000)
+    {
+        puts((const int8_t *)"\033[31m");
+    }
+    puts((const int8_t *)s);
+    if (color == 0xFFFF0000)
+    {
+        puts((const int8_t *)"\033[0m");
+    }
+
+    uint16_t newline_count = 0;
+    while (*s != '\0')
+    {
+        if (*s++ == '\n' && newline_count < 0xFFFF)
+        {
+            ++newline_count;
+        }
+    }
+    return newline_count;
+#endif
 }
 
 // 부호 없는 64비트를 십진수로

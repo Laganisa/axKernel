@@ -161,7 +161,10 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                 if (has_irq)
                 {
                     g_virtio_net_irq = node_irq_num;
+
+#if DEBUG_DTB_FLAG == 1
                     dump("Virtio_Net_IRQ", (uint64_t)node_irq_num);
+#endif
                 }
             }
             else if (is_gpu && node_mmio_addr != 0)
@@ -170,7 +173,9 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                 if (has_irq)
                 {
                     g_virtio_gpu_irq = node_irq_num;
+#if DEBUG_DTB_FLAG == 1
                     dump("Virtio_GPU_IRQ", (uint64_t)node_irq_num);
+#endif
                 }
             }
             else if (is_blk && node_mmio_addr != 0)
@@ -179,7 +184,10 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                 if (has_irq)
                 {
                     g_virtio_blk_irq = node_irq_num;
+
+#if DEBUG_DTB_FLAG == 1
                     dump("Virtio_BLK_IRQ", (uint64_t)node_irq_num);
+#endif
                 }
             }
             else if (is_snd && node_mmio_addr != 0)
@@ -187,7 +195,10 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                 g_virtio_snd_base = node_mmio_addr;
                 if (has_irq)
                 {
+
+#if DEBUG_DTB_FLAG == 1
                     dump("Virtio_SND_IRQ", (uint64_t)node_irq_num);
+#endif
                 }
             }
             else if (is_input && node_mmio_addr != 0)
@@ -200,9 +211,15 @@ void parse_dtb_tokens(uint64_t dtb_addr)
                         has_irq ? node_irq_num : 0;
                     if (has_irq)
                     {
+
+#if DEBUG_DTB_FLAG == 1
                         dump("Virtio_Input_IRQ", node_irq_num);
+#endif
                     }
+
+#if DEBUG_DTB_FLAG == 1
                     dump("Found_Virtio_Input_At", node_mmio_addr);
+#endif
                 }
                 else
                 {
@@ -231,33 +248,50 @@ void parse_dtb_tokens(uint64_t dtb_addr)
 
                     if (device_id != 0)
                     {
+#if DEBUG_DTB_FLAG == 1
                         dump("Virtio_Device_At", mmio_addr);
                         dump("Virtio_Device_ID", device_id);
+#endif
                     }
 
                     if (device_id == 1)
                     {
+#if DEBUG_DTB_FLAG == 1
                         dump("Found_Virtio_Net_At", mmio_addr);
+#endif
+
                         is_net = 1;
                     }
                     if (device_id == 2)
                     {
+#if DEBUG_DTB_FLAG == 1
                         dump("Found_Virtio_BLK_At", mmio_addr);
+#endif
+
                         is_blk = 1;
                     }
                     else if (device_id == 16)
                     {
+#if DEBUG_DTB_FLAG == 1
                         dump("Found_Virtio_GPU_At", mmio_addr);
+#endif
+
                         is_gpu = 1;
                     }
                     else if (device_id == 25)
                     {
+#if DEBUG_DTB_FLAG == 1
                         dump("Found_Virtio_SND_At", mmio_addr);
+#endif
+
                         is_snd = 1;
                     }
                     else if (device_id == 18)
                     {
+#if DEBUG_DTB_FLAG == 1
                         dump("Found_Virtio_Input_At", mmio_addr);
+#endif
+
                         is_input = 1;
                     }
                 }
@@ -288,7 +322,10 @@ void parse_dtb_tokens(uint64_t dtb_addr)
         }
         else if (token == FDT_END)
         {
+#if DEBUG_DTB_FLAG == 1
             dump("DTB_Parse", 0x99999999); // 파싱 완료 표시
+#endif
+
             break;
         }
         else

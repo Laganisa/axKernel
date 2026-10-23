@@ -1,5 +1,6 @@
 #include "frm/ksh.h"
 #include "frm/kedt.h"
+#include "global/_io.h"
 
 enum shell_ret
 {
@@ -41,64 +42,9 @@ static fcb_e *kcurrent_dir(void)
     return &(fm_record->FMv3_dir_mem[dir_id]);
 }
 
-static uint16_t ksh_yline = 0;
-static uint32_t ksh_xpixel = 0;
-
 static uint16_t kshputs_color(const char *s, uint32_t color)
 {
-#if DEBUG_DISPLAY_FLAG == 1
-    char line[128];
-    uint16_t line_len = 0;
-    uint16_t newline_count = 0;
-
-    while (1)
-    {
-        if (s[0] == '\n' || s[0] == '\0' || line_len == sizeof(line) - 1)
-        {
-            line[line_len] = '\0';
-            if (line_len != 0)
-            {
-                ltrs_color(ksh_xpixel, 8 * ksh_yline, line, color);
-                ksh_xpixel += 8 * line_len;
-                line_len = 0;
-            }
-
-            if (s[0] == '\n')
-            {
-                if (newline_count < 0xFFFF)
-                {
-                    newline_count++;
-                }
-                if (ksh_yline < 0xFFFF)
-                {
-                    ksh_yline++;
-                }
-                ksh_xpixel = 0;
-                s++;
-                continue;
-            }
-
-            if (s[0] == '\0')
-            {
-                return newline_count;
-            }
-        }
-
-        line[line_len++] = *s++;
-    }
-
-#elif DEBUG_DISPLAY_FLAG == 0
-    if (color == 0xFFFF0000)
-    {
-        puts((const int8_t *)"\033[31m");
-    }
-    puts((const int8_t *)s);
-    if (color == 0xFFFF0000)
-    {
-        puts((const int8_t *)"\033[0m");
-    }
-    return 0;
-#endif
+    return io_puts_color(s, color);
 }
 
 static uint16_t kshputs(const char *s)
@@ -500,7 +446,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
             for (int i = 0; i < now_dir_fcb->dir_dnum; i++)
             {
                 uint32_t dir_pos = now_dir_fcb->dirs[i];
-                fcb_t *now_dir = &(fm_record->FMv3_dir_mem[dir_pos]);
+                fcb_e *now_dir = &(fm_record->FMv3_dir_mem[dir_pos]);
                 kshputs("dir name : ");
                 kshputs((const char *)now_dir->alias);
                 kshputs("  auth : ");

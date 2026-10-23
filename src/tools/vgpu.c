@@ -654,7 +654,9 @@ void gpu_init(void)
         return;
     }
 
+#if DEBUG_GPU_FLAG == 1
     log("GPU initialized successfully\n");
+#endif
 }
 
 void virtio_gpu_irq_handle(void)
