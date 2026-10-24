@@ -42,19 +42,14 @@ static fcb_e *kcurrent_dir(void)
     return &(fm_record->FMv3_dir_mem[dir_id]);
 }
 
-static uint16_t kshputs_color(const char *s, uint32_t color)
-{
-    return io_puts_color(s, color);
-}
-
 static uint16_t kshputs(const char *s)
 {
-    return kshputs_color(s, 0xFFFFFFFF);
+    return io_puts_color(s, 0xFFFFFFFF);
 }
 
 static uint16_t kshputs_error(const char *s)
 {
-    return kshputs_color(s, 0xFFFF0000);
+    return io_puts_color(s, 0xFFFF0000);
 }
 
 static void fput_uint(uint64_t n)
@@ -71,8 +66,8 @@ static void fput_uint(uint64_t n)
         buf[i--] = (n % 10) + '0';
         n /= 10;
     }
-
-    kshputs(&buf[i + 1]);
+    io_puts_color(&buf[i + 1], 0xFFFFFFFF);
+    // kshputs(&buf[i + 1]);
 }
 
 // 현재 작업 경로를 나타내는 로직
@@ -682,8 +677,19 @@ static uint8_t sys_split(char **args)
 
         now_fcb = fm_find(fm_record, args[1]);
 
-        kedt(now_fcb);
+        if (now_fcb == NULL)
+        {
+            kshputs_error("unknow file\n");
+            ret = UNKNOW_ERR;
+            break;
+        }
 
+        // 화면을 지우고 호출하기
+
+        // 화면 지우기
+
+        // 호출
+        kedt(now_fcb);
         break;
 
     default:

@@ -19,8 +19,19 @@
 #define VIRTIO_INPUT_EV_KEY 1
 #define VIRTIO_INPUT_EV_REL 2
 #define VIRTIO_INPUT_EV_ABS 3
+#define VIRTIO_INPUT_KEY_ESC 1
 #define VIRTIO_INPUT_KEY_ENTER 28
+#define VIRTIO_INPUT_KEY_LEFTCTRL 29
 #define VIRTIO_INPUT_KEY_A 30
+#define VIRTIO_INPUT_KEY_F1 59
+#define VIRTIO_INPUT_KEY_F10 68
+#define VIRTIO_INPUT_KEY_F11 87
+#define VIRTIO_INPUT_KEY_F12 88
+#define VIRTIO_INPUT_KEY_RIGHTCTRL 97
+#define VIRTIO_INPUT_KEY_UP 103
+#define VIRTIO_INPUT_KEY_LEFT 105
+#define VIRTIO_INPUT_KEY_RIGHT 106
+#define VIRTIO_INPUT_KEY_DOWN 108
 #define VIRTIO_INPUT_BTN_LEFT 272
 #define VIRTIO_INPUT_REL_X 0
 #define VIRTIO_INPUT_REL_Y 1
@@ -180,7 +191,7 @@ static void input_mark_failed(uint64_t base)
     VIRTIO_TOT_REG(base, 0x070) |= VIRTIO_STATUS_FAILED;
 }
 
-static int8_t input_key_to_ascii(uint16_t code, int shifted, int caps_lock)
+static int8_t input_key_to_character(uint16_t code, int shifted, int caps_lock)
 {
     static const uint16_t letter_codes[] = {
         30, 48, 46, 32, 18, 33, 34, 35, 23, 36, 37, 38, 50,
@@ -209,6 +220,43 @@ static int8_t input_key_to_ascii(uint16_t code, int shifted, int caps_lock)
 
     switch (code)
     {
+    case VIRTIO_INPUT_KEY_ESC:
+        return IO_KEY_ESC;
+    case VIRTIO_INPUT_KEY_LEFTCTRL:
+    case VIRTIO_INPUT_KEY_RIGHTCTRL:
+        return IO_KEY_CTRL;
+    case VIRTIO_INPUT_KEY_F1:
+        return IO_KEY_F1;
+    case VIRTIO_INPUT_KEY_F1 + 1:
+        return IO_KEY_F2;
+    case VIRTIO_INPUT_KEY_F1 + 2:
+        return IO_KEY_F3;
+    case VIRTIO_INPUT_KEY_F1 + 3:
+        return IO_KEY_F4;
+    case VIRTIO_INPUT_KEY_F1 + 4:
+        return IO_KEY_F5;
+    case VIRTIO_INPUT_KEY_F1 + 5:
+        return IO_KEY_F6;
+    case VIRTIO_INPUT_KEY_F1 + 6:
+        return IO_KEY_F7;
+    case VIRTIO_INPUT_KEY_F1 + 7:
+        return IO_KEY_F8;
+    case VIRTIO_INPUT_KEY_F1 + 8:
+        return IO_KEY_F9;
+    case VIRTIO_INPUT_KEY_F10:
+        return IO_KEY_F10;
+    case VIRTIO_INPUT_KEY_F11:
+        return IO_KEY_F11;
+    case VIRTIO_INPUT_KEY_F12:
+        return IO_KEY_F12;
+    case VIRTIO_INPUT_KEY_UP:
+        return IO_KEY_UP;
+    case VIRTIO_INPUT_KEY_DOWN:
+        return IO_KEY_DOWN;
+    case VIRTIO_INPUT_KEY_LEFT:
+        return IO_KEY_LEFT;
+    case VIRTIO_INPUT_KEY_RIGHT:
+        return IO_KEY_RIGHT;
     case 12:
         return shifted ? '_' : '-';
     case 13:
@@ -292,7 +340,7 @@ static void input_process_key(
         return;
     }
 
-    int8_t character = input_key_to_ascii(
+    int8_t character = input_key_to_character(
         event->code,
         device->left_shift || device->right_shift,
         device->caps_lock);
@@ -435,6 +483,7 @@ int vhid_irq_handle(uint32_t irq)
         virtio_queue_state *queue =
             &input_devices[i].queues[VIRTIO_INPUT_EVENT_QUEUE];
         uint32_t interrupt_status;
+
         do
         {
             virtio_input_event_t event;
@@ -448,15 +497,19 @@ int vhid_irq_handle(uint32_t irq)
                     input_process_key(&input_devices[device_index], &event);
                 }
             } while (result > 0);
+
             interrupt_status = VIRTIO_TOT_REG(base, 0x060);
+
             if (interrupt_status != 0)
             {
                 VIRTIO_TOT_REG(base, 0x064) = interrupt_status;
             }
             virtio_mb();
         } while (queue->used->idx != input_devices[i].last_used_idx);
+
         return 1;
     }
+
     return 0;
 }
 

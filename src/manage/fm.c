@@ -202,7 +202,12 @@ void fm_execute(FMv3_record *reco)
     // ! fm_sync(reco);
 }
 
-uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset)
+uint32_t fm_write(
+    FMv3_record *reco,
+    fcb_t *file,
+    void *buf,
+    uint32_t size,
+    uint32_t offset)
 {
     if (file == 0)
     {
@@ -225,7 +230,12 @@ uint32_t fm_write(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint
     return size;
 }
 
-uint32_t fm_read(FMv3_record *reco, fcb_t *file, void *buf, uint32_t size, uint32_t offset)
+uint32_t fm_read(
+    FMv3_record *reco,
+    fcb_t *file,
+    void *buf,
+    uint32_t size,
+    uint32_t offset)
 {
     if (file == NULL)
     {
