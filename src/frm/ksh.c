@@ -147,24 +147,51 @@ static uint8_t proc_split(char **args)
     case 0xF5A2F5190CAEA09C:
         if (prefix_targs[3] != 0)
         {
-            kshputs_error("Syntax : file crt {entry}\n");
+            kshputs_error("Syntax : proc crt {entry}\n");
             ret = ARGS_ERR;
             break;
         }
+
+        // 파일의 실행 권한을 확인한다음 실행하기
+
         pm_create(pm_object, 1, 1);
         break;
 
     // 프로세스 삭제
     case 0xCA9A2418F461F5CA:
+        if (prefix_targs[3] != 0)
+        {
+            kshputs_error("Syntax : proc del {entry}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        // 파일의 권한을 확인
 
         break;
 
     // 프로세스 정보
     case 0xF5D6A8C57AB94F05:
+        if (prefix_targs[3] != 0)
+        {
+            kshputs_error("Syntax : proc info {entry}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        // 보기 권한이 있는지 확인
 
         break;
         // 프로세스 상태(생명주기) 변경
     case 0xF5FAF8190CF91B8B:
+        if (prefix_targs[3] != 0)
+        {
+            kshputs_error("Syntax : proc chg {mod}\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        // 권한이 있는지 확인 실행 권한이 있어야 함
 
         break;
 
@@ -607,26 +634,56 @@ static uint8_t dev_split(char **args)
     {
     // 장치 연결
     case 0xF604F1190D01642B:
+        if (prefix_targs[2] != 0)
+        {
+            kshputs_error("Syntax : dev con {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
 
         break;
 
     // 장치 분리
     case 0x73A50667267E3819:
+        if (prefix_targs[2] != 0)
+        {
+            kshputs_error("Syntax : dev don {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
 
         break;
 
     // 장치 정보
     case 0xF5D6A8C57AB94F05:
+        if (prefix_targs[2] != 0)
+        {
+            kshputs_error("Syntax : dev info {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
 
         break;
 
     // 장치 열기
     case 0xF84F97B4633670E9:
+        if (prefix_targs[2] != 0)
+        {
+            kshputs_error("Syntax : dev opn {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
 
         break;
 
     // 장치 닫기
     case 0x9EC2699513C0F9C3:
+        if (prefix_targs[2] != 0)
+        {
+            kshputs_error("Syntax : dev cls {name/path}\n");
+            ret = ARGS_ERR;
+            break;
+        }
 
         break;
 

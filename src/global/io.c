@@ -384,3 +384,16 @@ uint64_t str_to_uint(const char *str)
     }
     return val;
 }
+
+// 문자열 길이
+size_t strlen(const char *str)
+{
+    const char *p = str;
+
+    while (*p)
+    {
+        p++;
+    }
+
+    return (size_t)(p - str);
+}

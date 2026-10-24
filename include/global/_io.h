@@ -46,5 +46,6 @@ int32_t strcmp(const int8_t *s1, const int8_t *s2);
 void *memset(void *ptr, int value, size_t num);
 char *strstr(const char *s, const char *sub);
 uint64_t str_to_uint(const char *str);
+size_t strlen(const char *str);
 
 #endif
