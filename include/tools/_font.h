@@ -106,7 +106,11 @@ void ltr(uint32_t x,
          uint32_t y,
          char c);
 
-void ltrs(uint32_t x,
-          uint32_t y,
-          char *string);
+uint16_t ltrs(uint32_t x,
+              uint32_t y,
+              const char *string);
+uint16_t ltrs_color(uint32_t x,
+                    uint32_t y,
+                    const char *string,
+                    uint32_t color);
 #endif

@@ -7,7 +7,7 @@
     [heap_block_t 헤더][데이터]...[heap_block_t 헤더][데이터]...
 
     각 블록은 linked list로 연결되어 있으며,
-    free 블록을 찾아서 할당하거나 필요시 분할(split)함
+    free 블록을 찾아서 할당하거나 필요시 분할함
 */
 
 #define HEAP_SIZE (1024 * 100) // 100KB

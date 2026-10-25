@@ -15,18 +15,123 @@ extern void _proc(pcb_t *);
 
 extern dcb_t uart_device;
 
+/*
+    시스템 콜을 연결하는 파일
+*/
+
 #pragma region general_call
 
-static uint64_t setup_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+// 프로세스가 정상종료 시 호출하는 시스템 콜
+static uint64_t exit_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
+    enter("sys_exit");
+
+    full_stop();
+
+    // arg1: exit code
+    // ! 아직은 그 인자에 대하여 사용하지 않음
+    {
+        pcb_t *current = get_current_proc_addr();
+        pcb_t *next;
+
+        pm_awake(pm_object, 1, current);
+        next = pm_run(pm_object);
+
+        // 다음 값이 무었인지 확인하기
+        dump("next", (uint64_t)(uintptr_t)next);
+
+        current_proc = next;
+
+        if (next != 0)
+        {
+            _proc(next);
+        }
+
+        // 대기 함수 이거 나중에 바꿔야지
+        while (1)
+            ;
+    }
+    return 0;
+}
+
+// 프로세스가 비정상 종료시 호출하는 시스템 콜
+static uint64_t abort_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+}
+
+// 힙에 공간을 할당 받을 때 사용하는 시스템 콜
+// ! 그냥 디스크 관련 아님 미정
+static uint64_t brk_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    if (current_proc == NULL || current_proc->heap_start == 0)
+    {
+        return (uint64_t)-1;
+    }
+
+    if (arg1 == 0)
+    {
+        return current_proc->heap_break;
+    }
+
+    if (current_proc->heap_break > current_proc->heap_limit ||
+        arg1 > current_proc->heap_limit - current_proc->heap_break)
+    {
+        return (uint64_t)-1;
+    }
+
+    uint64_t old_break = current_proc->heap_break;
+    current_proc->heap_break += arg1;
+    return old_break;
+}
+
+// 자신이 프로세스 점유를 남에게 빌려주는 시스템 콜
+static uint64_t yield_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+}
+
+// 프로세스와 커널 간 초기 설정
+static uint64_t setup_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    enter("setup");
     uint8_t *addr = (uint8_t *)arg1;
     uint8_t rule = (uint8_t)arg2;
-    pm_object.proto_arr[current_proc->id].rule = rule;
-    pm_object.proto_arr[current_proc->id].addr = addr;
+    pm_object->proto_arr[current_proc->id].rule = rule;
+    pm_object->proto_arr[current_proc->id].addr = addr;
+    exit("setup");
     return 1;
 }
 
-static uint64_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t write_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     // enter("sys_write");
 
@@ -58,9 +163,14 @@ static uint64_t write_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t
     }
 }
 
-static uint64_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t read_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
-    // ! 근데 이거 길이 입력 방식이 필요할 듯
+
     int fd = (int)arg1;
     char *buf = (char *)arg2;
     size_t count = (size_t)arg3;
@@ -68,22 +178,47 @@ static uint64_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
 
     if (count == 0)
     {
+
         return 0;
+    }
+
+    if (buf == NULL || fd < 0 || fd >= MAX_CONTROL_NUM ||
+        current_proc->control[fd].is_ctrl_alloc == 0)
+    {
+
+        return (uint64_t)-1;
     }
 
     // 장치 읽기일 경우
     if (current_proc->control[fd].is_file == 0)
     {
-        char c = getchar();
+        size_t read_bytes = 0;
+        for (size_t i = 0; i < count; i++)
+        {
+            char c = getchar();
+            buf[i] = c;
+            read_bytes++;
 
-        putchar(c);
+            if (c == '\n' || c == '\r')
+            {
+                putchar('\n');
+                break;
+            }
 
-        buf[0] = c;
-        return 1;
+            putchar(c);
+        }
+
+        return read_bytes;
     }
     // 파일 읽기일 경우
     else
     {
+        if (count > (size_t)(uint32_t)-1)
+        {
+            exit("sys_read");
+            log("!");
+            return (uint64_t)-1;
+        }
 
         if (offset >= current_proc->control[fd].file_offset)
         {
@@ -93,21 +228,30 @@ static uint64_t read_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
         uint32_t read_bytes = fm_read(
             fm_record,
             current_proc->control[fd].use_file,
-            (void *)buf,
-            arg3,
+            buf,
+            (uint32_t)count,
             offset);
 
         if (read_bytes > 0)
         {
-            current_proc->control[fd].file_offset += 1;
-            return 0;
+            current_proc->control[fd].file_offset += read_bytes;
         }
 
-        return -1;
+        exit("sys_read");
+        return read_bytes;
     }
 }
 
-static uint64_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+#pragma endregion
+
+#pragma region file_call
+
+static uint64_t open_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
     dump("arg1", arg1);
@@ -182,7 +326,12 @@ static uint64_t open_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t 
     }
 }
 
-static uint64_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t close_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     int fd = (int)arg1;
 
@@ -199,40 +348,12 @@ static uint64_t close_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t
     return 1;
 }
 
-static uint64_t exit_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
-{
-    enter("sys_exit");
-    // arg1: exit code
-    // ! 아직은 그 인자에 대하여 사용하지 않음
-    {
-        pcb_t *current = get_current_proc_addr();
-        pcb_t *next;
-
-        pm_awake(&pm_object, 1, current);
-        next = pm_run(&pm_object);
-
-        // 다음 값이 무었인지 확인하기
-        dump("next", next);
-
-        current_proc = next;
-
-        if (next != 0)
-        {
-            _proc(next);
-        }
-
-        // 대기 함수 이거 나중에 바꿔야지
-        while (1)
-            ;
-    }
-    return 0;
-}
-
-#pragma endregion
-
-#pragma region file_call
-
-static uint64_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t file_create_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         dump("arg1", arg1);
@@ -250,33 +371,201 @@ static uint64_t creat_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uin
     return 1;
 }
 
-static uint64_t del_file_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t file_del_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         dump("arg1", arg1);
         dump("arg2", arg2);
         dump("arg3", arg3);
     */
+    // TODO:
+
+    char *name = (char *)arg1;
+    return fm_delete(fm_record, name);
+}
+
+static uint64_t dir_in_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    fcb_e *dir = (fcb_e *)arg1;
+    uint16_t file_id = (uint16_t)arg2;
+
+    return fm_dir_in(fm_record, dir, file_id);
+}
+
+static uint64_t dir_out_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    fcb_e *dir = (fcb_e *)arg1;
+    uint16_t file_id = (uint16_t)arg2;
+
+    return fm_dir_out(fm_record, dir, file_id);
+}
+
+static uint64_t dir_create_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+    char *name = (char *)arg1;
+    uint32_t p_fid = (uint32_t)arg2;
+    uint16_t depth = (uint16_t)arg3;
+    uint16_t auth = (uint16_t)arg4;
+
+    return (uint64_t)(uintptr_t)fm_dir_create(
+        fm_record,
+        name,
+        p_fid,
+        depth,
+        auth);
+}
+
+static uint64_t dir_del_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+    char *name = (char *)arg1;
+
+    return fm_dir_delete(fm_record, name);
 }
 
 #pragma endregion
 
 #pragma region proc_call
 
-static uint64_t creat_proc_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+// 프로세스 생성 함수
+static uint64_t proc_creat_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
     dump("arg1", arg1);
     dump("arg2", arg2);
     dump("arg3", arg3);
     */
+    // TODO:
+}
+
+// 프로세스 제거 함수
+static uint64_t proc_del_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+    dump("arg1", arg1);
+    dump("arg2", arg2);
+    dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+#pragma endregion
+
+#pragma region ipc_call
+
+static uint64_t ipc_send_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    enter("ipc_send_call");
+
+    uint8_t *data = (uint8_t *)arg1;
+    uint8_t len = (uint8_t)arg2;
+    uint8_t towho = (uint8_t)arg3;
+
+    uint8_t who = current_proc->id;
+
+    ptp(pm_object, who, towho, data, len);
+    *(pm_object->proto_arr[towho].addr) = 3;
+    return 1;
+}
+
+static uint64_t ipc_rece_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    enter("ipc_rece_call");
+
+    uint8_t *addr = (uint8_t *)arg1;
+
+    dump("addr", (uint64_t)addr);
+    dump("before", addr[0]);
+
+    for (int i = 0; i < current_proc->msgs.len; i++)
+    {
+        addr[i] = current_proc->msgs.msgbox[i];
+    }
+
+    dump("after0", addr[0]);
+    dump("after1", addr[1]);
+
+    exit("ipc");
+
+    return 1;
 }
 
 #pragma endregion
 
 #pragma region L2toL3
 
-static uint64_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t l2_send_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         송신 시스템 콜
@@ -320,12 +609,17 @@ static uint64_t send_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
     1. 일단 관리자 구조체에서 온 신호가 있는지 확인한다.
     2. 만약 없다면 이 프로세스를 재우고 나중에 인터럽트로 올때 자신을 깨우라고 한다.
 */
-static uint64_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t l2_rece_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         일단 스캘레톤으로 만듬
         아니 인자 왜 받는거임?
-        todo : 검증이 필요
+        TODO: 검증이 필요
     */
     char *data = (char *)arg1;
     uint8_t *dst = (uint8_t *)arg2;
@@ -334,15 +628,20 @@ static uint64_t rece_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
     // 온 순서대로 리턴하기
     enter("rece_L2_call");
     uint8_t ret = nm_connect.nmqueue.pop(&(nm_connect.nmqueue));
-    return nm_connect.payload_buf[ret];
+    return (uint64_t)(uintptr_t)nm_connect.payload_buf[ret];
 }
 
-static uint64_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5)
+static uint64_t l2_find_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
 {
     /*
         ARP 요청 보네고 인덱스를 리턴하기
     */
-
+    // TODO:
     char *path = (char *)arg1;
     int mode = (int)arg2;
     uint32_t size = (uint32_t)arg3;
@@ -350,38 +649,137 @@ static uint64_t find_L2_call(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64
 
 #pragma endregion
 
-static uint64_t (*call_table[40])(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = {
+#pragma region virtio_call
+
+static uint64_t disk_load_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+static uint64_t disk_store_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+#pragma endregion
+
+static uint64_t reserved_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    return (uint64_t)-1;
+}
+
+static uint64_t (*call_table[64])(
+    uint64_t,
+    uint64_t,
+    uint64_t,
+    uint64_t,
+    uint64_t) = {
+
     /* General */
+    [SYS_RESERVED0] = reserved_call,
     [SYS_EXIT] = exit_call,
-    /*[SYS_ABORT] = abort_call,
-    [SYS_LOAD] = load_call,
-    [SYS_YIELD] = yield_call,*/
+    [SYS_ABORT] = abort_call,
+    [SYS_BRK] = brk_call,
+    [SYS_YIELD] = yield_call,
     [SYS_SETUP] = setup_call,
     [SYS_WRITE] = write_call,
     [SYS_READ] = read_call,
 
     /* File */
-    [SYS_FILE_CREAT] = creat_file_call,
-    [SYS_FILE_DEL] = del_file_call,
     [SYS_OPEN] = open_call,
-    [SYS_CLOSE] = close_call, /*
-     [SYS_DIR_CREAT] = creat_dir_call,
-     [SYS_DIR_DEL] = del_dir_call,
-     */
+    [SYS_CLOSE] = close_call,
+    [SYS_FILE_CREATE] = file_create_call,
+    [SYS_FILE_DEL] = file_del_call,
+    [SYS_DIR_IN] = reserved_call,
+    [SYS_DIR_OUT] = reserved_call,
+    [SYS_DIR_CREAT] = dir_create_call,
+    [SYS_DIR_DEL] = dir_del_call,
+
+    /*IPC*/
+    [SYS_IPC_SEND] = ipc_send_call,
+    [SYS_IPC_RECE] = ipc_rece_call,
+    [SYS_RESERVED26] = reserved_call,
+    [SYS_RESERVED27] = reserved_call,
+    [SYS_RESERVED28] = reserved_call,
+    [SYS_RESERVED29] = reserved_call,
+    [SYS_RESERVED30] = reserved_call,
+    [SYS_RESERVED31] = reserved_call,
 
     /* Process */
-    [SYS_PROC_CREAT] = creat_proc_call,
-    /*[SYS_PROC_DEL] = del_proc_call,
-     */
+    [SYS_PROC_CREAT] = proc_creat_call,
+    [SYS_PROC_DEL] = proc_del_call,
+    [SYS_RESERVED18] = reserved_call,
+    [SYS_RESERVED19] = reserved_call,
+    [SYS_RESERVED20] = reserved_call,
+    [SYS_RESERVED21] = reserved_call,
+    [SYS_RESERVED22] = reserved_call,
+    [SYS_RESERVED23] = reserved_call,
 
     /* Network */
-    [SYS_SEND_L2] = send_L2_call};
+    [SYS_L2_SEND] = l2_send_call,
+    [SYS_L2_RECE] = l2_rece_call,
+    [SYS_L2_FIND] = l2_find_call,
+    [SYS_RESERVED35] = reserved_call,
+    [SYS_RESERVED36] = reserved_call,
+    [SYS_RESERVED37] = reserved_call,
+    [SYS_RESERVED38] = reserved_call,
+    [SYS_RESERVED39] = reserved_call,
 
-/*
-    시스템 콜을 연결하는 파일
-*/
+    /* Info */
+    [SYS_RESERVED40] = reserved_call,
+    [SYS_RESERVED41] = reserved_call,
+    [SYS_RESERVED42] = reserved_call,
+    [SYS_RESERVED43] = reserved_call,
+    [SYS_RESERVED44] = reserved_call,
+    [SYS_RESERVED45] = reserved_call,
+    [SYS_RESERVED46] = reserved_call,
+    [SYS_RESERVED47] = reserved_call,
 
-uint64_t handle_svc_a64(
+    /* Virtio */
+    [SYS_DISK_LOAD] = disk_load_call,
+    [SYS_DISK_STORE] = disk_store_call,
+    [SYS_RESERVED50] = reserved_call,
+    [SYS_RESERVED51] = reserved_call,
+    [SYS_RESERVED52] = reserved_call,
+    [SYS_RESERVED53] = reserved_call,
+    [SYS_RESERVED54] = reserved_call,
+    [SYS_RESERVED55] = reserved_call,
+    [SYS_RESERVED56] = reserved_call,
+    [SYS_RESERVED57] = reserved_call,
+    [SYS_RESERVED58] = reserved_call,
+    [SYS_RESERVED59] = reserved_call,
+    [SYS_RESERVED60] = reserved_call,
+    [SYS_RESERVED61] = reserved_call,
+    [SYS_RESERVED62] = reserved_call,
+    [SYS_RESERVED63] = reserved_call,
+};
+
+uint64_t svc_a64_handle(
     uint64_t syscall_num,
     uint64_t arg1,
     uint64_t arg2,
@@ -390,9 +788,14 @@ uint64_t handle_svc_a64(
     uint64_t arg5)
 {
 
-    if (call_table[syscall_num] != NULL)
+    if (syscall_num < 64 && call_table[syscall_num] != NULL)
     {
-        uint64_t ret = call_table[syscall_num](arg1, arg2, arg3, arg4, arg5);
+        uint64_t ret = call_table[syscall_num](
+            arg1,
+            arg2,
+            arg3,
+            arg4,
+            arg5);
         return ret;
     }
     else

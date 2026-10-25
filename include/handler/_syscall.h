@@ -9,7 +9,7 @@
 #define SYS_RESERVED0 0
 #define SYS_EXIT 1
 #define SYS_ABORT 2
-#define SYS_LOAD 3
+#define SYS_BRK 3
 #define SYS_YIELD 4
 #define SYS_SETUP 5
 #define SYS_WRITE 6
@@ -19,14 +19,15 @@
 
 #define SYS_OPEN 8
 #define SYS_CLOSE 9
-#define SYS_FILE_CREAT 10
+#define SYS_FILE_CREATE 10
 #define SYS_FILE_DEL 11
-#define SYS_DIR_CREAT 12
-#define SYS_DIR_DEL 13
-#define SYS_RESERVED12 14
-#define SYS_RESERVED15 15
+#define SYS_DIR_IN 12
+#define SYS_DIR_OUT 13
+#define SYS_DIR_CREAT 14
+#define SYS_DIR_DEL 15
 
 // Process System Call (16 ~ 23)
+// !  프로세스 생명 주기 관련 명령
 
 #define SYS_PROC_CREAT 16
 #define SYS_PROC_DEL 17
@@ -39,8 +40,8 @@
 
 // IPC System Call (24 ~ 31)
 
-#define SYS_RESERVED24 24
-#define SYS_RESERVED25 25
+#define SYS_IPC_SEND 24
+#define SYS_IPC_RECE 25
 #define SYS_RESERVED26 26
 #define SYS_RESERVED27 27
 #define SYS_RESERVED28 28
@@ -50,13 +51,47 @@
 
 // Network System Call (32 ~ 39)
 
-#define SYS_SEND_L2 32
-#define SYS_RESERVED33 33
-#define SYS_RESERVED34 34
+#define SYS_L2_SEND 32
+#define SYS_L2_RECE 33
+#define SYS_L2_FIND 34
 #define SYS_RESERVED35 35
 #define SYS_RESERVED36 36
 #define SYS_RESERVED37 37
 #define SYS_RESERVED38 38
 #define SYS_RESERVED39 39
+
+// info system Call (40 ~ 47)
+
+#define SYS_RESERVED40 40
+#define SYS_RESERVED41 41
+#define SYS_RESERVED42 42
+#define SYS_RESERVED43 43
+#define SYS_RESERVED44 44
+#define SYS_RESERVED45 45
+#define SYS_RESERVED46 46
+#define SYS_RESERVED47 47
+
+// virtio system Call (48 ~ 55)
+
+#define SYS_DISK_LOAD 48
+#define SYS_DISK_STORE 49
+#define SYS_RESERVED50 50
+#define SYS_RESERVED51 51
+#define SYS_RESERVED52 52
+#define SYS_RESERVED53 53
+#define SYS_RESERVED54 54
+#define SYS_RESERVED55 55
+
+// 아직 만들지 않은 시스템 콜들
+// ! 생각만 하고 있음
+
+#define SYS_RESERVED56 56
+#define SYS_RESERVED57 57
+#define SYS_RESERVED58 58
+#define SYS_RESERVED59 59
+#define SYS_RESERVED60 60
+#define SYS_RESERVED61 61
+#define SYS_RESERVED62 62
+#define SYS_RESERVED63 63
 
 #endif

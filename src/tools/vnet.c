@@ -23,6 +23,7 @@ struct virtio_queue_state tx_queue;
 uint16_t last_rx_used_idx = 0;
 uint16_t last_tx_used_idx = 0;
 
+/*
 static void net_setup_queue(int queue_index, struct virtio_queue_state *queue)
 {
     VIRTIO_QUEUE_SEL = queue_index;
@@ -74,6 +75,7 @@ void setup_virtqueue(int queue_index)
     }
     puts("Queue setup done with PFN!\n");
 }
+*/
 
 void net_TX_main(void)
 {

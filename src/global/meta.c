@@ -3,6 +3,8 @@
 #include "global/_debug.h"
 #include "tools/_asm.h"
 
+#define PROC_STACK_RESERVE (16 * 1024ULL)
+
 extern pcb_t *current_proc;
 
 /*
@@ -16,12 +18,18 @@ pcb_t *proc_turn(
     void *entry_point,
     uint8_t mod)
 {
+    /*
+    dump("name", (uint64_t)name);
+    dump("entry_point", (uint64_t)entry_point);
+    dump("mod", (uint64_t)mod);
+    */
+
     // 헤더 설정
-    fm_exec_hdr_t task;
-    task.magic = FM_EXEC_MAGIC;
-    task.mode = (mod == 0) ? FM_EXEC_MODE_DIRECT : FM_EXEC_MODE_IMAGE;
-    task.entry = (mod == 0) ? (uint64_t)entry_point : 0;
-    task.image_size = 0;
+    fm_exec_hdr_t new_hdr;
+    new_hdr.magic = FM_EXEC_MAGIC;
+    new_hdr.mode = (mod == 0) ? FM_EXEC_MODE_DIRECT : FM_EXEC_MODE_IMAGE;
+    new_hdr.entry = (mod == 0) ? (uint64_t)entry_point : 0;
+    new_hdr.image_size = 0;
 
     // IMAGE 모드일 때 바이너리 파일 기록
     if (mod == 1)
@@ -39,20 +47,20 @@ pcb_t *proc_turn(
 
         if (entry_point == (void *)_task_shell_start)
         {
+
             uint64_t shell_size = *((uint64_t *)_task_shell_size);
 
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + shell_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
-
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
-            task.image_size = shell_size;
-            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+            new_hdr.image_size = shell_size;
+            fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, &pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0);
         }
         if (entry_point == (void *)_task_bridge_start)
         {
@@ -61,15 +69,15 @@ pcb_t *proc_turn(
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + bridge_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
-
+            dump("total size", total_size);
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
-            task.image_size = bridge_size;
-            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+            new_hdr.image_size = bridge_size;
+            fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_bridge_start, (uint32_t)bridge_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, &pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0);
         }
         if (entry_point == (void *)_task_compiler_start)
         {
@@ -77,23 +85,28 @@ pcb_t *proc_turn(
 
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + compiler_size);
+            dump("total size", total_size);
             uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
 
             fcb_t *fil = fm_create(reco, name, alloc_size, 0);
 
-            task.image_size = compiler_size;
-            fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
+            new_hdr.image_size = compiler_size;
+            fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_compiler_start, (uint32_t)compiler_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, &pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0);
         }
+    }
+    // 커널 실행시 내부적으로 만든 파일이 실행되는 거
+    else
+    {
     }
 
     // 기본 동작
     fcb_t *fil = fm_create(reco, name, 1024, 0);
-    fm_write(reco, fil, &task, sizeof(fm_exec_hdr_t), 0);
-    return mata_exec_file(reco, &pm_object, name, 0);
+    fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
+    return mata_exec_file(reco, pm_object, name, 0);
 }
 
 static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
@@ -125,8 +138,16 @@ static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
     return TRUE;
 }
 
-static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
+static pcb_t *elf_load_image(
+    pcb_t *proc,
+    uint8_t *image,
+    uint32_t image_size)
 {
+    /*
+    dump("proc", (uint64_t)proc);
+    dump("image", (uint64_t)image);
+    dump("image_size", (uint64_t)image_size);
+    */
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 
@@ -138,6 +159,7 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
     uint64_t min_vaddr = (uint64_t)-1;
     uint64_t max_vaddr = 0;
     uint64_t max_align = 1;
+
     for (uint16_t i = 0; i < ehdr->e_phnum; i++)
     {
         elf_phdr_t *phdr = (elf_phdr_t *)(image + ehdr->e_phoff + (i * sizeof(elf_phdr_t)));
@@ -178,11 +200,22 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
     }
 
     uint64_t real_addr = mm_find(&mm_stack, proc->mm_addr, 0);
+
     uint64_t load_base = real_addr;
     if (max_align > 1)
     {
         uint64_t align_mask = max_align - 1;
         load_base = (load_base + align_mask) & ~align_mask;
+    }
+
+    uint64_t process_size = INITIAL_PROC_SIZE << 10;
+    uint64_t heap_limit = real_addr + process_size - PROC_STACK_RESERVE;
+    uint64_t image_end = load_base + (max_vaddr - min_vaddr);
+    uint64_t heap_start = (image_end + 15) & ~15ULL;
+
+    if (heap_start > heap_limit)
+    {
+        return 0;
     }
 
     for (uint16_t i = 0; i < ehdr->e_phnum; i++)
@@ -194,7 +227,7 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
         }
 
         uint64_t seg_offset = phdr->p_vaddr - min_vaddr;
-        if (seg_offset + phdr->p_memsz > (INITIAL_PROC_SIZE << 10))
+        if (load_base - real_addr + seg_offset + phdr->p_memsz > process_size - PROC_STACK_RESERVE)
         {
             return 0;
         }
@@ -214,11 +247,18 @@ static pcb_t *elf_load_image(pcb_t *proc, uint8_t *image, uint32_t image_size)
     }
 
     proc->regs.elr_el1 = load_base + (ehdr->e_entry - min_vaddr);
+    proc->heap_start = heap_start;
+    proc->heap_break = heap_start;
+    proc->heap_limit = heap_limit;
     return proc;
 }
 
 // 파일 실행
-pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid)
+pcb_t *mata_exec_file(
+    FMv3_record *reco,
+    PMv1_object *obj,
+    int8_t path[27],
+    uint8_t parid)
 {
 
     fcb_t *file = fm_find(reco, path);
@@ -227,62 +267,60 @@ pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint
 
     if (file == 0)
     {
-        return 0;
+        log("file zero error");
+        return NULL;
     }
 
     hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
 
     if (hdr->magic != FM_EXEC_MAGIC)
     {
-        return 0;
+        dump("magic", hdr->magic);
+        log("magic error");
+        return NULL;
     }
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
-        return pm_creat(obj, hdr->entry, parid);
+        return pm_create(obj, hdr->entry, parid);
     }
 
     if (hdr->mode == FM_EXEC_MODE_IMAGE)
     {
-        pcb_t *proc = pm_creat(obj, 0, parid);
+        pcb_t *proc = pm_create(obj, 0, parid);
 
         if (proc == 0)
         {
-            return 0;
+            return NULL;
         }
 
         if (elf_load_image(proc, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size) == 0)
         {
-            return 0;
+            return NULL;
         }
 
         return proc;
     }
-    return 0;
+    return NULL;
 }
 
 pcb_t *schedule_proc(pcb_t *proc)
 {
 
     // 다음 프로세스를 큐에서 꺼냄
-    pcb_t *next = pm_run(&pm_object);
-
-    for (int i = 0; i < 4; i++)
-    {
-        dump("val", pm_object.lowbuf[i]);
-    }
+    pcb_t *next = pm_run(pm_object);
 
     // ! 수정하기
     // 다른 프로세스를 꺼내는 상황
     if (next->state == (uint8_t)PROC_SIGNAL)
     {
-        pm_awake(&pm_object, 0, proc); // 현재 proc를 넣고
+        pm_awake(pm_object, 0, proc); // 현재 proc를 넣고
         mm_free(&mm_stack, &mm_substack, proc->mm_addr);
-        current_proc = pm_run(&pm_object); // 다른걸 꺼내자
+        current_proc = pm_run(pm_object); // 다른걸 꺼내자
     }
     else
     {
-        pm_awake(&pm_object, 0, proc);
+        pm_awake(pm_object, 0, proc);
         current_proc = next;
     }
 

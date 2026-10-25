@@ -1,6 +1,8 @@
 #include "tools/_font.h"
 #include "tools/_virtio.h"
 #include "tools/_utils.h"
+#include "global/_io.h"
+#include "manage/_gm.h"
 
 #pragma region ascii
 
@@ -667,11 +669,11 @@ const uint8_t font_GRVE[8] = {
 
 const uint8_t font_a[8] = {
     0b00000000,
+    0b00110000,
+    0b00001000,
     0b00111000,
-    0b00000100,
-    0b00111100,
-    0b01000100,
-    0b00111000,
+    0b01001000,
+    0b00110100,
     0b00000000,
     0b00000000};
 
@@ -781,7 +783,7 @@ const uint8_t font_l[8] = {
     0b00010000,
     0b00010000,
     0b00010000,
-    0b00010000,
+    0b00011000,
     0b00000000,
     0b00000000};
 
@@ -1073,7 +1075,7 @@ void ltr(uint32_t x,
         return;
 
     // 글자 처리
-    uint8_t *glyph;
+    const uint8_t *glyph;
 
     if (c >= 33 && c <= 126)
     {
@@ -1090,19 +1092,9 @@ void ltr(uint32_t x,
         {
             if ((glyph[row] >> (7 - col)) & 1)
             {
-                draw_pixel(x + col, y + row, 0xFFFFFFFF);
+                gm_pixel(x + col, y + row, 0xFFFFFFFF);
             }
         }
-    }
-
-    if (gpu_transfer_to_host_2d(
-            x,
-            y,
-            8,
-            8) < 0)
-    {
-        puts("GPU partial transfer failed\n");
-        return;
     }
 
     if (gpu_resource_flush(
@@ -1116,20 +1108,60 @@ void ltr(uint32_t x,
     }
 }
 
-void ltrs(uint32_t x,
-          uint32_t y,
-          char *string)
+uint16_t ltrs(uint32_t x,
+              uint32_t y,
+              const char *string)
 {
-    if (x > gpu_display_width || y > gpu_display_height)
-        return;
+    return ltrs_color(x, y, string, 0xFFFFFFFF);
+}
 
-    // 글자 처리
-
-    uint16_t len = kstrlen(string);
-
-    for (int i = 0; i < len; i++)
+uint16_t ltrs_color(uint32_t x,
+                    uint32_t y,
+                    const char *string,
+                    uint32_t color)
+{
+    size_t len = kstrlen(string);
+    uint16_t newline_count = 0;
+    for (size_t i = 0; i < len; i++)
     {
-        uint8_t *glyph;
+        if (string[i] == '\n' && newline_count < 0xFFFF)
+        {
+            newline_count++;
+        }
+    }
+
+    if (x > gpu_display_width || y > gpu_display_height)
+    {
+        return newline_count;
+    }
+
+    if (len == 0)
+    {
+        return newline_count;
+    }
+
+    uint32_t line_x = x;
+    uint32_t line_y = y;
+    uint32_t line_width = 0;
+
+    for (size_t i = 0; i < len; i++)
+    {
+        if (string[i] == '\n')
+        {
+            if (line_width != 0 &&
+                gpu_resource_flush(x, line_y, line_width, 8) < 0)
+            {
+                puts("GPU partial flush failed\n");
+                return newline_count;
+            }
+
+            line_x = x;
+            line_y += 8;
+            line_width = 0;
+            continue;
+        }
+
+        const uint8_t *glyph;
 
         // 일반 글자
         if (string[i] >= 33 && string[i] <= 126)
@@ -1153,31 +1185,20 @@ void ltrs(uint32_t x,
             {
                 if ((glyph[row] >> (7 - col)) & 1)
                 {
-                    draw_pixel(x + (8 * i) + col, y + row, 0xFFFFFFFF);
+                    gm_pixel(line_x + col, line_y + row, color);
                 }
             }
         }
+
+        line_x += 8;
+        line_width += 8;
     }
 
-    uint32_t total_width = len * 8;
-
-    if (gpu_transfer_to_host_2d(
-            x,
-            y,
-            total_width,
-            8) < 0)
-    {
-        puts("GPU partial transfer failed\n");
-        return;
-    }
-
-    if (gpu_resource_flush(
-            x,
-            y,
-            total_width,
-            8) < 0)
+    if (line_width != 0 &&
+        gpu_resource_flush(x, line_y, line_width, 8) < 0)
     {
         puts("GPU partial flush failed\n");
-        return;
     }
+
+    return newline_count;
 }

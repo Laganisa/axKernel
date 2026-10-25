@@ -179,7 +179,7 @@ void blk_init(void)
         puts((char *)blk_read_data);
     }
 
-    log("1");
+    // log("1");
 
     log("READ BYTE");
 
@@ -190,6 +190,7 @@ void blk_init(void)
             put_hex2(blk_read_data[i]);
         }
     }
+
     puts("\n\n");
     log("Program end");
 }

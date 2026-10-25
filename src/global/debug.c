@@ -59,10 +59,13 @@ void xxx_dump() {}
 
 void full_stop(void)
 {
+    disable_irq();
+
     puts("\ninf loop\n");
+
     while (1)
     {
-        ;
+        asm volatile("wfe");
     }
 }
 
@@ -98,22 +101,17 @@ void log(const char *name)
     }
 }
 
-void flow(const char type)
+void flow(const uint8_t type)
 {
     if (type == 0)
     {
         log("flow pass");
     }
-    else if (type == 1)
-    {
-        puts("[Debug] ");
-        puts("flow test #1");
-        puts("\n");
-    }
     else
     {
         puts("[Debug] ");
-        puts("flow test #2");
+        puts("flow test #");
+        put_hex2(type);
         puts("\n");
     }
 }
@@ -252,22 +250,31 @@ void proc_dump(const char *name, pcb_t *proc)
         puts("[Debug] ");
         puts(name);
         puts(" : ");
-        put_hex(proc);
+        put_hex((uint64_t)proc);
         puts("\n");
+
         puts("[Debug] ");
         puts(name);
         puts(" id : ");
         put_hex(proc->id);
         puts("\n");
+
         puts("[Debug] ");
         puts(name);
         puts(" sp : ");
         put_hex(proc->regs.sp);
         puts("\n");
+
         puts("[Debug] ");
         puts(name);
         puts(" elr_el1 : ");
         put_hex(proc->regs.elr_el1);
+        puts("\n");
+
+        puts("[Debug] ");
+        puts(name);
+        puts(" spsr: ");
+        put_hex(proc->regs.spsr);
         puts("\n");
     }
 }
@@ -279,7 +286,7 @@ void file_dump(const char *name, fcb_t *file)
         puts("[Debug] ");
         puts(name);
         puts(" : ");
-        put_hex(file);
+        put_hex((uint64_t)file);
         puts("\n");
         puts("[Debug] ");
         puts(name);

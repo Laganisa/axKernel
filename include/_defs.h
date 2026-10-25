@@ -1,6 +1,11 @@
 #ifndef __KERNEL_DEFS_H__
 #define __KERNEL_DEFS_H__
 
+// 전역 디버깅 플래그 관련
+#define DEBUG_DISPLAY_FLAG 1 // 참이면 GPU 모드
+#define DEBUG_DTB_FLAG 0     // 참이면 디버깅 시작
+#define DEBUG_GPU_FLAG 0     // 참이면 디버깅 시작
+
 // 인터럽트 관련
 #define enable_irq() asm volatile("msr daifclr, #2")
 #define disable_irq() asm volatile("msr daifset, #2")
@@ -28,7 +33,7 @@
 
 #define MAX_PCB_SIZE 0x100     // 최대 pcb 수 256개 0은 pid 0 운영체제 꺼
 #define MAX_PCB_BITSIZE 0x04   // 최대 pcb bit 수 4개 이유는 1비트당 하나의 프로세서이니까
-#define INITIAL_PROC_SIZE 0x80 // 초기 프로세스 할당 크기
+#define INITIAL_PROC_SIZE 1024 // 초기 프로세스 할당 크기(단위 KB) 초기 128
 #define PROC_SIGNAL 0xFF       // low q를 확인할 차례라는 시그널
 #define PMV1_MAX_PROC 0xFF     // 프로세스 최대 수
 #define MAX_PTP_MSGBOX 0x10    // 프로세스간 메시지 통신 개수 제한, 이유 : 이러면 딱 1KB
@@ -49,17 +54,23 @@
 
 // V2 파일 관리자 - 1MB 파일 지원
 #define MAX_FILE_SIZE 0x100000 // 최대 파일 크기: 1MB
+
+/*
 #define MAX_DIR_SIZE 0x200000  // 디렉토리당 최대 크기: 2MB
 #define MAX_FCB_file 0x10      // FCB 최대 수 (16개)
 #define MAX_FCB_dir 0x04       // 디렉토리 최대 수 4개
+*/
 
 // V3 파일 관리자
 #define MAX_FILE_NUM 0x1000                 // 최대 파일 수
 #define FM_EXEC_MAGIC 0x415853504144453BULL // "AXSPADE;"라는 매직넘버
-#define FM_EXEC_MODE_DIRECT 0ULL
-#define FM_EXEC_MODE_IMAGE 1ULL
-#define MAX_BPT_NODE_NUM 4
 
+#define FM_EXEC_MODE_DIRECT 0ULL // 0이면 직접 실행
+#define FM_EXEC_MODE_IMAGE 1ULL  // 1이면 이미지 실행
+
+#define MAX_BPT_NODE_NUM 4                          // B+트리 노드 최대 수
+#define MAX_DIR_FILE_NUM 16                         // 디렉토리당 최대 파일 수
+#define MAX_DIR_NUM MAX_FILE_NUM / MAX_DIR_FILE_NUM // 최대 디렉토리 수
 #pragma endregion
 
 // 장치 관리자 관련

@@ -18,7 +18,8 @@ typedef struct bpt_node
 
 bpt_node *search_leaf(bpt_node *root, uint64_t key);
 bpt_node *create_node(uint8_t leaf);
-uint8_t insert(bpt_node *root, char *name, uint16_t value);
-uint16_t *search(bpt_node *root, char *name);
+uint8_t bpt_insert(bpt_node *root, char *name, uint16_t value);
+uint16_t *bpt_search(bpt_node *root, char *name);
+uint8_t bpt_delete(bpt_node *root, char *name);
 
 #endif

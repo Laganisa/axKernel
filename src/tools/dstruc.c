@@ -1,5 +1,7 @@
 #include "tools/_dstruc.h"
 
+#pragma region queue
+
 static void queue_push(queue *this, uint8_t data)
 {
     if (this->count >= this->size)
@@ -55,3 +57,56 @@ void queue_init(queue *this, uint8_t *buffer, uint32_t size)
     this->empty = queue_empty;
     this->full = queue_full;
 }
+
+#pragma endregion
+
+#pragma region stack
+
+static void stack_push(stack *this, uint8_t data)
+{
+    if (this->count >= this->size)
+        return;
+
+    this->buffer[this->head] = data;
+    this->head++;
+    this->count++;
+}
+
+static uint8_t stack_pop(stack *this)
+{
+    if (this->count == 0)
+        return 0;
+
+    this->head--;
+    this->count--;
+
+    return this->buffer[this->head];
+}
+
+static uint8_t stack_empty(stack *this)
+{
+    return this->count == 0;
+}
+
+static uint8_t stack_full(stack *this)
+{
+    return this->count >= this->size;
+}
+
+void stack_init(stack *this, uint8_t *buffer, uint32_t size)
+{
+    this->buffer = buffer;
+
+    this->size = size;
+
+    this->head = 0;
+    this->tail = 0;
+    this->count = 0;
+
+    this->push = stack_push;
+    this->pop = stack_pop;
+    this->empty = stack_empty;
+    this->full = stack_full;
+}
+
+#pragma endregion

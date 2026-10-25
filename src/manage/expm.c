@@ -7,60 +7,23 @@
     프로세스 간의 작업과 관련한 파일
 */
 
-// ! 큐는 따로 OOP로 수정할 예정
-
-/*
-    주소를 주면 변환해서 내주는 코드
-
-    주소 -> 실제 주소
-    pid
-    cmd = 0 : 넣기
-    cmd = 1 : 빼기
-*/
-uint8_t pm_low(PMv1_object *obj, uint8_t cmd, uint8_t val)
-{
-    if (cmd == 0)
-    {
-        obj->lowqueue.push(&(obj->lowqueue), val);
-        return 0;
-    }
-    else
-    {
-        uint8_t ret = obj->lowqueue.pop(&(obj->lowqueue));
-        return ret;
-    }
-}
-
-uint8_t pm_high(PMv1_object *obj, uint8_t cmd, uint8_t val)
-{
-    if (cmd == 0)
-    {
-        obj->highqueue.push(&(obj->highqueue), val);
-        return 0;
-    }
-    else
-    {
-        uint8_t ret = obj->highqueue.pop(&(obj->highqueue));
-        return ret;
-    }
-}
-
 /*
     프로세스 실행 함수
     큐에 들어가 있는 대로 진행함
     큐에 있는 프로세스를 리턴함
 */
+
 pcb_t *pm_run(PMv1_object *obj)
 {
     uint8_t data; // pm 큐에서 뽑은 id 값
 
     if (!(obj->highqueue.empty(&(obj->highqueue))))
     {
-        data = pm_high(obj, 1, 0);
+        data = obj->highqueue.pop(&(obj->highqueue));
     }
     else if (!(obj->lowqueue.empty(&(obj->lowqueue))))
     {
-        data = pm_low(obj, 1, 0);
+        data = obj->lowqueue.pop(&(obj->lowqueue));
     }
     else
     {
@@ -84,12 +47,14 @@ pcb_t *pm_run(PMv1_object *obj)
     uint8_t cmd = 2 , uint8_t task의 주소 및 메모리 해제
     요악 하면 cmd = 1은 wait, cmd = 2 는 kill
 */
+
 void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
 {
     // pm_run의 대기 큐에 삽입
     if (cmd == 0)
     {
-        pm_low(&pm_object, 0, proc->id);
+        obj->lowqueue.push(&(obj->lowqueue), proc->id);
+        // pm_low(&pm_object, 0, proc->id);
     }
     // 여기 하단은 호출되지 않음
     else
@@ -136,27 +101,46 @@ void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc)
     cmd = 1 : 메시지 수신 함수
     who가 towho에게 msg를 실행
 */
-void ptp(PMv1_object *obj, uint8_t who, uint8_t towho, int8_t msg[64])
+void ptp(
+    PMv1_object *obj,
+    uint8_t who,
+    uint8_t towho,
+    uint8_t msg[64],
+    uint8_t len)
 {
     pcb_t *rece = &obj->PMv1_mem[towho];
+
     if (rece->msgs.is_msgbox == FALSE)
     {
         log("who");
+
+        if (len > 64)
+        {
+            return;
+        }
+
         // 메시지 넣는 로직
         rece->msgs.is_msgbox = TRUE;
         rece->msgs.from = who;
-        for (int i = 0; i < 64; i++)
+        rece->msgs.len = len;
+
+        for (int i = 0; i < len; i++)
         {
+            dump("msg", msg[i]);
             rece->msgs.msgbox[i] = msg[i];
         }
 
         // towho의 우선순위를 증가시켜 바로 입력 받을 수 있도록
-        pm_low(obj, 1, towho);  // 대상자를 빼고
-        pm_high(obj, 0, towho); // 대상자를 넣고
+        // ! 수정하기
+        obj->lowqueue.pop(&(obj->lowqueue));           // 대상자를 빼고
+        obj->highqueue.push(&(obj->highqueue), towho); // 대상자를 넣고
     }
     else
     {
         log("WHY");
         // ! 예외 처리
+        // 메시지 박스가 차 있다면?
+        // 그냥 안 보내면 되지 않나?
+        // 아니면 그냥 for 문을 돌린다음에 처리하는것도 생각 중
     }
 }

@@ -1,6 +1,7 @@
 #include "global/_in_proc.h"
 #include "global/_io.h"
 #include "tools/_asm.h"
+#include "global/_debug.h"
 
 /*
     pid 0 : 루트 프로세스
@@ -9,6 +10,8 @@
 void ROOT(void)
 {
     // 루트 프로세스
+    // 에러가 나면 이 프로세스를 실행함
+    // 커널 초기화 및 재실행 등 진짜 심각 한 상황일 때
 }
 
 /*
@@ -41,9 +44,9 @@ void temp_posi1(void)
 
     puts("\ntemp position 1\n");
 
-    char msg_arr[64] = "hello";
+    // char msg_arr[64] = "hello";
 
-    ptp(&pm_object, 2, 1, msg_arr);
+    // ptp(&pm_object, 2, 1, msg_arr,);
 
     while (1)
     {
@@ -66,10 +69,10 @@ void temp_posi2(void)
     puts("\ntemp position 2\n");
     char msg_arr[64] = {0};
 
-    pm_object.PMv1_mem[2].msgs.msgbox = msg_arr;
-    pm_object.PMv1_mem[2].msgs.is_msgbox = 0;
+    // pm_object->PMv1_mem[2].msgs.msgbox = msg_arr;
+    pm_object->PMv1_mem[2].msgs.is_msgbox = 0;
 
-    while (pm_object.PMv1_mem[2].msgs.is_msgbox == 0)
+    while (pm_object->PMv1_mem[2].msgs.is_msgbox == 0)
     {
         asm volatile("wfi");
     }
@@ -77,7 +80,7 @@ void temp_posi2(void)
     puts("Message arrived: ");
     puts(msg_arr);
 
-    pm_object.PMv1_mem[2].msgs.is_msgbox = 0;
+    pm_object->PMv1_mem[2].msgs.is_msgbox = 0;
 
     proc_exit();
 

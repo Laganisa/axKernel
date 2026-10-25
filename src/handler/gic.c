@@ -5,17 +5,16 @@
 
 void gic_enable_irq(uint32_t irq)
 {
-    volatile uint32_t *reg =
-        (volatile uint32_t *)(GIC_DIST_BASE + 0x100 + (irq / 32) * 4);
+    volatile uint32_t *reg = &GIC_DIST_REG(0x100 + (irq / 32) * 4);
 
     *reg = (1U << (irq % 32));
 }
+
 #define GIC_DIST_DISABLE0 (*(volatile uint32_t *)(GIC_DIST_BASE + 0x180))
 
 void gic_disable_irq(uint32_t irq)
 {
-    volatile uint32_t *reg =
-        (volatile uint32_t *)(GIC_DIST_BASE + 0x180 + (irq / 32) * 4);
+    volatile uint32_t *reg = &GIC_DIST_REG(0x180 + (irq / 32) * 4);
 
     *reg = (1U << (irq % 32));
 }
@@ -23,6 +22,14 @@ void gic_disable_irq(uint32_t irq)
 void gic_set_priority(uint32_t irq, uint8_t priority)
 {
     GIC_DIST_REG8(GIC_DIST_PRIORITY + irq) = priority;
+}
+
+void gic_set_target_cpu0(uint32_t irq)
+{
+    if (irq >= 32)
+    {
+        GIC_DIST_REG8(0x800 + irq) = 1;
+    }
 }
 
 void gic_init(void)
@@ -64,6 +71,7 @@ void gic_init(void)
     asm volatile("dsb sy");
     asm volatile("isb");
 
+    /*
     dump("GIC DIST CTRL",
          GIC_DIST_CTRL);
 
@@ -72,6 +80,6 @@ void gic_init(void)
 
     dump("GIC IRQ79 TARGET",
          GIC_DIST_REG8(0x84F));
+        */
 
-    enable_irq();
 }

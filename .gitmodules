@@ -10,3 +10,6 @@
 [submodule "usr/axShell"]
 	path = usr/axShell
 	url = https://github.com/Laganisa/axShell.git
+[submodule "usr/axEditor"]
+	path = usr/axEditor
+	url = https://github.com/Laganisa/axEditor.git

@@ -4,6 +4,24 @@
 #include "_defs.h"
 #include "_types.h"
 
+// MMU 관련
+
+// 프로세스에 들어갈 페이지 테이블
+typedef struct page_t
+{
+    uint16_t is_full : 1; // 페이지가 다 채워졌는지
+    uint16_t num : 10;    // 어디까지 차있는지
+    uint16_t is_leaf : 1; // 말단인지
+    uint16_t padding : 4;
+
+    union
+    {
+        struct page_t *pages[512]; // 페이지 포인터
+        uint64_t frame[512];       // 프레임 주소
+    };
+
+} page_t;
+
 // 메모리 관리자가 담당하는 메모리 선언
 typedef struct MMv5_stack
 {
@@ -16,11 +34,13 @@ typedef struct MMv5_stack
     uint8_t sp;             // 서브 스택 포인터
     uint8_t MMv5_submem[5]; // 4개면 되는데 예방차원으로 5개로 부여
 
+    struct page_t *pages[512];
+
 } __attribute__((aligned(8))) MMv5_stack;
 
 // 함수 선언
 void mm_init(MMv5_stack *stack, uint64_t addr);
-uint8_t MMv5_regu_push(MMv5_stack *stack, uint8_t val);
+uint16_t MMv5_regu_push(MMv5_stack *stack, uint8_t val);
 uint8_t MMv5_regu_substack_push(MMv5_stack *stack, uint8_t val);
 uint8_t MMv5_regu_pop(MMv5_stack *stack, uint16_t val);
 
@@ -34,5 +54,8 @@ uint64_t mm_find(MMv5_stack *stack, uint16_t val16, uint16_t indi_addr);
 // 전역 구조체 선언
 #define mm_stack (*(MMv5_stack *)MM_ADDR_START)
 #define mm_substack mm_stack
+
+// 페이지 로직
+uint64_t mm_page(uint64_t vaddr);
 
 #endif

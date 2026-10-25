@@ -20,11 +20,15 @@
 #include "manage/_nm.h" // 네트워크 관리자 헤더
 #include "manage/_gm.h" // 그래픽 관리자 헤더
 
-#include "handler/_irq.h"     // 인터럽트 헤더 추가
-#include "handler/_sync.h"    // 예외 핸들러 sync
-#include "handler/_syscall.h" // 시스템 콜 헨들러
+#include "handler/_irq.h"  // 인터럽트 헤더 추가
+#include "handler/_sync.h" // 예외 핸들러 sync
 
 #include "tools/_asm.h" // 어셈블리 함수가 있는 헤더
+#include "tools/_virtio.h"
+
+// 내장 커널 펌웨어 헤더
+#include "frm/ksh.h"  // 커널 쉘 헤더
+#include "frm/kedt.h" // 커널 에디터 헤더
 
 extern void _proc(pcb_t *);
 extern void vector_table(void);
@@ -42,15 +46,21 @@ extern uint8_t _task_bridge_start[];
 extern uint64_t _task_bridge_size[];
 
 extern dcb_t nic_device;
+void devo_main(void);
 
 #pragma endregion
 
 #define B_MASTER_FLAG 1
 
+void kernel_main(void);
+void devo_main(void);
+
 // 커널 함수
 void master(uint64_t dtb_addr)
 {
+#if DEBUG_DTB_FLAG == 1
     dump("Passed_DTB_addr", dtb_addr);
+#endif
 
     // dtb 파싱 후 연동
     parse_dtb(dtb_addr);
@@ -68,14 +78,14 @@ void master(uint64_t dtb_addr)
 #endif
 }
 
-// 임시 함수로 빼기전 개발용 매인
-void devo_main(void)
+static void foo(void)
 {
-    puts("devo main\n");
+    enter("foo\n");
 
-    gpu_init();
+    // gpu_init();
+    // vsnd_init();
 
-    ltr(0, 0, 'A');
+    // ltrs(16, 16, "AxKernel!");
 
     // net_TX_main();
 
@@ -84,18 +94,41 @@ void devo_main(void)
 
     blk_init();
     */
+
+    /*
+    ltrs(16, 16, "AxKernel!");
+
+    gm_rect(40, 40, 120, 60, 0xFFFF0000);
+    gm_copy(40, 40, 159, 99);
+    gm_paste(180, 40);
+    gm_line(40, 120, 300, 120, 0xFFFFFFFF);
+    */
+
+    while (1)
+    {
+        ;
+    }
 }
 
-#define B_MAIN_FLAG 5
+// 임시 함수로 빼기전 개발용 매인
+void devo_main(void)
+{
+    puts("devo main\n");
+}
+
+#define B_MAIN_FLAG 6
 
 void kernel_main(void)
 {
+
+    disable_irq();
 
     // 하드웨어 초기화
     uart_init();
     // 인터럽트 초기화
     irq_init();
-    // 동적할당 초기화
+    vhid_init();
+    //  동적할당 초기화
     heap_init();
 
     // 자료구조 초기화
@@ -111,6 +144,10 @@ void kernel_main(void)
         그래픽을 사용하여 부팅 로그를 만들기
     */
 
+#if DEBUG_DISPLAY_FLAG == 1
+    gpu_init();
+#endif
+
     puts("Booting AxKernel!\n");
 
     /*
@@ -118,92 +155,107 @@ void kernel_main(void)
         나중에 각각 ROOT 프로세스, INIT 프로세스가 될 예정
     */
 
-    pcb_t *proc1 = proc_turn(fm_record, "devo.BIN", devo_main, 0);
+    if (B_MAIN_FLAG == 1)
+    {
+        // 프로세스 전환 테스트 로직
 
-    proc_dump("proc1", proc1);
+        pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
 
-    //    프로세스 전환
+        pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
+        pm_awake(pm_object, 0, proc2);
 
-    current_proc = proc1;
-    _proc(proc1);
+        proc_dump("proc1", proc1);
+        proc_dump("proc2", proc2);
 
-#ifdef defined B_MAIN_FLAG
+        /*
+            프로세스 전환
+        */
 
-#elif B_MAIN_FLAG == 1
-    // 프로세스 전환 테스트 로직
+        current_proc = proc1;
+        _proc(proc1);
+    }
+    else if (B_MAIN_FLAG == 2)
+    {
 
-    pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
+        // 쉘 테스트 로직
+        pcb_t *shell_proc = proc_turn(
+            fm_record,
+            "shel.bin",
+            _task_shell_start,
+            1);
 
-    pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
-    pm_awake(&pm_object, 0, proc2);
+        pm_awake(pm_object, 0, shell_proc);
 
-    proc_dump("proc1", proc1);
-    proc_dump("proc2", proc2);
+        proc_dump("shell proc", shell_proc);
 
-    /*
-        프로세스 전환
-    */
+        current_proc = shell_proc;
+        _proc(shell_proc);
+    }
+    else if (B_MAIN_FLAG == 3)
+    {
+        // 브릿지 테스트 로직
 
-    dump("1", pm_object.lowbuf[0]);
+        pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
+        pm_awake(pm_object, 0, brdge_proc);
 
-    current_proc = proc1;
-    _proc(proc1);
+        proc_dump("brdge proc", brdge_proc);
 
-#elif B_MAIN_FLAG == 2
+        current_proc = brdge_proc;
+        _proc(brdge_proc);
+    }
+    else if (B_MAIN_FLAG == 4)
+    {
+        // 컴파일러 테스트 로직
 
-    // 쉘 테스트 로직
-    pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
-    pm_awake(&pm_object, 0, shell_proc);
+        pcb_t *compil_proc = proc_turn(
+            fm_record,
+            "compil.bin",
+            _task_compiler_start,
+            1);
 
-    proc_dump("shell proc", shell_proc);
+        pm_awake(pm_object, 0, compil_proc);
 
-    current_proc = shell_proc;
-    _proc(shell_proc);
+        proc_dump("compil proc", compil_proc);
 
-#elif B_MAIN_FLAG == 3
-    // 브릿지 테스트 로직
+        current_proc = compil_proc;
+        _proc(compil_proc);
+    }
+    else if (B_MAIN_FLAG == 5)
+    {
+        // ipc 테스트 로직
 
-    pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
-    pm_awake(&pm_object, 0, brdge_proc);
+        /*
+            쉘이랑 브릿지 2개를 띄워서 테스트
+        */
 
-    proc_dump("brdge proc", brdge_proc);
+        pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
+        pm_awake(pm_object, 0, shell_proc);
 
-    current_proc = brdge_proc;
-    _proc(brdge_proc);
+        pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
 
-#elif B_MAIN_FLAG == 4
-    // 컴파일러 테스트 로직
+        // pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
+        // pm_awake(pm_object, 0, bridge_proc);
 
-    pcb_t *compil_proc = proc_turn(
-        fm_record,
-        "compil.bin",
-        _task_compiler_start,
-        1);
+        proc_dump("shell_proc", shell_proc);
+        proc_dump("bridge proc", bridge_proc);
 
-    pm_awake(&pm_object, 0, compil_proc);
+        // full_stop();
 
-    proc_dump("compil proc", compil_proc);
+        current_proc = bridge_proc;
 
-    current_proc = compil_proc;
-    _proc(compil_proc);
-#elif B_MAIN_FLAG == 5
+        _proc(bridge_proc);
+    }
+    else if (B_MAIN_FLAG == 6)
+    {
+        pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", kshell, 0);
 
-    // ipc 테스트 로직
+        proc_dump("proc1", proc1);
 
-    /*
-        쉘이랑 브릿지 2개를 띄워서 테스트
-    */
-    pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
-    pm_awake(&pm_object, 0, bridge_proc);
-
-    pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
-    pm_awake(&pm_object, 0, shell_proc);
-
-    proc_dump("shell proc", bridge_proc);
-    proc_dump("shell proc", shell_proc);
-
-    current_proc = shell_proc;
-    _proc(shell_proc);
-
-#endif
+        current_proc = proc1;
+        _proc(proc1);
+    }
+    else
+    {
+        log("B_MAIN_FLAG is not defined\n");
+    }
 }

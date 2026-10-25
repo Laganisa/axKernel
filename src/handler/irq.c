@@ -32,8 +32,6 @@ pcb_t *get_current_proc_addr()
 // 인터럽트 핸들러
 void irq_handler_main(pcb_t *proc)
 {
-    enter("irq_handler_main");
-
     disable_irq();
 
     // 인터럽트 번호 읽기
@@ -43,19 +41,28 @@ void irq_handler_main(pcb_t *proc)
     // 타이머 인터럽트
     if (irq_nr == NSPTI)
     {
+        // log("time");
+
         current_proc = schedule_proc(proc);
 
         asm volatile("msr cntp_tval_el0, %0" : : "r"(frq));
 
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(current_proc);
+    }
+    else if (vhid_irq_handle(irq_nr))
+    {
+        // log("hid");
+        GIC_CPU_EOI = iar;
+
+        _proc(proc);
     }
     // 네트워크 인터럽트
     // 나중에 만들기
     else if (irq_nr == g_virtio_net_irq)
     {
+        log("net");
 
         uint32_t status = VIRTIO_INTERRUPT_STATUS;
         // nm 케시에 저장하기
@@ -65,18 +72,14 @@ void irq_handler_main(pcb_t *proc)
 
         // 인터럽트 처리 후
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(proc);
     }
     else if (irq_nr == g_virtio_gpu_irq)
     {
-        log("gpu");
-
         virtio_gpu_irq_handle();
 
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(proc);
     }
@@ -87,7 +90,6 @@ void irq_handler_main(pcb_t *proc)
         virtio_blk_irq_handle();
 
         GIC_CPU_EOI = iar;
-        enable_irq();
 
         _proc(proc);
     }
