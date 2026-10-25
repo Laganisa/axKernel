@@ -286,7 +286,7 @@ void file_dump(const char *name, fcb_t *file)
         puts("[Debug] ");
         puts(name);
         puts(" : ");
-        put_hex(file);
+        put_hex((uint64_t)file);
         puts("\n");
         puts("[Debug] ");
         puts(name);
@@ -296,7 +296,7 @@ void file_dump(const char *name, fcb_t *file)
         puts("[Debug] ");
         puts(name);
         puts(" size : ");
-        put_hex((uint64_t)file->lens);
+        put_hex(file->lens);
         puts("\n");
     }
 }
