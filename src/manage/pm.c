@@ -57,10 +57,10 @@ pcb_t *pm_create(
     new_proc->heap_limit = 0;
 
     // 프로세스 메시지
-    new_proc->msgs.from = NULL;
-    new_proc->msgs.is_call = NULL;
-    new_proc->msgs.is_msgbox = NULL;
-    new_proc->msgs.len = NULL;
+    new_proc->msgs.from = 0;
+    new_proc->msgs.is_call = 0;
+    new_proc->msgs.is_msgbox = 0;
+    new_proc->msgs.len = 0;
 
     // 메시지 배열 초기화
     memset(new_proc->msgs.msgbox, 0, sizeof(new_proc->msgs.msgbox));
