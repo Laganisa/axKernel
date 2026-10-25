@@ -43,7 +43,7 @@ static uint64_t exit_call(
         next = pm_run(pm_object);
 
         // 다음 값이 무었인지 확인하기
-        dump("next", next);
+        dump("next", (uint64_t)(uintptr_t)next);
 
         current_proc = next;
 
@@ -443,7 +443,12 @@ static uint64_t dir_create_call(
     uint16_t depth = (uint16_t)arg3;
     uint16_t auth = (uint16_t)arg4;
 
-    return fm_dir_create(fm_record, name, p_fid, depth, auth);
+    return (uint64_t)(uintptr_t)fm_dir_create(
+        fm_record,
+        name,
+        p_fid,
+        depth,
+        auth);
 }
 
 static uint64_t dir_del_call(
@@ -623,7 +628,7 @@ static uint64_t l2_rece_call(
     // 온 순서대로 리턴하기
     enter("rece_L2_call");
     uint8_t ret = nm_connect.nmqueue.pop(&(nm_connect.nmqueue));
-    return nm_connect.payload_buf[ret];
+    return (uint64_t)(uintptr_t)nm_connect.payload_buf[ret];
 }
 
 static uint64_t l2_find_call(
