@@ -36,6 +36,8 @@ static uint64_t fdt64_to_cpu(uint64_t val)
     return ((uint64_t)fdt32_to_cpu(low) << 32) | fdt32_to_cpu(high);
 }
 
+void parse_dtb_tokens(uint64_t dtb_addr);
+
 // DTB 파싱 메인 진입 함수
 void parse_dtb(uint64_t dtb_addr)
 {
