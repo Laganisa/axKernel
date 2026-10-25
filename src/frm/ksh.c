@@ -679,7 +679,8 @@ check:
     // 시스템
     else if (incode == 817)
     {
-        ret = sys_split(command);
+        kshputs_error("sorry yet devo\n");
+        //        ret = sys_split(command);
     }
 
     // ret에 맞는 처리
