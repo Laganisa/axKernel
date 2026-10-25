@@ -69,7 +69,7 @@ void net_RX_main(void)
 
     prepare_rx_buffer();
 
-    dump("RX buffer addr", rx_packet_buffer);
+    dump("RX buffer addr", (uint64_t)rx_packet_buffer);
     dump("Descriptor addr", rx_queue.desc[0].addr);
 
     GIC_DIST_CTRL = 1;
