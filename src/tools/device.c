@@ -41,7 +41,7 @@ int uart_dev_read(void *buf)
 }
 
 // ? 이거 왜 있지?
-void uart_dev_init()
+void uart_dev_init(void)
 {
     *UART0_CR &= ~(1 << 0);
     *UART0_CR |= (1 << 0) | (1 << 8) | (1 << 9);

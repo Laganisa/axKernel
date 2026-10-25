@@ -13,11 +13,11 @@ typedef struct dcb_t
     uint64_t base_addr; // 장치의 주소
     uint32_t irq_nr;    // 본인의 IRQ 번호 저장
 
-    int (*init)(void); // 초기화 함수 포인터
+    void (*init)(void); // 초기화 함수 포인터
     int (*open)(void);
     int (*close)(void);
     int (*read)(void *buf);           // 데이터 읽기 함수 포인터
-    int (*write)(void *buf, int len); // 데이터 쓰기 함수 포인터
+    int (*write)(const void *buf, int len); // 데이터 쓰기 함수 포인터
     void (*handler)(uint32_t irq_nr); // 인터럽트 발생 시 처리 로직
 } dcb_t;
 

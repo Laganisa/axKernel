@@ -24,10 +24,7 @@ dcb_t *dm_creat(DMv1_driver *driv, uint32_t irq_nr, dcb_t dev)
     // 초기화 함수가 제공되었다면 즉시 실행
     if (new_device->init != NULL)
     {
-        if (new_device->init() != 0)
-        {
-            return NULL;
-        }
+        new_device->init();
     }
 
     return new_device;
