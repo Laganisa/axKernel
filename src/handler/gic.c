@@ -5,8 +5,7 @@
 
 void gic_enable_irq(uint32_t irq)
 {
-    volatile uint32_t *reg =
-        (volatile uint32_t *)(GIC_DIST_BASE + 0x100 + (irq / 32) * 4);
+    volatile uint32_t *reg = &GIC_DIST_REG(0x100 + (irq / 32) * 4);
 
     *reg = (1U << (irq % 32));
 }
@@ -15,8 +14,7 @@ void gic_enable_irq(uint32_t irq)
 
 void gic_disable_irq(uint32_t irq)
 {
-    volatile uint32_t *reg =
-        (volatile uint32_t *)(GIC_DIST_BASE + 0x180 + (irq / 32) * 4);
+    volatile uint32_t *reg = &GIC_DIST_REG(0x180 + (irq / 32) * 4);
 
     *reg = (1U << (irq % 32));
 }

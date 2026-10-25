@@ -19,9 +19,6 @@ typedef int64_t ssize_t;
 typedef uint64_t uintptr_t;
 typedef int64_t intptr_t;
 
-// 여기서 쓸 타입들
-typedef uint8_t bool;
-
 // NULL 정의
 #define NULL ((void *)0)
 

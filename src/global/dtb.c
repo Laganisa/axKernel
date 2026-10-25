@@ -124,12 +124,12 @@ void parse_dtb_tokens(uint64_t dtb_addr)
     // 현재 노드에서 임시로 수집할 변수들
     uint64_t node_mmio_addr = 0;
     uint32_t node_irq_num = 0;
-    bool has_irq = 0;
-    bool is_net = 0;
-    bool is_gpu = 0;
-    bool is_blk = 0;
-    bool is_snd = 0;
-    bool is_input = 0;
+    uint8_t has_irq = 0;
+    uint8_t is_net = 0;
+    uint8_t is_gpu = 0;
+    uint8_t is_blk = 0;
+    uint8_t is_snd = 0;
+    uint8_t is_input = 0;
 
     while (1)
     {
