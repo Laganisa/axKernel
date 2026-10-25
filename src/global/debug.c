@@ -250,7 +250,7 @@ void proc_dump(const char *name, pcb_t *proc)
         puts("[Debug] ");
         puts(name);
         puts(" : ");
-        put_hex(proc);
+        put_hex((uint64_t)proc);
         puts("\n");
 
         puts("[Debug] ");
@@ -296,7 +296,7 @@ void file_dump(const char *name, fcb_t *file)
         puts("[Debug] ");
         puts(name);
         puts(" size : ");
-        put_hex(file->lens);
+        put_hex((uint64_t)file->lens);
         puts("\n");
     }
 }
