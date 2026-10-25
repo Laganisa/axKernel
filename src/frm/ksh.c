@@ -1,6 +1,7 @@
 #include "frm/ksh.h"
 #include "frm/kedt.h"
 #include "global/_io.h"
+#include "global/_meta.h"
 
 enum shell_ret
 {
@@ -96,113 +97,6 @@ static void kpath()
 }
 
 #pragma endregion
-
-// 메모리
-static uint8_t mem_split(char **args)
-{
-    uint8_t ret;
-    uint64_t hash_check = fnv1a_hash_64(args[0]);
-    uint64_t targs[6] = {0};
-
-    for (int i = 0; i < 6; i++)
-    {
-        targs[i] = str_to_uint(args[i]);
-    }
-
-    switch (hash_check)
-    {
-
-    default:
-        kshputs_error("Syntax : mem {command} {args}\n");
-        ret = COMM_ERR;
-        break;
-    }
-
-    return ret;
-}
-
-// 프로세스
-static uint8_t proc_split(char **args)
-{
-    uint8_t ret;
-    uint64_t hash_check = fnv1a_hash_64(args[0]);
-    uint64_t targs[6] = {0};
-
-    for (int i = 0; i < 6; i++)
-    {
-        targs[i] = str_to_uint(args[i]);
-    }
-
-    // 누적 OR 으로 나중에 인자 개수 판별
-    uint8_t prefix_targs[6] = {0};
-
-    for (int i = 5; i >= 0; i--)
-    {
-        prefix_targs[i] = targs[i] | (i < 5 ? prefix_targs[i + 1] : 0);
-    }
-
-    switch (hash_check)
-    {
-    // 프로세스 생성
-    case 0xF5A2F5190CAEA09C:
-        if (prefix_targs[3] != 0)
-        {
-            kshputs_error("Syntax : proc crt {entry}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        // 파일의 실행 권한을 확인한다음 실행하기
-
-        pm_create(pm_object, 1, 1);
-        break;
-
-    // 프로세스 삭제
-    case 0xCA9A2418F461F5CA:
-        if (prefix_targs[3] != 0)
-        {
-            kshputs_error("Syntax : proc del {entry}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        // 파일의 권한을 확인
-
-        break;
-
-    // 프로세스 정보
-    case 0xF5D6A8C57AB94F05:
-        if (prefix_targs[3] != 0)
-        {
-            kshputs_error("Syntax : proc info {entry}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        // 보기 권한이 있는지 확인
-
-        break;
-        // 프로세스 상태(생명주기) 변경
-    case 0xF5FAF8190CF91B8B:
-        if (prefix_targs[3] != 0)
-        {
-            kshputs_error("Syntax : proc chg {mod}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        // 권한이 있는지 확인 실행 권한이 있어야 함
-
-        break;
-
-    default:
-        kshputs_error("Syntax : proc {command} {args}\n");
-        ret = COMM_ERR;
-        break;
-    }
-
-    return ret;
-}
 
 #pragma region 파일
 
@@ -600,104 +494,6 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 
 #pragma endregion
 
-#pragma region 장치
-
-/*
-    장치
-
-    con
-    dcon
-    info
-    open
-    close
-*/
-static uint8_t dev_split(char **args)
-{
-    uint8_t ret;
-    uint64_t hash_check = fnv1a_hash_64(args[0]);
-    uint64_t targs[6] = {0};
-
-    for (int i = 0; i < 6; i++)
-    {
-        targs[i] = str_to_uint(args[i]);
-    }
-
-    // 누적 OR 으로 나중에 인자 개수 판별
-    uint8_t prefix_targs[6] = {0};
-
-    for (int i = 5; i >= 0; i--)
-    {
-        prefix_targs[i] = targs[i] | (i < 5 ? prefix_targs[i + 1] : 0);
-    }
-
-    switch (hash_check)
-    {
-    // 장치 연결
-    case 0xF604F1190D01642B:
-        if (prefix_targs[2] != 0)
-        {
-            kshputs_error("Syntax : dev con {name/path}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        break;
-
-    // 장치 분리
-    case 0x73A50667267E3819:
-        if (prefix_targs[2] != 0)
-        {
-            kshputs_error("Syntax : dev don {name/path}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        break;
-
-    // 장치 정보
-    case 0xF5D6A8C57AB94F05:
-        if (prefix_targs[2] != 0)
-        {
-            kshputs_error("Syntax : dev info {name/path}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        break;
-
-    // 장치 열기
-    case 0xF84F97B4633670E9:
-        if (prefix_targs[2] != 0)
-        {
-            kshputs_error("Syntax : dev opn {name/path}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        break;
-
-    // 장치 닫기
-    case 0x9EC2699513C0F9C3:
-        if (prefix_targs[2] != 0)
-        {
-            kshputs_error("Syntax : dev cls {name/path}\n");
-            ret = ARGS_ERR;
-            break;
-        }
-
-        break;
-
-    default:
-        kshputs_error("Syntax : dev {command} {args}\n");
-        ret = COMM_ERR;
-        break;
-    }
-
-    return ret;
-}
-
-#pragma endregion
-
 // 시스템 처리
 // 사실 잡다한 것들 용도
 static uint8_t sys_split(char **args)
@@ -855,13 +651,15 @@ check:
     // 메모리
     if (incode == 747 && (con & 0b1))
     {
-        ret = mem_split(command);
+        kshputs_error("sorry yet devo\n");
+        // ret = mem_split(command);
     }
     // 프로세스
     else if (incode == 1673 &&
              ((con >> 1 & 0b1)))
     {
-        ret = proc_split(command);
+        kshputs_error("sorry yet devo\n");
+        // ret = proc_split(command);
     }
     // 파일
     else if (incode == 1553 &&
@@ -875,7 +673,8 @@ check:
     else if (incode == 1673 &&
              ((con >> 3) & 0b1))
     {
-        ret = dev_split(command);
+        kshputs_error("sorry yet devo\n");
+        // ret = dev_split(command);
     }
     // 시스템
     else if (incode == 817)

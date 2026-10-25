@@ -98,6 +98,10 @@ pcb_t *proc_turn(
             return mata_exec_file(reco, pm_object, name, 0);
         }
     }
+    // 커널 실행시 내부적으로 만든 파일이 실행되는 거
+    else
+    {
+    }
 
     // 기본 동작
     fcb_t *fil = fm_create(reco, name, 1024, 0);

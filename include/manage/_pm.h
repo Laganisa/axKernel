@@ -36,6 +36,12 @@ typedef struct ctrl_t
 
 } ctrl_t;
 
+enum proc_state
+{
+    // 아직 작성하지 않음
+    NO = 0,
+};
+
 typedef struct pcb_t
 {
     struct proc_regs_t regs;
