@@ -52,6 +52,9 @@ void devo_main(void);
 
 #define B_MASTER_FLAG 1
 
+void kernel_main(void);
+void devo_main(void);
+
 // 커널 함수
 void master(uint64_t dtb_addr)
 {
