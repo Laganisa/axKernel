@@ -14,6 +14,7 @@ void pm_init()
 {
     queue_init(&(pm_object->lowqueue), pm_object->lowbuf, 255);
     queue_init(&(pm_object->highqueue), pm_object->highbuf, 255);
+    queue_init(&(pm_object->blockqueue), pm_object->blockbuf, 255);
 }
 
 /*
@@ -134,8 +135,7 @@ pcb_t *pm_delete(
 {
 }
 
-// TODO:
-// 어떤 타입을 리턴할지 미정
+// TODO: 어떤 타입을 리턴할지 미정
 uint64_t mm_page(uint64_t vaddr)
 {
     uint64_t addr = vaddr >> 12;

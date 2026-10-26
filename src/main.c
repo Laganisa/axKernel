@@ -162,7 +162,7 @@ void kernel_main(void)
         pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
 
         pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
-        pm_awake(pm_object, 0, proc2);
+        pm_object->lowqueue.push(&(pm_object->lowqueue), proc2->id);
 
         proc_dump("proc1", proc1);
         proc_dump("proc2", proc2);
@@ -184,7 +184,7 @@ void kernel_main(void)
             _task_shell_start,
             1);
 
-        pm_awake(pm_object, 0, shell_proc);
+        pm_object->lowqueue.push(&(pm_object->lowqueue), shell_proc->id);
 
         proc_dump("shell proc", shell_proc);
 
@@ -196,7 +196,7 @@ void kernel_main(void)
         // 브릿지 테스트 로직
 
         pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
-        pm_awake(pm_object, 0, brdge_proc);
+        pm_object->lowqueue.push(&(pm_object->lowqueue), brdge_proc->id);
 
         proc_dump("brdge proc", brdge_proc);
 
@@ -213,7 +213,7 @@ void kernel_main(void)
             _task_compiler_start,
             1);
 
-        pm_awake(pm_object, 0, compil_proc);
+        pm_object->lowqueue.push(&(pm_object->lowqueue), compil_proc->id);
 
         proc_dump("compil proc", compil_proc);
 
@@ -229,7 +229,7 @@ void kernel_main(void)
         */
 
         pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
-        pm_awake(pm_object, 0, shell_proc);
+        pm_object->lowqueue.push(&(pm_object->lowqueue), shell_proc->id);
 
         pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
 

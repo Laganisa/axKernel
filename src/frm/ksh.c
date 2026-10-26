@@ -643,8 +643,6 @@ check:
         }
     }
 
-#pragma endregion
-
     // 리턴 변수 받는 부분
     uint8_t ret = UNKNOW_ERR;
 

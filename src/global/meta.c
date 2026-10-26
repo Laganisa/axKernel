@@ -99,9 +99,7 @@ pcb_t *proc_turn(
         }
     }
     // 커널 실행시 내부적으로 만든 파일이 실행되는 거
-    else
-    {
-    }
+    // 임시로 넣음
 
     // 기본 동작
     fcb_t *fil = fm_create(reco, name, 1024, 0);
@@ -302,27 +300,4 @@ pcb_t *mata_exec_file(
         return proc;
     }
     return NULL;
-}
-
-pcb_t *schedule_proc(pcb_t *proc)
-{
-
-    // 다음 프로세스를 큐에서 꺼냄
-    pcb_t *next = pm_run(pm_object);
-
-    // ! 수정하기
-    // 다른 프로세스를 꺼내는 상황
-    if (next->state == (uint8_t)PROC_SIGNAL)
-    {
-        pm_awake(pm_object, 0, proc); // 현재 proc를 넣고
-        mm_free(&mm_stack, &mm_substack, proc->mm_addr);
-        current_proc = pm_run(pm_object); // 다른걸 꺼내자
-    }
-    else
-    {
-        pm_awake(pm_object, 0, proc);
-        current_proc = next;
-    }
-
-    return next;
 }

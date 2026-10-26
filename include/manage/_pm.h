@@ -74,6 +74,7 @@ typedef struct proto_t
 } proto_t;
 
 // 버전 v2로 올리기
+// 버전 v3으로 올리기
 typedef struct PMv1_object
 {
     uint64_t *base; // 바닥 주소
@@ -82,11 +83,15 @@ typedef struct PMv1_object
     // 할당여부를 담당
     uint8_t is_alloc[MAX_PCB_SIZE];
 
-    // 큐
+    // 준비 우선순위 큐
     struct queue lowqueue;
     uint8_t lowbuf[MAX_PCB_SIZE];
     struct queue highqueue;
     uint8_t highbuf[MAX_PCB_SIZE];
+
+    // 블럭 큐
+    struct queue blockqueue;
+    uint8_t blockbuf[MAX_PCB_SIZE];
 
     // 동적 배열로 바꾸기
     struct pcb_t PMv1_mem[MAX_PCB_SIZE]; // 최대 프로세스 수 만큼 만들기 8KB 정도 pcb의 배열
@@ -100,13 +105,23 @@ typedef struct PMv1_object
 
 // init 만들기
 void pm_init();
-pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid);
-pcb_t *pm_create(PMv1_object *obj, uint64_t entry, uint8_t parid);
-// uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);
-// uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
-uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);
+
+pcb_t *creat_proc(
+    PMv1_object *obj,
+    void *task,
+    uint8_t parid);
+
+pcb_t *pm_create(
+    PMv1_object *obj,
+    uint64_t entry,
+    uint8_t parid);
+
+// uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);
 pcb_t *pm_run(PMv1_object *obj);
+
+// 나중에 지울거
 void pm_awake(PMv1_object *obj, uint8_t cmd, pcb_t *proc);
+
 pcb_t *pm_delete(
     PMv1_object *obj,
     uint64_t entry,
