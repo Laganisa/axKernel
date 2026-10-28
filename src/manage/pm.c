@@ -45,7 +45,14 @@ pcb_t *pm_create(
     }
 
     id = (uint8_t)id + 1;
-    pcb_t *new_proc = &obj->PMv1_mem[id];
+
+    put_hex((uint64_t)obj);
+    put_hex((uint64_t)id);
+
+    /// ????
+    //     put_hex((uint64_t)&obj->PMv1_mem[id]);
+
+    pcb_t *new_proc = &(obj->PMv1_mem[id]);
 
     // 프로세스 상태
     new_proc->id = id;      // 프로세스의 id를 할당된 pid로 변경

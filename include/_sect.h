@@ -14,7 +14,7 @@
 
 // 커널 데이터 영역
 #define MM_ADDR_SIZE 0x5000
-#define PM_ADDR_SIZE 0x7000
+#define PM_ADDR_SIZE 0x20000
 #define FM_ADDR_SIZE 0x50000
 #define DM_ADDR_SIZE 0x5000
 #define NM_ADDR_SIZE 0x5000
