@@ -1,5 +1,6 @@
 # 개인/임시 파일
 temp/
+other/
 notes/
 *.log
 todo.md

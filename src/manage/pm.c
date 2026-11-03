@@ -45,13 +45,6 @@ pcb_t *pm_create(
     }
 
     id = (uint8_t)id + 1;
-
-    put_hex((uint64_t)obj);
-    put_hex((uint64_t)id);
-
-    /// ????
-    //     put_hex((uint64_t)&obj->PMv1_mem[id]);
-
     pcb_t *new_proc = &(obj->PMv1_mem[id]);
 
     // 프로세스 상태
