@@ -1,73 +1,74 @@
 #ifndef __KERNEL_SECT_H__
 #define __KERNEL_SECT_H__
 
-#define ALIGN_16(addr) (((addr) + 15) & ~15)
+#include "_types.h"
 
-#pragma region KERNEL
-// 커널의 메모리 정하기
-#define KERNEL_TEXT_START 0x40000000
+#define ALIGN_16(addr) (((addr) + 15) & ~15ULL)
+
+extern unsigned char __kernel_start[];
+extern unsigned char __mm_addr_start[];
+extern unsigned char __mm_addr_end[];
+extern unsigned char __pm_addr_start[];
+extern unsigned char __pm_addr_end[];
+extern unsigned char __fm_addr_start[];
+extern unsigned char __fm_addr_end[];
+extern unsigned char __dm_addr_start[];
+extern unsigned char __dm_addr_end[];
+extern unsigned char __nm_addr_start[];
+extern unsigned char __nm_addr_end[];
+extern unsigned char __gm_addr_start[];
+extern unsigned char __gm_addr_end[];
+extern unsigned char __kernel_data_end[];
+extern unsigned char __kernel_bss_start[];
+extern unsigned char __kernel_bss_end[];
+extern unsigned char __kernel_stack_start[];
+extern unsigned char __kernel_stack_end[];
+extern unsigned char __kernel_heap_start[];
+extern unsigned char __kernel_heap_end[];
+extern unsigned char __user_proc_start[];
+extern unsigned char __user_proc_end[];
+extern unsigned char __user_file_start[];
+extern unsigned char __user_file_end[];
+
+#define KERNEL_TEXT_START ((uint64_t)__kernel_start)
 #define KERNEL_TEXT KERNEL_TEXT_START
 
-#define KERNEL_TEXT_SIZE 0x64000 // 커널 텍스트 사이즈 400KB
+#define MM_ADDR_SIZE 0x6000ULL
+#define PM_ADDR_SIZE 0x1F000ULL
+#define FM_ADDR_SIZE 0x50000ULL
+#define DM_ADDR_SIZE 0x5000ULL
+#define NM_ADDR_SIZE 0x5000ULL
+#define GM_ADDR_SIZE 0x5000ULL
 
-#define KERNEL_TEXT_END (KERNEL_TEXT_START + KERNEL_TEXT_SIZE)
+#define MM_ADDR_START ((uint64_t)__mm_addr_start)
+#define MM_ADDR_END ((uint64_t)__mm_addr_end)
+#define PM_ADDR_START ((uint64_t)__pm_addr_start)
+#define PM_ADDR_END ((uint64_t)__pm_addr_end)
+#define FM_ADDR_START ((uint64_t)__fm_addr_start)
+#define FM_ADDR_END ((uint64_t)__fm_addr_end)
+#define DM_ADDR_START ((uint64_t)__dm_addr_start)
+#define DM_ADDR_END ((uint64_t)__dm_addr_end)
+#define NM_ADDR_START ((uint64_t)__nm_addr_start)
+#define NM_ADDR_END ((uint64_t)__nm_addr_end)
+#define GM_ADDR_START ((uint64_t)__gm_addr_start)
+#define GM_ADDR_END ((uint64_t)__gm_addr_end)
 
-// 커널 데이터 영역
-#define MM_ADDR_SIZE 0x5000
-#define PM_ADDR_SIZE 0x1F000
-#define FM_ADDR_SIZE 0x50000
-#define DM_ADDR_SIZE 0x5000
-#define NM_ADDR_SIZE 0x5000
-#define GM_ADDR_SIZE 0x5000
+#define KERNEL_DATA_END ((uint64_t)__kernel_data_end)
+#define KERNEL_BSS_SIZE 0x10000ULL
+#define KERNEL_STACK_SIZE 0x10000ULL
+#define KERNEL_HEAP_SIZE 0x80000ULL
+#define KERNEL_BSS_START ((uint64_t)__kernel_bss_start)
+#define KERNEL_BSS_END ((uint64_t)__kernel_bss_end)
+#define KERNEL_STACK_START ((uint64_t)__kernel_stack_start)
+#define KERNEL_STACK_END ((uint64_t)__kernel_stack_end)
+#define KERNEL_HEAP_START ((uint64_t)__kernel_heap_start)
+#define KERNEL_HEAP_END ((uint64_t)__kernel_heap_end)
 
-#define MM_ADDR_START ALIGN_16(KERNEL_TEXT_END)
-#define MM_ADDR_END ALIGN_16(MM_ADDR_START + MM_ADDR_SIZE)
-
-#define PM_ADDR_START ALIGN_16(MM_ADDR_END)
-#define PM_ADDR_END ALIGN_16(PM_ADDR_START + PM_ADDR_SIZE)
-
-#define FM_ADDR_START ALIGN_16(PM_ADDR_END)
-#define FM_ADDR_END ALIGN_16(FM_ADDR_START + FM_ADDR_SIZE)
-
-#define DM_ADDR_START ALIGN_16(FM_ADDR_END)
-#define DM_ADDR_END ALIGN_16(DM_ADDR_START + DM_ADDR_SIZE)
-
-#define NM_ADDR_START ALIGN_16(DM_ADDR_END)
-#define NM_ADDR_END ALIGN_16(NM_ADDR_START + NM_ADDR_SIZE)
-
-#define GM_ADDR_START ALIGN_16(DM_ADDR_END)
-#define GM_ADDR_END ALIGN_16(GM_ADDR_START + GM_ADDR_SIZE)
-
-#define KERNEL_DATA_END GM_ADDR_END
-
-// 커널 BSS & 스택 & 힙 영역
-#define KERNEL_BSS_SIZE 0x10000   // BSS 크기 64KB
-#define KERNEL_STACK_SIZE 0x10000 // 스택 크기 64KB
-#define KERNEL_HEAP_SIZE 0x80000  // 커널 힙 크기 512KB (데몬 200KB 고려)
-
-#define KERNEL_BSS_START KERNEL_DATA_END
-#define KERNEL_BSS_END ALIGN_16(KERNEL_BSS_START + KERNEL_BSS_SIZE)
-
-#define KERNEL_STACK_START KERNEL_BSS_END
-#define KERNEL_STACK_END ALIGN_16(KERNEL_STACK_START + KERNEL_STACK_SIZE)
-
-#define KERNEL_HEAP_START KERNEL_STACK_END
-#define KERNEL_HEAP_END ALIGN_16(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
-
-#pragma endregion
-
-#pragma region USER
-
-// 유저 프로세스 영역 (유저 힙 & 스택 포함)
-#define USER_PROC_START KERNEL_HEAP_END
-#define USER_PROC_SIZE 0x10000000 // 유저 프로세스 공간 256MB
-#define USER_PROC_END (USER_PROC_START + USER_PROC_SIZE)
-
-// 유저 파일 영역
-#define USER_FILE_START USER_PROC_END
-#define USER_FILE_SIZE 0x88755000 // 유저 파일 공간 2184MB
-#define USER_FILE_END (USER_FILE_START + USER_FILE_SIZE)
-
-#pragma endregion
+#define USER_PROC_START ((uint64_t)__user_proc_start)
+#define USER_PROC_SIZE 0x10000000ULL
+#define USER_PROC_END ((uint64_t)__user_proc_end)
+#define USER_FILE_START ((uint64_t)__user_file_start)
+#define USER_FILE_SIZE 0x88755000ULL
+#define USER_FILE_END ((uint64_t)__user_file_end)
 
 #endif

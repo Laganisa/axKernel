@@ -15,6 +15,7 @@
 #include "global/_dtb.h"
 
 #include "manage/_mm.h" // 메모리 관리자 헤더
+#include "manage/temp_mm.h"
 #include "manage/_pm.h" // 프로세스 관리자 헤더
 #include "manage/_fm.h" // 파일 관리자 헤더
 #include "manage/_nm.h" // 네트워크 관리자 헤더
@@ -62,7 +63,8 @@ void master(uint64_t dtb_addr)
     dump("Passed_DTB_addr", dtb_addr);
 #endif
 
-    // dtb 파싱 후 연동
+    // Temporary identity map keeps boot data and MMIO reachable during DTB parsing.
+    temp_mmu_init();
     parse_dtb(dtb_addr);
 
 #if defined(NET)
@@ -116,7 +118,7 @@ void devo_main(void)
     puts("devo main\n");
 }
 
-#define B_MAIN_FLAG 6
+#define B_MAIN_FLAG 2
 
 void kernel_main(void)
 {
@@ -189,6 +191,7 @@ void kernel_main(void)
         proc_dump("shell proc", shell_proc);
 
         current_proc = shell_proc;
+        log("1");
         _proc(shell_proc);
     }
     else if (B_MAIN_FLAG == 3)

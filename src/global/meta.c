@@ -2,8 +2,13 @@
 #include "manage/_mm.h"
 #include "global/_debug.h"
 #include "tools/_asm.h"
+#include "manage/temp_mm.h"
 
 #define PROC_STACK_RESERVE (16 * 1024ULL)
+#define TEMP_PROC_PAGE_COUNT ((INITIAL_PROC_SIZE << 10) / TEMP_MM_PAGE_SIZE)
+#define ELF_PF_EXEC 0x1
+#define ELF_PF_WRITE 0x2
+#define ELF_PF_READ 0x4
 
 extern pcb_t *current_proc;
 
@@ -59,7 +64,7 @@ pcb_t *proc_turn(
             fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
-
+            log("1");
             return mata_exec_file(reco, pm_object, name, 0);
         }
         if (entry_point == (void *)_task_bridge_start)
@@ -148,6 +153,7 @@ static pcb_t *elf_load_image(
     dump("image", (uint64_t)image);
     dump("image_size", (uint64_t)image_size);
     */
+    log("aa");
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 
@@ -211,7 +217,18 @@ static pcb_t *elf_load_image(
     uint64_t process_size = INITIAL_PROC_SIZE << 10;
     uint64_t heap_limit = real_addr + process_size - PROC_STACK_RESERVE;
     uint64_t image_end = load_base + (max_vaddr - min_vaddr);
-    uint64_t heap_start = (image_end + 15) & ~15ULL;
+    uint64_t heap_start =
+        (image_end + TEMP_MM_PAGE_SIZE - 1) & ~(TEMP_MM_PAGE_SIZE - 1);
+    uint8_t page_flags[TEMP_PROC_PAGE_COUNT];
+    uint8_t segment_flags[TEMP_PROC_PAGE_COUNT];
+    uint8_t segment_seen[TEMP_PROC_PAGE_COUNT];
+
+    for (uint16_t i = 0; i < TEMP_PROC_PAGE_COUNT; i++)
+    {
+        page_flags[i] = TEMP_MM_PAGE_READ | TEMP_MM_PAGE_WRITE;
+        segment_flags[i] = 0;
+        segment_seen[i] = FALSE;
+    }
 
     if (heap_start > heap_limit)
     {
@@ -227,9 +244,53 @@ static pcb_t *elf_load_image(
         }
 
         uint64_t seg_offset = phdr->p_vaddr - min_vaddr;
-        if (load_base - real_addr + seg_offset + phdr->p_memsz > process_size - PROC_STACK_RESERVE)
+        uint64_t segment_start = load_base - real_addr + seg_offset;
+        uint64_t segment_limit = process_size - PROC_STACK_RESERVE;
+        if (segment_start > segment_limit ||
+            phdr->p_memsz > segment_limit - segment_start)
         {
             return 0;
+        }
+
+        if (phdr->p_memsz == 0)
+        {
+            continue;
+        }
+
+        uint64_t segment_end = segment_start + phdr->p_memsz;
+        uint64_t first_page = segment_start / TEMP_MM_PAGE_SIZE;
+        uint64_t end_page =
+            segment_end / TEMP_MM_PAGE_SIZE +
+            (segment_end % TEMP_MM_PAGE_SIZE != 0);
+        uint8_t flags = 0;
+        if (phdr->p_flags & ELF_PF_READ)
+        {
+            flags |= TEMP_MM_PAGE_READ;
+        }
+        if (phdr->p_flags & ELF_PF_WRITE)
+        {
+            flags |= TEMP_MM_PAGE_WRITE;
+        }
+        if (phdr->p_flags & ELF_PF_EXEC)
+        {
+            flags |= TEMP_MM_PAGE_EXEC;
+        }
+        if (end_page > TEMP_PROC_PAGE_COUNT)
+        {
+            return 0;
+        }
+        for (uint64_t page = first_page; page < end_page; page++)
+        {
+            if (segment_seen[page])
+            {
+                segment_flags[page] |= flags;
+            }
+            else
+            {
+                segment_flags[page] = flags;
+                segment_seen[page] = TRUE;
+            }
+            page_flags[page] = segment_flags[page];
         }
 
         uint8_t *dest = (uint8_t *)(load_base + seg_offset);
@@ -246,10 +307,38 @@ static pcb_t *elf_load_image(
         return 0;
     }
 
-    proc->regs.elr_el1 = load_base + (ehdr->e_entry - min_vaddr);
-    proc->heap_start = heap_start;
-    proc->heap_break = heap_start;
-    proc->heap_limit = heap_limit;
+    uint64_t entry_offset =
+        load_base - real_addr + (ehdr->e_entry - min_vaddr);
+
+    if (entry_offset >= process_size ||
+        !(page_flags[entry_offset / TEMP_MM_PAGE_SIZE] & TEMP_MM_PAGE_EXEC))
+    {
+        return 0;
+    }
+
+    log("4");
+
+    if (!temp_mmu_prepare_user(
+            proc,
+            proc->page_i,
+            real_addr,
+            TEMP_MM_USER_BASE,
+            process_size,
+            page_flags))
+    {
+        log("err");
+        return 0;
+    }
+
+    log("4");
+
+    proc->regs.elr_el1 = TEMP_MM_USER_BASE + entry_offset;
+    proc->regs.sp = TEMP_MM_USER_BASE + process_size;
+    proc->heap_start = TEMP_MM_USER_BASE + (heap_start - real_addr);
+    proc->heap_break = proc->heap_start;
+    proc->heap_limit =
+        TEMP_MM_USER_BASE + process_size - PROC_STACK_RESERVE;
+
     return proc;
 }
 
@@ -287,18 +376,21 @@ pcb_t *mata_exec_file(
 
     if (hdr->mode == FM_EXEC_MODE_IMAGE)
     {
+
         pcb_t *proc = pm_create(obj, 0, parid);
 
         if (proc == 0)
         {
+            log("null");
             return NULL;
         }
-
+        log("3");
         if (elf_load_image(proc, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size) == 0)
         {
+            log("null");
             return NULL;
         }
-
+        log("null");
         return proc;
     }
     return NULL;
