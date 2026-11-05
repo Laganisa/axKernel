@@ -204,7 +204,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         kshputs("file name : ");
         kshputs((const char *)now_fcb->alias);
         kshputs("\n");
-        kshputs("file len(KB): ");
+        kshputs("file len(B): ");
         fput_uint((uint64_t)now_fcb->lens);
         kshputs("\n");
         kshputs("file id: ");

@@ -1,8 +1,13 @@
 .section ".text.proc"
 .global _proc
+.extern temp_mmu_switch
 
 // pcb_t 구조체를 사용
 _proc:
+    mov x19, x0
+    bl temp_mmu_switch
+    mov x0, x19
+
     // SPSR_EL1의 복귀 모드에 맞는 스택 포인터를 복원
     ldr x1, [x0, #(31 * 8)]
 

@@ -34,7 +34,6 @@ static struct virtio_queue_state blk_queue;
 #define VIRTIO_BLK_T_OUT 1
 
 #define VIRTIO_BLK_S_OK 0
-#define BLK_TEST_SECTOR 100
 
 #define VRING_DESC_F_NEXT 1
 #define VRING_DESC_F_WRITE 2
@@ -60,46 +59,37 @@ enum blk_request_state
 static volatile enum blk_request_state blk_req_state =
     BLK_REQ_IDLE;
 
-static int blk_write_test(void);
-
 static struct virtio_blk_req blk_req
-    __attribute__((aligned(16)));
-
-static uint8_t blk_data[512]
     __attribute__((aligned(16)));
 
 static uint8_t blk_status
     __attribute__((aligned(1)));
 
-static void blk_prepare_test_data(void)
-{
-    memset(blk_data, 0, sizeof(blk_data));
-
-    const char *msg = "HELLO FROM axOS";
-
-    for (uint32_t i = 0; msg[i] != '\0'; ++i)
-    {
-        blk_data[i] = (uint8_t)msg[i];
-    }
-}
-
 #define VIRTIO_BLK_INTERRUPT_STATUS \
     (*(volatile uint32_t *)(g_virtio_blk_base + 0x060))
 
-static uint8_t blk_read_data[512]
-    __attribute__((aligned(16)));
+static volatile uint16_t blk_last_used_idx;
+static uint64_t blk_sector_count;
+static uint8_t blk_is_ready;
 
-/*
-    cmd == 0 쓰기
-    cmd == 1 읽기
-*/
-static int blk_submit(uint8_t cmd)
+static int blk_submit(
+    uint8_t cmd,
+    uint32_t sector,
+    void *buffer)
 {
+    if (!blk_is_ready || buffer == NULL ||
+        blk_req_state == BLK_REQ_PENDING ||
+        (cmd != VIRTIO_BLK_T_IN && cmd != VIRTIO_BLK_T_OUT) ||
+        (uint64_t)sector >= blk_sector_count)
+    {
+        return FALSE;
+    }
+
     struct virtq_desc *desc = blk_queue.desc;
 
-    blk_req.type = VIRTIO_BLK_T_IN;
+    blk_req.type = cmd;
     blk_req.reserved = 0;
-    blk_req.sector = BLK_TEST_SECTOR;
+    blk_req.sector = sector;
 
     blk_status = 0xFF;
 
@@ -107,11 +97,11 @@ static int blk_submit(uint8_t cmd)
     desc[0].len = sizeof(struct virtio_blk_req);
     desc[0].flags = VRING_DESC_F_NEXT;
     desc[0].next = 1;
-    desc[1].addr = (uint64_t)blk_read_data;
-    desc[1].len = sizeof(blk_read_data);
+    desc[1].addr = (uint64_t)buffer;
+    desc[1].len = 512;
     desc[1].flags = VRING_DESC_F_NEXT;
 
-    if (cmd == 1)
+    if (cmd == VIRTIO_BLK_T_IN)
     {
         desc[1].flags |= VRING_DESC_F_WRITE;
     }
@@ -131,77 +121,80 @@ static int blk_submit(uint8_t cmd)
     virtio_mb();
 
     VIRTIO_BLK_QUEUE_NOTIFY = 0;
+
+    while (blk_req_state == BLK_REQ_PENDING)
+    {
+        uint16_t used_idx = blk_queue.used->idx;
+        if (used_idx != blk_last_used_idx)
+        {
+            virtio_mb();
+            blk_last_used_idx = used_idx;
+            blk_req_state =
+                blk_status == VIRTIO_BLK_S_OK
+                    ? BLK_REQ_COMPLETE
+                    : BLK_REQ_ERROR;
+        }
+    }
+
+    uint8_t success = blk_req_state == BLK_REQ_COMPLETE;
+    blk_req_state = BLK_REQ_IDLE;
+    return success;
 }
 
 void blk_init(void)
 {
-    // 주소 확인
+    if (blk_is_ready)
+    {
+        return;
+    }
+
     if (g_virtio_blk_base == 0)
     {
         puts("BLK MMIO base not found\n");
         return;
     }
 
-    // 피쳐
     vq_init(g_virtio_blk_base);
-
-    // 큐 설정
     vq_setup(g_virtio_blk_base, 0, blk_queue_storage, &blk_queue);
-
-    const char *msg = "HELLO FROM axOS";
-
-    for (uint32_t i = 0; msg[i] != '\0'; ++i)
+    if (blk_queue.size < 3)
     {
-        blk_data[i] = (uint8_t)msg[i];
+        puts("BLK queue is too small\n");
+        return;
     }
 
-    blk_submit(0);
-
-    // ! 이거 바꿀거
-    while (blk_req_state == BLK_REQ_PENDING)
+    blk_last_used_idx = blk_queue.used->idx;
+    blk_sector_count =
+        (uint64_t)virtio_mmio_read_config32(g_virtio_blk_base, 0) |
+        ((uint64_t)virtio_mmio_read_config32(g_virtio_blk_base, 4) << 32);
+    blk_is_ready = blk_sector_count != 0;
+    if (!blk_is_ready)
     {
-        asm volatile("wfi");
+        puts("BLK capacity unavailable\n");
     }
-
-    memset(blk_read_data, 0, sizeof(blk_read_data));
-
-    blk_submit(1);
-
-    while (blk_req_state == BLK_REQ_PENDING)
-    {
-        asm volatile("wfi");
-    }
-
-    if (blk_req_state == BLK_REQ_COMPLETE)
-    {
-        puts("BLK READ COMPLETE\n");
-
-        puts((char *)blk_read_data);
-    }
-
-    // log("1");
-
-    log("READ BYTE");
-
-    for (int i = 0; i < 512; i++)
-    {
-        if (blk_read_data[i] != 0)
-        {
-            put_hex2(blk_read_data[i]);
-        }
-    }
-
-    puts("\n\n");
-    log("Program end");
 }
 
-#define VIRTIO_BLK_INTERRUPT_STATUS \
-    (*(volatile uint32_t *)(g_virtio_blk_base + 0x060))
+uint8_t virtio_blk_is_ready(void)
+{
+    return blk_is_ready;
+}
+
+uint64_t virtio_blk_sector_count(void)
+{
+    return blk_sector_count;
+}
+
+uint8_t virtio_blk_read_sector(uint32_t sector, void *buffer)
+{
+    return (uint8_t)blk_submit(VIRTIO_BLK_T_IN, sector, buffer);
+}
+
+uint8_t virtio_blk_write_sector(uint32_t sector, const void *buffer)
+{
+    return (uint8_t)blk_submit(VIRTIO_BLK_T_OUT, sector, (void *)buffer);
+}
 
 #define VIRTIO_BLK_INTERRUPT_ACK \
     (*(volatile uint32_t *)(g_virtio_blk_base + 0x064))
-
-static uint16_t blk_last_used_idx = 0;
 
 void virtio_blk_irq_handle(void)
 {
@@ -226,11 +219,9 @@ void virtio_blk_irq_handle(void)
     if (blk_status == VIRTIO_BLK_S_OK)
     {
         blk_req_state = BLK_REQ_COMPLETE;
-        puts("BLK REQUEST COMPLETE\n");
     }
     else
     {
         blk_req_state = BLK_REQ_ERROR;
-        puts("BLK WRITE ERROR\n");
     }
 }

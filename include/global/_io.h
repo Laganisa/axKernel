@@ -4,6 +4,7 @@
 #include "_defs.h"
 #include "_sect.h"
 #include "_types.h"
+#include "global/_debug.h"
 
 enum io_key_code
 {

@@ -56,7 +56,7 @@ fcb_t *fm_create(FMv3_record *reco, char *name, uint32_t size, uint16_t auth)
     new_file->alias[MAX_FILE_NAME] = '\0';
 
     new_file->is_alloc = 1;
-    new_file->lens = size >> 10;
+    new_file->lens = size;
     new_file->fid = (uint16_t)reco->all_file_num;
     new_file->auth = auth;
 
@@ -214,7 +214,7 @@ uint32_t fm_write(
         return 0;
     }
 
-    uint32_t file_size = (uint32_t)file->lens << 10;
+    uint32_t file_size = file->lens;
     if (offset >= file_size)
     {
         return 0;
@@ -242,7 +242,7 @@ uint32_t fm_read(
         return 0;
     }
 
-    uint32_t file_size = (uint32_t)file->lens << 10;
+    uint32_t file_size = file->lens;
     if (offset >= file_size)
     {
         return 0;
@@ -341,4 +341,12 @@ fm_exec_hdr_t *fm_data_addr(FMv3_record *reco, fcb_t *file)
     fm_exec_hdr_t *new_hdr;
     new_hdr = (fm_exec_hdr_t *)((uint8_t *)reco->base + ((uint32_t)file->fid * MAX_FILE_SIZE));
     return new_hdr;
+}
+
+void fm_pack(void)
+{
+}
+
+fcb_t fm_unpack(void)
+{
 }

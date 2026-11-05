@@ -315,7 +315,7 @@ static uint64_t open_call(
         // append
         if (((flags >> 3) & 1) != 0)
         {
-            current_proc->control[now_fd].file_offset = fil->lens * 1024;
+            current_proc->control[now_fd].file_offset = fil->lens;
         }
         else
         {

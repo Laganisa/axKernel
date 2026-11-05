@@ -12,8 +12,8 @@ typedef struct fcb_t
     // /0 또한 포함
     int8_t alias[MAX_FILE_NAME + 1];
 
-    uint16_t lens : 11; // 파일 길이 (1KB 단위, 최대 1MB)
-    uint16_t fid : 5;   // 파일 id
+    uint8_t checksum; // 체크섬
+    uint16_t fid;     // 파일 id
 
     uint16_t depth : 4;    // 파일 깊이 (0~2)
     uint16_t auth : 10;    // 권한
@@ -24,7 +24,8 @@ typedef struct fcb_t
     uint16_t MM : 4;
     uint16_t DD : 5;
 
-    uint8_t checksum; // 체크섬
+    uint32_t lens;   // 파일 길이 (Byte)
+    uint32_t dsk_id; // 디스크 내부 id
 
 } fcb_t;
 
@@ -35,20 +36,22 @@ typedef struct fcb_e
     // /0 또한 포함
     int8_t alias[MAX_FILE_NAME + 1];
 
+    uint32_t dsk_id; // 디스크 내부 id
+
     // 디렉토리 안에 있는 파일 id
     uint16_t files[MAX_DIR_FILE_NUM];
 
     // 디렉토리 안에 있는 디렉토리 id
     uint16_t dirs[MAX_DIR_FILE_NUM];
 
-    uint16_t p_fid : 6; // 부모 디렉토리 id
-    uint16_t fid : 6;   // 디렉토리 id
-    uint16_t depth : 4; // 디렉토리 깊이 (0~2)
+    uint16_t p_fid; //  디렉토리 id
+    uint16_t fid;   //  디렉토리 id
 
     uint16_t auth : 10;   // 권한
     uint16_t dir_num : 6; // 디랙토리 내부 파일 수
 
-    uint16_t dir_dnum; // 디랙토리 내부 폴더 수
+    uint16_t dir_dnum : 6; // 디랙토리 내부 폴더 수
+    uint16_t depth : 10;   // 디렉토리 깊이 (0~2)
 
     uint16_t YYYY : 7;
     uint16_t MM : 4;
