@@ -342,3 +342,11 @@ fm_exec_hdr_t *fm_data_addr(FMv3_record *reco, fcb_t *file)
     new_hdr = (fm_exec_hdr_t *)((uint8_t *)reco->base + ((uint32_t)file->fid * MAX_FILE_SIZE));
     return new_hdr;
 }
+
+void fm_pack(void)
+{
+}
+
+fcb_t fm_unpack(void)
+{
+}
