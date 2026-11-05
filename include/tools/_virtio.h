@@ -265,6 +265,10 @@ int gpu_resource_flush(
     uint32_t height);
 
 void blk_init(void);
+uint8_t virtio_blk_is_ready(void);
+uint64_t virtio_blk_sector_count(void);
+uint8_t virtio_blk_read_sector(uint32_t sector, void *buffer);
+uint8_t virtio_blk_write_sector(uint32_t sector, const void *buffer);
 
 #pragma endregion
 

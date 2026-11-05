@@ -1,8 +1,9 @@
 #include "_types.h"
 #include "global/_io.h"
+#include "tools/_dsk_fs.h"
+#include "tools/_virtio.h"
 
 #define AXV_DISK_SIZE (64ULL * 1024 * 1024)
-#define AXV_SECTOR_SIZE 512U
 #define AXV_SECTOR_COUNT ((uint32_t)(AXV_DISK_SIZE / AXV_SECTOR_SIZE))
 #define AXV_BITMAP_BYTES ((AXV_SECTOR_COUNT + 7U) / 8U)
 #define AXV_BITMAP_WORDS ((AXV_SECTOR_COUNT + 63U) / 64U)
@@ -15,18 +16,8 @@
 #define AXV_DATA_START (AXV_SLL_START + AXV_SLL_SECTORS)
 #define AXV_TREE_LEAF_BASE AXV_BITMAP_WORDS
 #define AXV_TREE_SIZE (AXV_TREE_LEAF_BASE * 2U)
-#define AXV_EMPTY (uint32_t)-1
 #define AXV_VERSION 1U
 #define AXV_MAGIC 0x31534644585641ULL
-
-typedef uint8_t (*axv_sector_read_fn)(
-    void *context,
-    uint32_t sector,
-    void *buffer);
-typedef uint8_t (*axv_sector_write_fn)(
-    void *context,
-    uint32_t sector,
-    const void *buffer);
 
 typedef struct axv_superblock
 {
@@ -681,4 +672,36 @@ uint32_t axv_write(
         (void *)buffer,
         size,
         TRUE);
+}
+
+static uint8_t dsk_fs_vblk_ready(void)
+{
+    blk_init();
+    return (uint8_t)(
+        virtio_blk_is_ready() &&
+        virtio_blk_sector_count() >= AXV_SECTOR_COUNT);
+}
+
+uint8_t dsk_fs_format_vblk(void)
+{
+    if (!dsk_fs_vblk_ready())
+    {
+        return FALSE;
+    }
+    return axv_format(
+        NULL,
+        virtio_blk_read_sector,
+        virtio_blk_write_sector);
+}
+
+uint8_t dsk_fs_mount_vblk(void)
+{
+    if (!dsk_fs_vblk_ready())
+    {
+        return FALSE;
+    }
+    return axv_mount(
+        NULL,
+        virtio_blk_read_sector,
+        virtio_blk_write_sector);
 }
