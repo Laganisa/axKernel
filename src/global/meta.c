@@ -64,7 +64,7 @@ pcb_t *proc_turn(
             fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
-            log("1");
+
             return mata_exec_file(reco, pm_object, name, 0);
         }
         if (entry_point == (void *)_task_bridge_start)
@@ -153,7 +153,6 @@ static pcb_t *elf_load_image(
     dump("image", (uint64_t)image);
     dump("image_size", (uint64_t)image_size);
     */
-    log("aa");
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 
@@ -316,8 +315,6 @@ static pcb_t *elf_load_image(
         return 0;
     }
 
-    log("4");
-
     if (!temp_mmu_prepare_user(
             proc,
             proc->page_i,
@@ -326,11 +323,9 @@ static pcb_t *elf_load_image(
             process_size,
             page_flags))
     {
-        log("err");
+
         return 0;
     }
-
-    log("4");
 
     proc->regs.elr_el1 = TEMP_MM_USER_BASE + entry_offset;
     proc->regs.sp = TEMP_MM_USER_BASE + process_size;
@@ -381,16 +376,15 @@ pcb_t *mata_exec_file(
 
         if (proc == 0)
         {
-            log("null");
             return NULL;
         }
-        log("3");
+
         if (elf_load_image(proc, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size) == 0)
         {
-            log("null");
+
             return NULL;
         }
-        log("null");
+
         return proc;
     }
     return NULL;

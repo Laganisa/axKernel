@@ -122,12 +122,6 @@ uint8_t temp_mmu_prepare_user(
     uint64_t size,
     const uint8_t *page_flags)
 {
-    enter("temp_mmu_prepare_user");
-
-    proc_dump("proc", proc);
-    proc_dump("sfw_root", software_root);
-    dump("phys_base", phys_base);
-    dump("user_base", user_base);
 
     if (!temp_mmu_ready || proc == NULL || software_root == NULL ||
         page_flags == NULL || proc->id == 0 ||
@@ -138,12 +132,9 @@ uint8_t temp_mmu_prepare_user(
         user_base >= (1ULL << 39) || size > (1ULL << 39) - user_base ||
         (user_base & (TEMP_MMU_L2_SIZE - 1)) + size > TEMP_MMU_L2_SIZE)
     {
-        log("8");
 
         return FALSE;
     }
-
-    log("8");
 
     uint16_t id = proc->id;
     if (temp_mmu_id_to_slot[id] != 0xFF)

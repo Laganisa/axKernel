@@ -20,7 +20,7 @@ wcb_t wm_create(
     new_wcb.w = w;
     new_wcb.h = h;
 
-    new_wcb.draw = func;
+    new_wcb.draw = (uint64_t)func;
 
     return new_wcb;
 }
