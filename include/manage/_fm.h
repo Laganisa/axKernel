@@ -12,8 +12,9 @@ typedef struct fcb_t
     // /0 또한 포함
     int8_t alias[MAX_FILE_NAME + 1];
 
-    uint16_t lens : 11; // 파일 길이 (1KB 단위, 최대 1MB)
-    uint16_t fid : 5;   // 파일 id
+    uint16_t checksum : 8; // 체크섬
+    uint16_t fid : 5;      // 파일 id
+    uint16_t padding : 3;  // 파일 id
 
     uint16_t depth : 4;    // 파일 깊이 (0~2)
     uint16_t auth : 10;    // 권한
@@ -24,7 +25,7 @@ typedef struct fcb_t
     uint16_t MM : 4;
     uint16_t DD : 5;
 
-    uint8_t checksum; // 체크섬
+    uint32_t lens; // 파일 길이 (Byte)
 
 } fcb_t;
 

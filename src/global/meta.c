@@ -57,8 +57,7 @@ pcb_t *proc_turn(
 
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + shell_size);
-            uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
-            fcb_t *fil = fm_create(reco, name, alloc_size, 0);
+            fcb_t *fil = fm_create(reco, name, total_size, 0);
 
             new_hdr.image_size = shell_size;
             fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
@@ -73,9 +72,8 @@ pcb_t *proc_turn(
 
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + bridge_size);
-            uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
             dump("total size", total_size);
-            fcb_t *fil = fm_create(reco, name, alloc_size, 0);
+            fcb_t *fil = fm_create(reco, name, total_size, 0);
 
             new_hdr.image_size = bridge_size;
             fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
@@ -91,9 +89,7 @@ pcb_t *proc_turn(
             // ELF 이미지와 FM 헤더를 함께 저장
             uint32_t total_size = (uint32_t)(sizeof(fm_exec_hdr_t) + compiler_size);
             dump("total size", total_size);
-            uint32_t alloc_size = (uint32_t)(((total_size + 4095) / 4096) * 4096);
-
-            fcb_t *fil = fm_create(reco, name, alloc_size, 0);
+            fcb_t *fil = fm_create(reco, name, total_size, 0);
 
             new_hdr.image_size = compiler_size;
             fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
