@@ -10,22 +10,6 @@
 */
 extern uint64_t g_virtio_blk_base;
 
-#define VIRTIO_BLK_STATUS (*(volatile uint32_t *)(g_virtio_blk_base + 0x070))
-
-#define VIRTIO_BLK_HOST_FEATURES_SEL (*(volatile uint32_t *)(g_virtio_blk_base + 0x014))
-#define VIRTIO_BLK_HOST_FEATURES (*(volatile uint32_t *)(g_virtio_blk_base + 0x010))
-
-#define VIRTIO_BLK_GUEST_FEATURES_SEL (*(volatile uint32_t *)(g_virtio_blk_base + 0x024))
-#define VIRTIO_BLK_GUEST_FEATURES (*(volatile uint32_t *)(g_virtio_blk_base + 0x020))
-
-#define VIRTIO_BLK_QUEUE_SEL (*(volatile uint32_t *)(g_virtio_blk_base + 0x030))
-#define VIRTIO_BLK_QUEUE_NUM_MAX (*(volatile uint32_t *)(g_virtio_blk_base + 0x034))
-#define VIRTIO_BLK_QUEUE_NUM (*(volatile uint32_t *)(g_virtio_blk_base + 0x038))
-#define VIRTIO_BLK_QUEUE_ALIGN (*(volatile uint32_t *)(g_virtio_blk_base + 0x03C))
-#define VIRTIO_BLK_QUEUE_PFN (*(volatile uint32_t *)(g_virtio_blk_base + 0x040))
-
-#define VIRTIO_BLK_GUEST_PAGE_SIZE (*(volatile uint32_t *)(g_virtio_blk_base + 0x028))
-
 static unsigned char blk_queue_storage[VIRTIO_QUEUE_STORAGE]
     __attribute__((aligned(4096)));
 static struct virtio_queue_state blk_queue;
@@ -82,6 +66,11 @@ static int blk_submit(
         (cmd != VIRTIO_BLK_T_IN && cmd != VIRTIO_BLK_T_OUT) ||
         (uint64_t)sector >= blk_sector_count)
     {
+        dump("BLK request rejected: cmd", cmd);
+        dump("BLK request rejected: sector", sector);
+        dump("BLK request rejected: ready", blk_is_ready);
+        dump("BLK request rejected: state", blk_req_state);
+        dump("BLK request rejected: capacity", blk_sector_count);
         return FALSE;
     }
 
@@ -137,6 +126,13 @@ static int blk_submit(
     }
 
     uint8_t success = blk_req_state == BLK_REQ_COMPLETE;
+    if (!success)
+    {
+        dump("BLK request status", blk_status);
+        dump("BLK request sector", sector);
+        dump("BLK request type", cmd);
+        dump("BLK request used idx", blk_queue.used->idx);
+    }
     blk_req_state = BLK_REQ_IDLE;
     return success;
 }
@@ -154,6 +150,14 @@ void blk_init(void)
         return;
     }
 
+    uint32_t version = virtio_mmio_version(g_virtio_blk_base);
+    if (version != 1)
+    {
+        dump("BLK VirtIO-MMIO version", version);
+        puts("BLK VirtIO-MMIO v1 required\n");
+        return;
+    }
+
     vq_init(g_virtio_blk_base);
     vq_setup(g_virtio_blk_base, 0, blk_queue_storage, &blk_queue);
     if (blk_queue.size < 3)
@@ -166,11 +170,13 @@ void blk_init(void)
     blk_sector_count =
         (uint64_t)virtio_mmio_read_config32(g_virtio_blk_base, 0) |
         ((uint64_t)virtio_mmio_read_config32(g_virtio_blk_base, 4) << 32);
-    blk_is_ready = blk_sector_count != 0;
-    if (!blk_is_ready)
+    if (blk_sector_count == 0)
     {
         puts("BLK capacity unavailable\n");
+        return;
     }
+
+    blk_is_ready = TRUE;
 }
 
 uint8_t virtio_blk_is_ready(void)

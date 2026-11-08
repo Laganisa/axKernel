@@ -128,20 +128,23 @@ static void axv_tree_build(void)
 
 static uint8_t axv_superblock_valid(const axv_superblock *sb)
 {
-    return (uint8_t)(sb->magic == AXV_MAGIC &&
-                     sb->version == AXV_VERSION &&
-                     sb->sector_size == AXV_SECTOR_SIZE &&
-                     sb->sector_count == AXV_SECTOR_COUNT &&
-                     sb->bitmap_start == AXV_BITMAP_START &&
-                     sb->bitmap_sectors == AXV_BITMAP_SECTORS &&
-                     sb->sll_start == AXV_SLL_START &&
-                     sb->sll_sectors == AXV_SLL_SECTORS &&
-                     sb->data_start == AXV_DATA_START &&
-                     sb->data_start < AXV_SECTOR_COUNT &&
-                     ((sb->metadata_start == AXV_EMPTY && sb->metadata_bytes == 0) ||
-                      (sb->metadata_start >= sb->data_start &&
-                       sb->metadata_start < AXV_SECTOR_COUNT &&
-                       sb->metadata_bytes != 0)));
+
+    uint8_t ret = (sb->magic == AXV_MAGIC &&
+                   sb->version == AXV_VERSION &&
+                   sb->sector_size == AXV_SECTOR_SIZE &&
+                   sb->sector_count == AXV_SECTOR_COUNT &&
+                   sb->bitmap_start == AXV_BITMAP_START &&
+                   sb->bitmap_sectors == AXV_BITMAP_SECTORS &&
+                   sb->sll_start == AXV_SLL_START &&
+                   sb->sll_sectors == AXV_SLL_SECTORS &&
+                   sb->data_start == AXV_DATA_START &&
+                   sb->data_start < AXV_SECTOR_COUNT &&
+                   ((sb->metadata_start == AXV_EMPTY && sb->metadata_bytes == 0) ||
+                    (sb->metadata_start >= sb->data_start &&
+                     sb->metadata_start < AXV_SECTOR_COUNT &&
+                     sb->metadata_bytes != 0)));
+
+    return ret;
 }
 
 static uint8_t axv_write_superblock(void)
@@ -149,10 +152,13 @@ static uint8_t axv_write_superblock(void)
     uint8_t sector[AXV_SECTOR_SIZE] __attribute__((aligned(16)));
     memset(sector, 0, sizeof(sector));
     axv_copy(sector, &axv_sb, sizeof(axv_sb));
-    return axv_write_sector(
+
+    uint8_t ret = axv_write_sector(
         axv_io_context,
         AXV_SUPERBLOCK_SECTOR,
         sector);
+
+    return ret;
 }
 
 static uint8_t axv_flush_metadata(void)
@@ -167,6 +173,7 @@ static uint8_t axv_flush_metadata(void)
                 AXV_SLL_START + i,
                 sll_bytes + (uint64_t)i * AXV_SECTOR_SIZE))
         {
+
             return FALSE;
         }
     }
@@ -187,6 +194,7 @@ static uint8_t axv_flush_metadata(void)
 
 static uint8_t axv_load_metadata(void)
 {
+
     uint8_t sector[AXV_SECTOR_SIZE] __attribute__((aligned(16)));
 
     if (!axv_read_sector(
@@ -194,12 +202,14 @@ static uint8_t axv_load_metadata(void)
             AXV_SUPERBLOCK_SECTOR,
             sector))
     {
+
         return FALSE;
     }
 
     axv_copy(&axv_sb, sector, sizeof(axv_sb));
     if (!axv_superblock_valid(&axv_sb))
     {
+
         return FALSE;
     }
 
@@ -212,6 +222,7 @@ static uint8_t axv_load_metadata(void)
                 AXV_BITMAP_START + i,
                 bitmap_bytes + (uint64_t)i * AXV_SECTOR_SIZE))
         {
+
             return FALSE;
         }
     }
@@ -223,6 +234,7 @@ static uint8_t axv_load_metadata(void)
                 AXV_SLL_START + i,
                 sll_bytes + (uint64_t)i * AXV_SECTOR_SIZE))
         {
+
             return FALSE;
         }
     }
@@ -231,6 +243,7 @@ static uint8_t axv_load_metadata(void)
     {
         if (!axv_sector_is_allocated(i))
         {
+
             return FALSE;
         }
     }
@@ -326,8 +339,10 @@ uint8_t axv_format(
     axv_sector_read_fn read_sector,
     axv_sector_write_fn write_sector)
 {
+
     if (read_sector == NULL || write_sector == NULL)
     {
+
         return FALSE;
     }
 
@@ -360,6 +375,8 @@ uint8_t axv_format(
     axv_is_mounted = TRUE;
     if (!axv_flush_metadata())
     {
+        log("???");
+
         axv_is_mounted = FALSE;
         return FALSE;
     }
@@ -416,6 +433,23 @@ uint8_t axv_unmount(void)
     return TRUE;
 }
 
+uint8_t axv_sync(void)
+{
+    return (uint8_t)(axv_is_mounted && axv_flush_metadata());
+}
+
+uint8_t axv_get_metadata(uint32_t *first_sector, uint32_t *byte_length)
+{
+    if (!axv_is_mounted || first_sector == NULL || byte_length == NULL)
+    {
+        return FALSE;
+    }
+
+    *first_sector = axv_sb.metadata_start;
+    *byte_length = axv_sb.metadata_bytes;
+    return TRUE;
+}
+
 uint8_t axv_set_metadata_chain(uint32_t first_sector, uint32_t byte_length)
 {
     if (!axv_is_mounted)
@@ -441,6 +475,19 @@ uint8_t axv_set_metadata_chain(uint32_t first_sector, uint32_t byte_length)
     return TRUE;
 }
 
+uint8_t axv_check_chain(uint32_t first_sector, uint32_t byte_length)
+{
+    if (!axv_is_mounted)
+    {
+        return FALSE;
+    }
+    if (byte_length == 0)
+    {
+        return (uint8_t)(first_sector == AXV_EMPTY);
+    }
+    return axv_chain_valid(first_sector, byte_length, NULL);
+}
+
 uint32_t axv_create(uint32_t byte_length)
 {
     if (!axv_is_mounted || byte_length == 0)
@@ -452,6 +499,7 @@ uint32_t axv_create(uint32_t byte_length)
         byte_length / AXV_SECTOR_SIZE +
         (byte_length % AXV_SECTOR_SIZE != 0);
     uint32_t free_count = 0;
+
     for (uint32_t i = 0; i < AXV_BITMAP_WORDS; i++)
     {
         free_count += (uint32_t)__builtin_popcountll(~axv_bitmap[i]);
@@ -677,31 +725,55 @@ uint32_t axv_write(
 static uint8_t dsk_fs_vblk_ready(void)
 {
     blk_init();
-    return (uint8_t)(
-        virtio_blk_is_ready() &&
-        virtio_blk_sector_count() >= AXV_SECTOR_COUNT);
+
+    uint8_t ret = (uint8_t)(virtio_blk_is_ready() &&
+                            virtio_blk_sector_count() >= AXV_SECTOR_COUNT);
+
+    return ret;
+}
+
+static uint8_t dsk_fs_vblk_read(
+    void *context,
+    uint32_t sector,
+    void *buffer)
+{
+    (void)context;
+    return virtio_blk_read_sector(sector, buffer);
+}
+
+static uint8_t dsk_fs_vblk_write(
+    void *context,
+    uint32_t sector,
+    const void *buffer)
+{
+    (void)context;
+    return virtio_blk_write_sector(sector, buffer);
 }
 
 uint8_t dsk_fs_format_vblk(void)
 {
+
     if (!dsk_fs_vblk_ready())
     {
         return FALSE;
     }
+
     return axv_format(
         NULL,
-        virtio_blk_read_sector,
-        virtio_blk_write_sector);
+        dsk_fs_vblk_read,
+        dsk_fs_vblk_write);
 }
 
 uint8_t dsk_fs_mount_vblk(void)
 {
     if (!dsk_fs_vblk_ready())
     {
+
         return FALSE;
     }
+
     return axv_mount(
         NULL,
-        virtio_blk_read_sector,
-        virtio_blk_write_sector);
+        dsk_fs_vblk_read,
+        dsk_fs_vblk_write);
 }

@@ -406,5 +406,5 @@ pcb_t *schedule_proc(pcb_t *proc)
         current_proc = next;
     }
 
-    return next;
+    return current_proc;
 }

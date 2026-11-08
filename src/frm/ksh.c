@@ -25,6 +25,8 @@ enum shell_incode
 static stack dir_path;
 static uint8_t path_buf[3];
 
+extern uint8_t global_dsk_mut;
+
 #pragma region shell 내부 함수
 
 static fcb_e *kcurrent_dir(void)
@@ -480,8 +482,63 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 
         // 나중에 디스크 관리
         /*
-
+            dsync
+            dumut
         */
+    // 디스크 동기화 명령
+    case 0x838EBCC27262D6C4:
+
+        if (args[1] != NULL)
+        {
+            kshputs_error("Syntax : file dsync\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        if (!global_dsk_mut)
+        {
+            kshputs_error("Disk is not mounted\n");
+            ret = COMM_ERR;
+            break;
+        }
+
+        if (!fm_dsk_sync())
+        {
+            kshputs_error("Disk synchronization failed\n");
+            ret = COMM_ERR;
+            break;
+        }
+
+        kshputs("Disk synchronized\n");
+        break;
+
+    // 디스크 언마운트 명령
+    case 0xAECB9DF300CC8574:
+
+        if (args[1] != NULL)
+        {
+            kshputs_error("Syntax : file dumut\n");
+            ret = ARGS_ERR;
+            break;
+        }
+
+        if (!global_dsk_mut)
+        {
+            kshputs_error("Disk is not mounted\n");
+            ret = COMM_ERR;
+            break;
+        }
+
+        if (!fm_dsk_unmount())
+        {
+            kshputs_error("Disk unmount failed\n");
+            ret = COMM_ERR;
+            break;
+        }
+
+        global_dsk_mut = FALSE;
+        kshputs("Disk unmounted\n");
+        break;
 
     default:
         kshputs_error("Syntax : file {command} {args}\n");

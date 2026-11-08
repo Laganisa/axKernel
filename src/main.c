@@ -118,7 +118,9 @@ void devo_main(void)
     puts("devo main\n");
 }
 
-#define B_MAIN_FLAG 2
+#define B_MAIN_FLAG 6
+
+uint8_t global_dsk_mut;
 
 void kernel_main(void)
 {
@@ -138,6 +140,23 @@ void kernel_main(void)
     // 관리자 초기화
     mm_init(&mm_stack, USER_PROC_START);
     fm_init((uint64_t *)USER_FILE_START);
+
+#if DEBUG_DSK_FORMAT_FLAG == 1
+    if (!dsk_fs_format_vblk())
+    {
+        puts("DSK format failed\n");
+    }
+#endif
+
+    global_dsk_mut = 1;
+    if (!fm_dsk_mount(fm_record))
+    {
+        global_dsk_mut = 0;
+        puts("DSK filesystem unavailable; continuing with RAM-backed FM\n");
+    }
+
+    dump("gloval", global_dsk_mut);
+
     pm_init();
 
     nm_init();
@@ -250,7 +269,7 @@ void kernel_main(void)
     }
     else if (B_MAIN_FLAG == 6)
     {
-        pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", kshell, 0);
+        pcb_t *proc1 = proc_turn(fm_record, "kshell", kshell, 0);
 
         proc_dump("proc1", proc1);
 

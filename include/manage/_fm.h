@@ -50,14 +50,13 @@ typedef struct fcb_e
     uint16_t auth : 10;   // 권한
     uint16_t dir_num : 6; // 디랙토리 내부 파일 수
 
-    uint16_t dir_dnum : 6; // 디랙토리 내부 폴더 수
-    uint16_t depth : 10;   // 디렉토리 깊이 (0~2)
+    uint16_t dir_dnum : 5; // 디랙토리 내부 폴더 수
+    uint16_t depth : 3;    // 디렉토리 깊이 (0~2)
+    uint16_t checksum : 8; // 체크섬
 
     uint16_t YYYY : 7;
     uint16_t MM : 4;
     uint16_t DD : 5;
-
-    uint8_t checksum; // 체크섬
 
 } fcb_e;
 
@@ -95,6 +94,75 @@ typedef struct fm_exec_hdr_t
     uint64_t image_size;
 
 } fm_exec_hdr_t;
+
+// Fixed-width records used by the on-disk FM metadata stream.
+typedef struct __attribute__((packed)) pack_fcb_t
+{
+    int8_t alias[MAX_FILE_NAME + 1];
+
+    uint8_t checksum;
+    uint8_t depth;
+    uint16_t auth;
+    uint16_t YYYMMDD;
+
+    uint32_t lens; // 파일 길이 (Byte)
+    uint32_t dsk_id;
+
+} pack_fcb_t;
+
+typedef struct __attribute__((packed)) pack_fcb_e
+{
+    int8_t alias[MAX_FILE_NAME + 1];
+
+    uint8_t dir_num;
+    uint8_t dir_dnum;
+    uint16_t auth;
+    uint32_t dsk_id;
+    uint8_t checksum;
+    uint16_t YYYMMDD;
+
+} pack_fcb_e;
+
+typedef struct __attribute__((packed)) fm_pack_header
+{
+    uint32_t magic;
+    uint16_t version;
+    uint16_t header_size;
+    uint32_t stream_size;
+    uint16_t file_count;
+    uint16_t dir_count;
+    uint8_t root_file_count;
+    uint8_t root_dir_count;
+} fm_pack_header;
+
+typedef struct fm_pack_context
+{
+    FMv3_record *reco;
+    uint8_t *buffer;
+    uint32_t capacity;
+    uint32_t offset;
+    uint16_t file_count;
+    uint16_t dir_count;
+    uint8_t seen_files[MAX_FILE_NUM];
+    uint8_t seen_dirs[MAX_DIR_NUM];
+} fm_pack_context;
+
+typedef struct fm_unpack_context
+{
+    FMv3_record *reco;
+    const uint8_t *buffer;
+    uint32_t size;
+    uint32_t offset;
+    uint16_t file_count;
+    uint16_t dir_count;
+} fm_unpack_context;
+
+#define FM_PACK_MAGIC 0x314D4641U
+#define FM_PACK_VERSION 1U
+#define FM_PACK_BUFFER_SIZE                    \
+    (sizeof(fm_pack_header) +                  \
+     (MAX_FILE_NUM - 1) * sizeof(pack_fcb_t) + \
+     (MAX_DIR_NUM - 2) * sizeof(pack_fcb_e))
 
 #define fm_record ((FMv3_record *)FM_ADDR_START)
 
@@ -156,5 +224,24 @@ uint8_t fm_dir_out(
     FMv3_record *reco,
     fcb_e *dir,
     uint16_t file_id);
+
+// Serializes preorder records into caller-owned memory; returns zero on failure.
+uint32_t fm_pack(
+    FMv3_record *reco,
+    uint8_t *buffer,
+    uint32_t capacity);
+
+// Restores into an FM record initialized by fm_init with an empty root.
+uint8_t fm_unpack(
+    FMv3_record *reco,
+    const uint8_t *buffer,
+    uint32_t size);
+
+uint8_t fm_dsk_mount(FMv3_record *reco);
+uint8_t fm_dsk_sync(void);
+uint8_t fm_dsk_unmount(void);
+uint8_t fm_dsk_ready(void);
+uint8_t fm_dsk_retire(uint32_t first_sector, uint32_t byte_length);
+void fm_dsk_cancel_retire(uint32_t first_sector, uint32_t byte_length);
 
 #endif

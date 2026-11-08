@@ -24,9 +24,12 @@ uint8_t axv_mount(
     axv_sector_read_fn read_sector,
     axv_sector_write_fn write_sector);
 uint8_t axv_unmount(void);
+uint8_t axv_sync(void);
+uint8_t axv_get_metadata(uint32_t *first_sector, uint32_t *byte_length);
 uint8_t axv_set_metadata_chain(uint32_t first_sector, uint32_t byte_length);
 uint32_t axv_create(uint32_t byte_length);
 uint8_t axv_delete(uint32_t first_sector, uint32_t byte_length);
+uint8_t axv_check_chain(uint32_t first_sector, uint32_t byte_length);
 uint32_t axv_find(
     uint32_t first_sector,
     uint32_t byte_length,
