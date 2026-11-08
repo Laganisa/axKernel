@@ -3,9 +3,7 @@
 
 #include "manage/_fm.h"
 #include "global/_io.h"
-
-extern uint32_t io_console_line;
-extern uint32_t io_console_xpixel;
+#include "manage/_wm.h"
 
 enum edt_mode
 {

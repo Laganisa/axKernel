@@ -683,9 +683,10 @@ static uint64_t disk_store_call(
 
 #pragma endregion
 
-#pragma region
+#pragma region gui_call
 
-static uint64_t gui_rect_call(
+// 픽셀 그리는 함수
+static uint64_t gui_pixel_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -699,6 +700,8 @@ static uint64_t gui_rect_call(
     */
     // TODO:
 }
+
+// 선 그리는 함수
 static uint64_t gui_line_call(
     uint64_t arg1,
     uint64_t arg2,
@@ -713,7 +716,67 @@ static uint64_t gui_line_call(
     */
     // TODO:
 }
-static uint64_t gui_pixel_call(
+
+// 사각형 그리기
+static uint64_t gui_rect_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+
+    uint32_t x = (uint32_t)arg1;
+    uint32_t y = (uint32_t)arg1;
+    uint32_t w = (uint32_t)arg1;
+    uint32_t h = (uint32_t)arg1;
+
+    uint32_t color = (uint32_t)arg1;
+
+    // wm 함수 호출
+}
+
+// 글씨 그려주는 함수
+static uint64_t gui_ltr_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+// 화면 초기화 함수
+static uint64_t gui_clear_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+// 이미지 콜
+// TODO: 아직 개발중
+static uint64_t gui_image_call(
     uint64_t arg1,
     uint64_t arg2,
     uint64_t arg3,
@@ -816,12 +879,14 @@ static uint64_t (*call_table[64])(
     [SYS_RESERVED53] = reserved_call,
     [SYS_RESERVED54] = reserved_call,
     [SYS_RESERVED55] = reserved_call,
-    [SYS_RESERVED56] = reserved_call,
-    [SYS_RESERVED57] = reserved_call,
-    [SYS_RESERVED58] = reserved_call,
-    [SYS_RESERVED59] = reserved_call,
-    [SYS_RESERVED60] = reserved_call,
-    [SYS_RESERVED61] = reserved_call,
+
+    /* Gui */
+    [SYS_GUI_PIXEL] = gui_pixel_call,
+    [SYS_GUI_LINE] = gui_line_call,
+    [SYS_GUI_RECT] = gui_rect_call,
+    [SYS_GUI_LTR] = gui_ltr_call,
+    [SYS_GUI_CLEAR] = gui_clear_call,
+    [SYS_GUI_IMAGE] = gui_image_call,
     [SYS_RESERVED62] = reserved_call,
     [SYS_RESERVED63] = reserved_call,
 };
@@ -834,7 +899,6 @@ uint64_t svc_a64_handle(
     uint64_t arg4,
     uint64_t arg5)
 {
-
     if (syscall_num < 64 && call_table[syscall_num] != NULL)
     {
         uint64_t ret = call_table[syscall_num](

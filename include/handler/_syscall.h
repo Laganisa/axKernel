@@ -82,16 +82,27 @@
 #define SYS_RESERVED54 54
 #define SYS_RESERVED55 55
 
+// 그래픽 시스템 콜
+
+#define SYS_GUI_PIXEL 56
+#define SYS_GUI_LINE 57
+#define SYS_GUI_RECT 58
+#define SYS_GUI_LTR 59
+#define SYS_GUI_CLEAR 60
+#define SYS_GUI_IMAGE 61
+#define SYS_RESERVED62 62
+#define SYS_RESERVED63 63
+
 // 아직 만들지 않은 시스템 콜들
 // ! 생각만 하고 있음
 
-#define SYS_RESERVED56 56
-#define SYS_RESERVED57 57
-#define SYS_RESERVED58 58
-#define SYS_RESERVED59 59
-#define SYS_RESERVED60 60
-#define SYS_RESERVED61 61
-#define SYS_RESERVED62 62
-#define SYS_RESERVED63 63
+#define SYS_RESERVED64 64
+#define SYS_RESERVED65 65
+#define SYS_RESERVED66 66
+#define SYS_RESERVED67 67
+#define SYS_RESERVED68 68
+#define SYS_RESERVED69 69
+#define SYS_RESERVED70 70
+#define SYS_RESERVED71 71
 
 #endif

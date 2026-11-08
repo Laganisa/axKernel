@@ -1,11 +1,7 @@
 #include "frm/kedt.h"
 #include "global/_io.h"
 #include "manage/_gm.h"
-
-static uint16_t kedtputs(const char *s)
-{
-    return io_puts_color(s, 0xFFFFFFFF);
-}
+#include "manage/_wm.h"
 
 // ! 지우기 만들기
 
@@ -19,8 +15,8 @@ void kedt(fcb_t *file)
     uint32_t edt_offset;
     uint8_t mode = M_MODE;
 
-    uint32_t now_console_y = io_console_line;
-    uint32_t now_console_x = io_console_xpixel;
+    uint32_t now_console_y = wm_console_line;
+    uint32_t now_console_x = wm_console_xpixel;
 
     while (1)
     {
@@ -34,20 +30,20 @@ void kedt(fcb_t *file)
         for (int i = 0; i < 10; i++)
         {
             uint32_t up = fm_read(fm_record, file, file_buf, 63, view_offset);
-            kedtputs(file_buf);
+            wputs(file_buf);
             view_offset += up;
         }
 
         // 읽은 위치에 edt_offset을 넣기
-        ltr(io_console_xpixel, io_console_line, '_');
+        ltr(wm_console_xpixel, wm_console_line, '_');
 
         /*
             명령 입력
         */
 
         // 명령 입력 위치 선정
-        io_console_line = 10;
-        io_console_xpixel = 5;
+        wm_console_line = 10;
+        wm_console_xpixel = 5;
 
         // 어디 위치인지 쓰고
 
@@ -107,6 +103,6 @@ void kedt(fcb_t *file)
 
 quit:
     // 복구하기
-    io_console_line = now_console_y;
-    io_console_xpixel = now_console_x;
+    wm_console_line = now_console_y;
+    wm_console_xpixel = now_console_x;
 }

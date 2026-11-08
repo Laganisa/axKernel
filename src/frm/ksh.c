@@ -2,6 +2,7 @@
 #include "frm/kedt.h"
 #include "global/_io.h"
 #include "global/_meta.h"
+#include "manage/_wm.h"
 
 enum shell_ret
 {
@@ -45,14 +46,9 @@ static fcb_e *kcurrent_dir(void)
     return &(fm_record->FMv3_dir_mem[dir_id]);
 }
 
-static uint16_t kshputs(const char *s)
-{
-    return io_puts_color(s, 0xFFFFFFFF);
-}
-
 static uint16_t kshputs_error(const char *s)
 {
-    return io_puts_color(s, 0xFFFF0000);
+    return wputs_color(s, 0xFFFF0000);
 }
 
 static void fput_uint(uint64_t n)
@@ -69,16 +65,15 @@ static void fput_uint(uint64_t n)
         buf[i--] = (n % 10) + '0';
         n /= 10;
     }
-    io_puts_color(&buf[i + 1], 0xFFFFFFFF);
-    // kshputs(&buf[i + 1]);
+    wputs((const char *)&buf[i + 1]);
 }
 
 // 현재 작업 경로를 나타내는 로직
 // 스택에 저장된 경로 요소를 루트부터 출력
 static void kpath()
 {
-    kshputs("ax:");
-    kshputs("/");
+    wputs("ax:");
+    wputs("/");
 
     for (uint32_t i = 0; i < dir_path.count; i++)
     {
@@ -91,11 +86,11 @@ static void kpath()
 
         if (i != 0)
         {
-            kshputs("/");
+            wputs("/");
         }
-        kshputs((const char *)fm_record->FMv3_dir_mem[dir_id].alias);
+        wputs((const char *)fm_record->FMv3_dir_mem[dir_id].alias);
     }
-    kshputs("> ");
+    wputs("> ");
 }
 
 #pragma endregion
@@ -203,26 +198,26 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
             break;
         }
 
-        kshputs("file name : ");
-        kshputs((const char *)now_fcb->alias);
-        kshputs("\n");
-        kshputs("file len(B): ");
+        wputs("file name : ");
+        wputs((const char *)now_fcb->alias);
+        wputs("\n");
+        wputs("file len(B): ");
         fput_uint((uint64_t)now_fcb->lens);
-        kshputs("\n");
-        kshputs("file id: ");
+        wputs("\n");
+        wputs("file id: ");
         fput_uint((uint64_t)now_fcb->fid);
-        kshputs("\n");
-        kshputs("file auth : ");
+        wputs("\n");
+        wputs("file auth : ");
         fput_uint((uint64_t)now_fcb->auth);
-        kshputs("\n");
+        wputs("\n");
 
-        kshputs("YYYY : ");
+        wputs("YYYY : ");
         fput_uint((uint64_t)now_fcb->YYYY);
-        kshputs("  MM : ");
+        wputs("  MM : ");
         fput_uint((uint64_t)now_fcb->MM);
-        kshputs("  DD : ");
+        wputs("  DD : ");
         fput_uint((uint64_t)now_fcb->DD);
-        kshputs("\n");
+        wputs("\n");
         break;
 
     // 파일의 디렉토리간 이동
@@ -321,16 +316,16 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
             break;
         }
 
-        kshputs("dir name : ");
-        kshputs((const char *)now_dir_fcb->alias);
-        kshputs("\n");
+        wputs("dir name : ");
+        wputs((const char *)now_dir_fcb->alias);
+        wputs("\n");
 
-        kshputs("dir id: ");
+        wputs("dir id: ");
         fput_uint((uint64_t)now_dir_fcb->fid);
-        kshputs("\n");
-        kshputs("dir auth : ");
+        wputs("\n");
+        wputs("dir auth : ");
         fput_uint((uint64_t)now_dir_fcb->auth);
-        kshputs("\n");
+        wputs("\n");
 
         if (now_dir_fcb->dir_num == 0)
         {
@@ -338,19 +333,19 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         }
         else
         {
-            kshputs("files\n");
-            kshputs("----------\n");
+            wputs("files\n");
+            wputs("----------\n");
             for (int i = 0; i < now_dir_fcb->dir_num; i++)
             {
                 uint32_t file_pos = now_dir_fcb->files[i];
                 fcb_t *now_file = &(fm_record->FMv3_mem[file_pos]);
-                kshputs("name : ");
-                kshputs((const char *)now_file->alias);
-                kshputs("  auth : ");
+                wputs("name : ");
+                wputs((const char *)now_file->alias);
+                wputs("  auth : ");
                 fput_uint((uint64_t)now_file->auth);
-                kshputs("\n");
+                wputs("\n");
             }
-            kshputs("----------\n");
+            wputs("----------\n");
         }
 
         if (now_dir_fcb->dir_dnum == 0)
@@ -359,28 +354,28 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         }
         else
         {
-            kshputs("\ndirs\n");
-            kshputs("----------\n");
+            wputs("\ndirs\n");
+            wputs("----------\n");
             for (int i = 0; i < now_dir_fcb->dir_dnum; i++)
             {
                 uint32_t dir_pos = now_dir_fcb->dirs[i];
                 fcb_e *now_dir = &(fm_record->FMv3_dir_mem[dir_pos]);
-                kshputs("dir name : ");
-                kshputs((const char *)now_dir->alias);
-                kshputs("  auth : ");
+                wputs("dir name : ");
+                wputs((const char *)now_dir->alias);
+                wputs("  auth : ");
                 fput_uint((uint64_t)now_dir->auth);
-                kshputs("\n");
+                wputs("\n");
             }
-            kshputs("----------\n");
+            wputs("----------\n");
         }
 
-        kshputs("YYYY : ");
+        wputs("YYYY : ");
         fput_uint((uint64_t)now_dir_fcb->YYYY);
-        kshputs("  MM : ");
+        wputs("  MM : ");
         fput_uint((uint64_t)now_dir_fcb->MM);
-        kshputs("  DD : ");
+        wputs("  DD : ");
         fput_uint((uint64_t)now_dir_fcb->DD);
-        kshputs("\n");
+        wputs("\n");
         break;
 
     // 디렉토리의 디렉토리간 이동
@@ -509,7 +504,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
             break;
         }
 
-        kshputs("Disk synchronized\n");
+        wputs("Disk synchronized\n");
         break;
 
     // 디스크 언마운트 명령
@@ -537,7 +532,7 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
         }
 
         global_dsk_mut = FALSE;
-        kshputs("Disk unmounted\n");
+        wputs("Disk unmounted\n");
         break;
 
     default:
@@ -550,6 +545,8 @@ static uint8_t file_split(char **args, fcb_e *current_dir, uint8_t depth)
 }
 
 #pragma endregion
+
+#pragma region 시스템
 
 // 시스템 처리
 // 사실 잡다한 것들 용도
@@ -610,6 +607,8 @@ static uint8_t sys_split(char **args)
 
     return ret;
 }
+
+#pragma endregion
 
 // 프롬포트를 분리하는 로직
 static void ksplit(char *args)
@@ -699,8 +698,6 @@ check:
             i++;
         }
     }
-
-#pragma endregion
 
     // 리턴 변수 받는 부분
     uint8_t ret = UNKNOW_ERR;

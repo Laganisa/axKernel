@@ -274,6 +274,7 @@ void kernel_main(void)
         proc_dump("proc1", proc1);
 
         current_proc = proc1;
+
         _proc(proc1);
     }
     else

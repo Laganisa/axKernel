@@ -31,13 +31,10 @@ enum io_key_code
 void uart_init(void);
 void putchar(int8_t c);
 void puts(const int8_t *s);
-/* Keyboard special keys return IO_KEY_*; ordinary input retains ASCII values. */
+/* Read one character from the UART. */
 int8_t getchar(void);
+/* Read a line from the UART, echoing input back to the UART. */
 void gets(int8_t *s, int32_t max_len);
-uint16_t io_puts_color(const char *s, uint32_t color);
-
-extern uint32_t io_console_line;
-extern uint32_t io_console_xpixel;
 
 void put_hex(uint64_t d);
 void put_uint(uint64_t n);
