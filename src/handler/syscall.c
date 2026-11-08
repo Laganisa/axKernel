@@ -683,6 +683,53 @@ static uint64_t disk_store_call(
 
 #pragma endregion
 
+#pragma region
+
+static uint64_t gui_rect_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+static uint64_t gui_line_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+static uint64_t gui_pixel_call(
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5)
+{
+    /*
+        dump("arg1", arg1);
+        dump("arg2", arg2);
+        dump("arg3", arg3);
+    */
+    // TODO:
+}
+
+#pragma endregion
+
 static uint64_t reserved_call(
     uint64_t arg1,
     uint64_t arg2,

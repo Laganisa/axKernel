@@ -351,7 +351,20 @@ pcb_t *mata_exec_file(
         return NULL;
     }
 
+    if (file->lens < sizeof(fm_exec_hdr_t) ||
+        file->lens > MAX_FILE_SIZE)
+    {
+        dump("invalid executable length", file->lens);
+        return NULL;
+    }
+
     hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
+    if (fm_dsk_ready() &&
+        fm_read(reco, file, hdr, file->lens, 0) != file->lens)
+    {
+        log("executable read error");
+        return NULL;
+    }
 
     if (hdr->magic != FM_EXEC_MAGIC)
     {
