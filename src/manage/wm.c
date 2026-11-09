@@ -4,8 +4,11 @@
 #include "global/_io.h"
 #include "tools/_virtio.h"
 #include "tools/_font.h"
+#include "handler/_irq.h"
 
-#pragma region 화면내부
+extern pcb_t *get_current_proc_addr(void);
+
+#pragma region 화면 내부
 
 uint32_t wm_console_line;
 uint32_t wm_console_xpixel;
@@ -73,12 +76,103 @@ static void wm_console_flush_run(
 }
 #endif
 
+static uint16_t wm_console_puts_color(const char *s, uint32_t color);
+
+static void wm_compact_strings(void)
+{
+    uint32_t offset = 0;
+    for (uint8_t i = 0; i < wm_slot->cmd_cnt; ++i)
+    {
+        gui_cmd_t *cmd = &wm_slot->cmd_arr[i];
+        uint16_t len = cmd->len;
+        const char *source = cmd->str;
+
+        for (uint32_t j = 0; j <= len; ++j)
+        {
+            wm_slot->str_buf[offset + j] = source[j];
+        }
+        cmd->str = &wm_slot->str_buf[offset];
+        offset += (uint32_t)len + 1;
+    }
+}
+
+static uint16_t wm_queue_puts(const char *s, uint32_t color, uint8_t pcb_id)
+{
+    wm_compact_strings();
+
+    uint32_t string_used = 0;
+    for (uint8_t i = 0; i < wm_slot->cmd_cnt; ++i)
+    {
+        string_used += (uint32_t)wm_slot->cmd_arr[i].len + 1;
+    }
+
+    uint32_t available = sizeof(wm_slot->str_buf) - string_used;
+    uint32_t len = 0;
+    while (len < available && s[len] != '\0')
+    {
+        ++len;
+    }
+    if (len == available || wm_slot->cmd_cnt >= WM_CMD_QUEUE_SIZE)
+    {
+        return 0;
+    }
+
+    gui_cmd_t *cmd = &wm_slot->cmd_arr[wm_slot->cmd_cnt];
+    cmd->type = WM_CMD_PUTS;
+    cmd->pcb_id = pcb_id;
+    cmd->color = color;
+    cmd->len = (uint16_t)len;
+    cmd->str = &wm_slot->str_buf[string_used];
+
+    for (uint32_t i = 0; i <= len; ++i)
+    {
+        wm_slot->str_buf[string_used + i] = s[i];
+    }
+    ++wm_slot->cmd_cnt;
+    return 1;
+}
+
+static uint16_t wm_puts_color(const char *s, uint32_t color)
+{
+    if (s == NULL)
+    {
+        puts("Window output string is null\n");
+        return 0;
+    }
+
+    pcb_t *now_pcb = get_current_proc_addr();
+
+    uint8_t wm_id = wm_slot->now_pcb_id;
+
+    // 활성 창이라면 그리기
+    if (now_pcb == NULL || now_pcb->id == wm_id)
+    {
+        return wm_console_puts_color(s, color);
+    }
+
+    // 활성창이 아니라면 큐에 넣기
+    // 명령 큐가 있다 가정
+
+    // 만약 큐 크기가 다 차면 0을 리턴
+
+    // 문자열을 wm_slot str buf에 복사하고 그 주소를 저장하기
+
+    // 명령 큐에 넣기
+
+    return wm_queue_puts(s, color, now_pcb->id);
+}
+
 uint16_t wputs(const char *s)
 {
-    return wputs_color(s, 0xFFFFFFFF);
+    return wm_puts_color(s, 0xFFFFFFFF);
 }
 
 uint16_t wputs_color(const char *s, uint32_t color)
+{
+    return wm_puts_color(s, color);
+}
+
+static uint16_t wm_console_puts_color(const char *s, uint32_t color)
 {
     if (s == NULL)
     {
@@ -242,9 +336,14 @@ int32_t wget(char *s, int32_t max_len)
 
 #pragma endregion
 
+#pragma region 화면 외부
+
 // 윈도우 슬롯 초기화
 void wm_init()
 {
+    wm_slot->now_pcb_id = 0;
+    wm_slot->cnt = 0;
+    wm_slot->cmd_cnt = 0;
 }
 
 // 새로운 창 생성
@@ -270,9 +369,42 @@ wcb_t wm_create(
 // 창 교체
 void wm_switch()
 {
+    gui_cmd_t pending[WM_CMD_QUEUE_SIZE];
+    uint8_t pending_count = 0;
+    uint8_t active_pcb_id = wm_slot->now_pcb_id;
+
+    for (uint8_t i = 0; i < wm_slot->cmd_cnt; ++i)
+    {
+        gui_cmd_t cmd = wm_slot->cmd_arr[i];
+        if (cmd.type == WM_CMD_PUTS && cmd.pcb_id == active_pcb_id)
+        {
+            wm_console_puts_color(cmd.str, cmd.color);
+        }
+        else
+        {
+            pending[pending_count++] = cmd;
+        }
+    }
+
+    wm_slot->cmd_cnt = pending_count;
+    uint32_t string_used = 0;
+    for (uint8_t i = 0; i < pending_count; ++i)
+    {
+        uint16_t len = pending[i].len;
+        const char *source = pending[i].str;
+        for (uint32_t j = 0; j <= len; ++j)
+        {
+            wm_slot->str_buf[string_used + j] = source[j];
+        }
+        pending[i].str = &wm_slot->str_buf[string_used];
+        wm_slot->cmd_arr[i] = pending[i];
+        string_used += (uint32_t)len + 1;
+    }
 }
 
 // 창 삭제
 void wm_delate()
 {
 }
+
+#pragma endregion
