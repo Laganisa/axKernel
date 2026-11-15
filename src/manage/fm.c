@@ -61,6 +61,8 @@ fcb_t *fm_create(
         }
     }
 
+    log("this?");
+
     uint16_t file_id = reco->all_file_num;
     if (bpt_insert(reco->root, name, file_id) == 0)
     {
@@ -70,6 +72,8 @@ fcb_t *fm_create(
         }
         return NULL;
     }
+
+    log("is this?");
 
     fcb_t *new_file = &reco->FMv3_mem[file_id];
     memset(new_file, 0, sizeof(*new_file));
@@ -341,10 +345,14 @@ uint32_t fm_write(
     uint32_t size,
     uint32_t offset)
 {
+
+    enter("fM_write");
+
     if (reco == NULL || file == NULL || !file->is_alloc ||
         (buf == NULL && size != 0) || size == 0 ||
         size > (uint32_t)-1 - offset)
     {
+        log("err");
         return 0;
     }
 
@@ -352,13 +360,18 @@ uint32_t fm_write(
     uint32_t end = offset + size;
     if (end > MAX_FILE_SIZE)
     {
+        log("MAX_FILE_SIZE");
         return 0;
     }
+
+    log("aaaa");
 
     if (!fm_dsk_ready() && file->dsk_id != AXV_EMPTY)
     {
         return 0;
     }
+
+    log("aaaa");
 
     if (fm_dsk_ready())
     {
@@ -410,11 +423,16 @@ uint32_t fm_write(
             size);
     }
 
+    log("aaaa");
+
     if (offset > file_size)
     {
         memset((uint8_t *)fm_data_addr(reco, file) + file_size, 0, offset - file_size);
     }
     uint8_t *dst_addr = (uint8_t *)fm_data_addr(reco, file) + offset;
+
+    dump("eddd", dst_addr);
+
     memcpy(dst_addr, (uint8_t *)buf, size);
     if (end > file_size)
     {

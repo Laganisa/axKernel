@@ -105,8 +105,25 @@ pcb_t *proc_turn(
     }
 
     // 기본 동작
-    fcb_t *fil = fm_create(reco, name, 1024, 0);
-    fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
+    fcb_t *fil = fm_find(reco, (char *)name);
+    if (fil == NULL)
+    {
+        fil = fm_create(reco, (char *)name, 1024, 0);
+    }
+    dump("oo", (uint64_t)(uintptr_t)fil);
+    if (fil == NULL)
+    {
+        log("Direct executable file creation failed");
+        return NULL;
+    }
+
+    uint32_t written = fm_write(reco, fil, &new_hdr, sizeof(fm_exec_hdr_t), 0);
+    if (written != sizeof(new_hdr))
+    {
+        dump("Direct executable header write failed", written);
+        return NULL;
+    }
+
     return mata_exec_file(reco, pm_object, name, 0);
 }
 
@@ -149,6 +166,8 @@ static pcb_t *elf_load_image(
     dump("image", (uint64_t)image);
     dump("image_size", (uint64_t)image_size);
     */
+
+    enter("elf_load_image");
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 
@@ -323,7 +342,10 @@ static pcb_t *elf_load_image(
         return 0;
     }
 
+    dump("a", TEMP_MM_USER_BASE + entry_offset);
+
     proc->regs.elr_el1 = TEMP_MM_USER_BASE + entry_offset;
+
     proc->regs.sp = TEMP_MM_USER_BASE + process_size;
     proc->heap_start = TEMP_MM_USER_BASE + (heap_start - real_addr);
     proc->heap_break = proc->heap_start;
@@ -340,6 +362,8 @@ pcb_t *mata_exec_file(
     int8_t path[27],
     uint8_t parid)
 {
+
+    enter("mata_exec_file");
 
     fcb_t *file = fm_find(reco, path);
 
@@ -359,6 +383,9 @@ pcb_t *mata_exec_file(
     }
 
     hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
+
+    dump("ddd", (uint64_t)(uintptr_t)hdr);
+
     if (fm_dsk_ready() &&
         fm_read(reco, file, hdr, file->lens, 0) != file->lens)
     {
@@ -375,7 +402,10 @@ pcb_t *mata_exec_file(
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
-        return pm_create(obj, hdr->entry, parid);
+        dump("a", hdr->entry);
+
+        pcb_t *proc = pm_create(obj, hdr->entry, parid);
+        return proc;
     }
 
     if (hdr->mode == FM_EXEC_MODE_IMAGE)

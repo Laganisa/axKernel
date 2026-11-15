@@ -115,6 +115,8 @@ pcb_t *pm_create(
     // new_proc->regs.spsr = (entry == 0) ? 0x3c0 : 0x3c5;        // 인셉션 레벨 분기
     new_proc->regs.spsr = (entry == 0) ? 0x340 : 0x3c5; // 인셉션 레벨 분기
 
+    dump("elr_el1", entry);
+
     return new_proc;
 }
 
