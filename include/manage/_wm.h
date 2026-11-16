@@ -60,6 +60,7 @@ extern uint32_t wm_console_line;
 extern uint32_t wm_console_xpixel;
 
 wcb_t wm_create(
+    uint8_t pcb_id,
     uint32_t x,
     uint32_t y,
     uint32_t w,

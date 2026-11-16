@@ -1,0 +1,7 @@
+#include "manage/_gm.h"
+#include "manage/_wm.h"
+#include "global/_debug.h"
+#include "global/_io.h"
+#include "tools/_virtio.h"
+#include "tools/_font.h"
+#include "handler/_irq.h"

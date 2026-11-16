@@ -113,4 +113,13 @@ uint16_t ltrs_color(uint32_t x,
                     uint32_t y,
                     const char *string,
                     uint32_t color);
+uint16_t ltrs_color_clip(
+    uint32_t x,
+    uint32_t y,
+    const char *string,
+    uint32_t color,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height);
 #endif

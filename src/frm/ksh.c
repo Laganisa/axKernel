@@ -774,8 +774,6 @@ void kshell(void)
 {
     enable_irq();
 
-    wm_create(0, 0, 200, 200, NULL);
-    // wm_switch();
     // 경로 설정
     stack_init(&dir_path, path_buf, sizeof(path_buf));
     fcb_e *root_dir = fm_dir_find(fm_record, "root");

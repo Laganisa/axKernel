@@ -276,6 +276,9 @@ void kernel_main(void)
         proc_dump("proc1", proc1);
 
         current_proc = proc1;
+#if DEBUG_DISPLAY_FLAG == 1
+        wm_create(proc1->id, 0, 0, 200, 200, NULL);
+#endif
 
         _proc(proc1);
     }

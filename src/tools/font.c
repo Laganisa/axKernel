@@ -1092,7 +1092,14 @@ void ltr(uint32_t x,
         {
             if ((glyph[row] >> (7 - col)) & 1)
             {
-                gm_pixel(x + col, y + row, 0xFFFFFFFF);
+                gm_pixel(
+                    x + col,
+                    y + row,
+                    0xFFFFFFFF,
+                    0,
+                    0,
+                    gpu_display_width,
+                    gpu_display_height);
             }
         }
     }
@@ -1119,6 +1126,27 @@ uint16_t ltrs_color(uint32_t x,
                     uint32_t y,
                     const char *string,
                     uint32_t color)
+{
+    return ltrs_color_clip(
+        x,
+        y,
+        string,
+        color,
+        0,
+        0,
+        gpu_display_width,
+        gpu_display_height);
+}
+
+uint16_t ltrs_color_clip(
+    uint32_t x,
+    uint32_t y,
+    const char *string,
+    uint32_t color,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height)
 {
     size_t len = kstrlen(string);
     uint16_t newline_count = 0;
@@ -1185,7 +1213,14 @@ uint16_t ltrs_color(uint32_t x,
             {
                 if ((glyph[row] >> (7 - col)) & 1)
                 {
-                    gm_pixel(line_x + col, line_y + row, color);
+                    gm_pixel(
+                        line_x + col,
+                        line_y + row,
+                        color,
+                        clip_x,
+                        clip_y,
+                        clip_width,
+                        clip_height);
                 }
             }
         }

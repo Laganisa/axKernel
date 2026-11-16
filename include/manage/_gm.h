@@ -6,7 +6,14 @@
 #include "tools/_font.h"
 #include "_sect.h"
 
-void gm_pixel(uint32_t x, uint32_t y, uint32_t color);
+void gm_pixel(
+    uint32_t x,
+    uint32_t y,
+    uint32_t color,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height);
 
 void gm_full(uint32_t color);
 
@@ -15,7 +22,11 @@ void gm_rect(
     uint32_t y,
     uint32_t width,
     uint32_t height,
-    uint32_t color);
+    uint32_t color,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height);
 
 /* Copies the rectangle between inclusive corner coordinates. */
 void gm_copy(
@@ -31,6 +42,10 @@ void gm_line(
     uint32_t y1,
     uint32_t x2,
     uint32_t y2,
-    uint32_t color);
+    uint32_t color,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height);
 
 #endif

@@ -12,15 +12,96 @@ static uint32_t gm_clipboard_height;
 void gm_pixel(
     uint32_t x,
     uint32_t y,
-    uint32_t color)
+    uint32_t color,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height)
 {
     if (x >= gpu_display_width ||
         y >= gpu_display_height)
     {
         return;
     }
+    if (clip_x >= gpu_display_width ||
+        clip_y >= gpu_display_height ||
+        x < clip_x ||
+        y < clip_y ||
+        x - clip_x >= clip_width ||
+        y - clip_y >= clip_height)
+    {
+        return;
+    }
 
     gpu_framebuffer[y * gpu_display_width + x] = color;
+}
+
+static int gm_clip_rect(
+    uint32_t *x,
+    uint32_t *y,
+    uint32_t *width,
+    uint32_t *height,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height)
+{
+    if (clip_x >= gpu_display_width ||
+        clip_y >= gpu_display_height ||
+        *x >= gpu_display_width ||
+        *y >= gpu_display_height ||
+        *width == 0 ||
+        *height == 0)
+    {
+        return 0;
+    }
+
+    if (*width > gpu_display_width - *x)
+    {
+        *width = gpu_display_width - *x;
+    }
+    if (*height > gpu_display_height - *y)
+    {
+        *height = gpu_display_height - *y;
+    }
+    if (clip_width > gpu_display_width - clip_x)
+    {
+        clip_width = gpu_display_width - clip_x;
+    }
+    if (clip_height > gpu_display_height - clip_y)
+    {
+        clip_height = gpu_display_height - clip_y;
+    }
+
+    uint32_t right = *x + *width;
+    uint32_t bottom = *y + *height;
+    uint32_t clip_right = clip_x + clip_width;
+    uint32_t clip_bottom = clip_y + clip_height;
+
+    if (*x < clip_x)
+    {
+        *x = clip_x;
+    }
+    if (*y < clip_y)
+    {
+        *y = clip_y;
+    }
+    if (right > clip_right)
+    {
+        right = clip_right;
+    }
+    if (bottom > clip_bottom)
+    {
+        bottom = clip_bottom;
+    }
+    if (right <= *x || bottom <= *y)
+    {
+        return 0;
+    }
+
+    *width = right - *x;
+    *height = bottom - *y;
+    return 1;
 }
 
 void gm_full(uint32_t color)
@@ -49,23 +130,23 @@ void gm_rect(
     uint32_t y,
     uint32_t width,
     uint32_t height,
-    uint32_t color)
+    uint32_t color,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height)
 {
-    if (x >= gpu_display_width ||
-        y >= gpu_display_height ||
-        width == 0 ||
-        height == 0)
+    if (!gm_clip_rect(
+            &x,
+            &y,
+            &width,
+            &height,
+            clip_x,
+            clip_y,
+            clip_width,
+            clip_height))
     {
         return;
-    }
-
-    if (width > gpu_display_width - x)
-    {
-        width = gpu_display_width - x;
-    }
-    if (height > gpu_display_height - y)
-    {
-        height = gpu_display_height - y;
     }
 
     for (uint32_t row = 0; row < height; ++row)
@@ -183,7 +264,11 @@ void gm_line(
     uint32_t y1,
     uint32_t x2,
     uint32_t y2,
-    uint32_t color)
+    uint32_t color,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height)
 {
     if (x1 >= gpu_display_width ||
         x2 >= gpu_display_width ||
@@ -206,7 +291,14 @@ void gm_line(
 
     while (1)
     {
-        gm_pixel((uint32_t)x, (uint32_t)y, color);
+        gm_pixel(
+            (uint32_t)x,
+            (uint32_t)y,
+            color,
+            clip_x,
+            clip_y,
+            clip_width,
+            clip_height);
 
         if (x == end_x && y == end_y)
         {
@@ -230,6 +322,19 @@ void gm_line(
     uint32_t top = y1 < y2 ? y1 : y2;
     uint32_t width = (x1 < x2 ? x2 - x1 : x1 - x2) + 1;
     uint32_t height = (y1 < y2 ? y2 - y1 : y1 - y2) + 1;
+
+    if (!gm_clip_rect(
+            &left,
+            &top,
+            &width,
+            &height,
+            clip_x,
+            clip_y,
+            clip_width,
+            clip_height))
+    {
+        return;
+    }
 
     if (gpu_resource_flush(left, top, width, height) < 0)
     {

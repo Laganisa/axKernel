@@ -13,34 +13,83 @@ extern pcb_t *get_current_proc_addr(void);
 uint32_t wm_console_line;
 uint32_t wm_console_xpixel;
 
+static void wm_get_clip(
+    uint32_t *x,
+    uint32_t *y,
+    uint32_t *width,
+    uint32_t *height)
+{
+    for (uint8_t i = 0; i < wm_slot->cnt; ++i)
+    {
+        wcb_t *window = &wm_slot->wm_arr[i];
+        if (window->is_on && window->pcb_id == wm_slot->now_pcb_id)
+        {
+            *x = window->x;
+            *y = window->y;
+            if (*x >= gpu_display_width || *y >= gpu_display_height)
+            {
+                *width = 0;
+                *height = 0;
+            }
+            else
+            {
+                *width = window->w;
+                *height = window->h;
+                if (*width > gpu_display_width - *x)
+                {
+                    *width = gpu_display_width - *x;
+                }
+                if (*height > gpu_display_height - *y)
+                {
+                    *height = gpu_display_height - *y;
+                }
+            }
+            return;
+        }
+    }
+
+    *x = 0;
+    *y = 0;
+    *width = gpu_display_width;
+    *height = gpu_display_height;
+}
+
 #if DEBUG_DISPLAY_FLAG == 1
 static void wm_console_scroll(void)
 {
-    uint32_t text_height = (gpu_display_height / 8) * 8;
-    if (text_height < 8)
+    uint32_t clip_x;
+    uint32_t clip_y;
+    uint32_t clip_width;
+    uint32_t clip_height;
+    wm_get_clip(&clip_x, &clip_y, &clip_width, &clip_height);
+
+    uint32_t text_width = (clip_width / 8) * 8;
+    uint32_t text_height = (clip_height / 8) * 8;
+    if (text_width < 8 || text_height < 8)
     {
         return;
     }
 
     for (uint32_t y = 8; y < text_height; ++y)
     {
-        for (uint32_t x = 0; x < gpu_display_width; ++x)
+        for (uint32_t x = 0; x < text_width; ++x)
         {
-            gpu_framebuffer[(y - 8) * gpu_display_width + x] =
-                gpu_framebuffer[y * gpu_display_width + x];
+            gpu_framebuffer[(clip_y + y - 8) * gpu_display_width + clip_x + x] =
+                gpu_framebuffer[(clip_y + y) * gpu_display_width + clip_x + x];
         }
     }
 
     uint32_t last_line = text_height - 8;
     for (uint32_t y = last_line; y < text_height; ++y)
     {
-        for (uint32_t x = 0; x < gpu_display_width; ++x)
+        for (uint32_t x = 0; x < text_width; ++x)
         {
-            gpu_framebuffer[y * gpu_display_width + x] = 0xFF000000;
+            gpu_framebuffer[(clip_y + y) * gpu_display_width + clip_x + x] =
+                0xFF000000;
         }
     }
 
-    if (gpu_resource_flush(0, 0, gpu_display_width, text_height) < 0)
+    if (gpu_resource_flush(clip_x, clip_y, text_width, text_height) < 0)
     {
         puts("GPU console scroll failed\n");
     }
@@ -51,7 +100,12 @@ static void wm_console_next_line(void)
     wm_console_xpixel = 0;
     ++wm_console_line;
 
-    uint32_t line_count = gpu_display_height / 8;
+    uint32_t clip_x;
+    uint32_t clip_y;
+    uint32_t clip_width;
+    uint32_t clip_height;
+    wm_get_clip(&clip_x, &clip_y, &clip_width, &clip_height);
+    uint32_t line_count = clip_height / 8;
     if (line_count != 0 && wm_console_line >= line_count)
     {
         wm_console_scroll();
@@ -70,7 +124,20 @@ static void wm_console_flush_run(
     }
 
     run[*run_len] = '\0';
-    ltrs_color(wm_console_xpixel, 8 * wm_console_line, run, color);
+    uint32_t clip_x;
+    uint32_t clip_y;
+    uint32_t clip_width;
+    uint32_t clip_height;
+    wm_get_clip(&clip_x, &clip_y, &clip_width, &clip_height);
+    ltrs_color_clip(
+        clip_x + wm_console_xpixel,
+        clip_y + 8 * wm_console_line,
+        run,
+        color,
+        clip_x,
+        clip_y,
+        clip_width,
+        clip_height);
     wm_console_xpixel += *run_len * 8;
     *run_len = 0;
 }
@@ -212,7 +279,12 @@ static uint16_t wm_console_puts_color(const char *s, uint32_t color)
             continue;
         }
 
-        if (wm_console_xpixel + 8 > gpu_display_width)
+        uint32_t clip_x;
+        uint32_t clip_y;
+        uint32_t clip_width;
+        uint32_t clip_height;
+        wm_get_clip(&clip_x, &clip_y, &clip_width, &clip_height);
+        if (wm_console_xpixel + 8 > clip_width)
         {
             wm_console_flush_run(run, &run_len, color);
             wm_console_next_line();
@@ -253,6 +325,12 @@ static uint16_t wm_console_puts_color(const char *s, uint32_t color)
 void wconsole_erase_char(void)
 {
 #if DEBUG_DISPLAY_FLAG == 1
+    uint32_t clip_x;
+    uint32_t clip_y;
+    uint32_t clip_width;
+    uint32_t clip_height;
+    wm_get_clip(&clip_x, &clip_y, &clip_width, &clip_height);
+
     if (wm_console_xpixel == 0)
     {
         if (wm_console_line == 0)
@@ -260,7 +338,7 @@ void wconsole_erase_char(void)
             return;
         }
         --wm_console_line;
-        wm_console_xpixel = (gpu_display_width / 8) * 8;
+        wm_console_xpixel = (clip_width / 8) * 8;
     }
 
     if (wm_console_xpixel < 8)
@@ -270,11 +348,15 @@ void wconsole_erase_char(void)
 
     wm_console_xpixel -= 8;
     gm_rect(
-        wm_console_xpixel,
-        8 * wm_console_line,
+        clip_x + wm_console_xpixel,
+        clip_y + 8 * wm_console_line,
         8,
         8,
-        0xFF000000);
+        0xFF000000,
+        clip_x,
+        clip_y,
+        clip_width,
+        clip_height);
 #endif
 }
 
@@ -345,10 +427,13 @@ void wm_init()
     wm_slot->now_pcb_id = 0;
     wm_slot->cnt = 0;
     wm_slot->cmd_cnt = 0;
+    wm_console_line = 0;
+    wm_console_xpixel = 0;
 }
 
 // 새로운 창 생성
 wcb_t wm_create(
+    uint8_t pcb_id,
     uint32_t x,
     uint32_t y,
     uint32_t w,
@@ -362,7 +447,21 @@ wcb_t wm_create(
     new_wcb.w = w;
     new_wcb.h = h;
 
+    new_wcb.is_on = 1;
+    new_wcb.pcb_id = pcb_id;
     new_wcb.draw = func;
+
+    if (wm_slot->cnt >= sizeof(wm_slot->wm_arr) / sizeof(wm_slot->wm_arr[0]))
+    {
+        puts("Window slot is full\n");
+        new_wcb.is_on = 0;
+        return new_wcb;
+    }
+
+    wm_slot->wm_arr[wm_slot->cnt++] = new_wcb;
+    wm_slot->now_pcb_id = pcb_id;
+    wm_console_line = 0;
+    wm_console_xpixel = 0;
 
     return new_wcb;
 }
