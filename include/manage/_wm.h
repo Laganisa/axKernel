@@ -59,4 +59,12 @@ void wm_switch(void);
 extern uint32_t wm_console_line;
 extern uint32_t wm_console_xpixel;
 
+wcb_t wm_create(
+    uint32_t x,
+    uint32_t y,
+    uint32_t w,
+    uint32_t h,
+    void (*func)(uint32_t, uint32_t));
+void wm_init();
+void wm_switch();
 #endif

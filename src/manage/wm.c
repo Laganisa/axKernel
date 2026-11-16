@@ -150,6 +150,7 @@ static uint16_t wm_puts_color(const char *s, uint32_t color)
         return wm_console_puts_color(s, color);
     }
 
+    log("a");
     // 활성창이 아니라면 큐에 넣기
     // 명령 큐가 있다 가정
 

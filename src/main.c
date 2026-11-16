@@ -167,6 +167,7 @@ void kernel_main(void)
 
 #if DEBUG_DISPLAY_FLAG == 1
     gpu_init();
+    wm_init();
 #endif
 
     puts("Booting AxKernel!\n");
