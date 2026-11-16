@@ -4,7 +4,7 @@
 // 전역 디버깅 플래그 관련
 #define DEBUG_DISPLAY_FLAG 1    // 참이면 GPU 모드
 #define DEBUG_DTB_FLAG 0        // 참이면 디버깅 시작
-#define DEBUG_GPU_FLAG 0        // 참이면 디버깅 시작
+#define DEBUG_GPU_FLAG 1        // 참이면 디버깅 시작
 #define DEBUG_DSK_FORMAT_FLAG 0 // 참이면 디스크 포맷
 
 // 인터럽트 관련

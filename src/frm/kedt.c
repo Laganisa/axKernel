@@ -48,7 +48,10 @@ void kedt(fcb_t *file)
         // 어디 위치인지 쓰고
 
         // 입력 받고
-        gets(prompt, 63);
+        if (wget(prompt, sizeof(prompt)) < 0)
+        {
+            return;
+        }
 
         // 모드에 따른 스위칭
         if (mode == M_MODE)

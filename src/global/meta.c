@@ -110,7 +110,7 @@ pcb_t *proc_turn(
     {
         fil = fm_create(reco, (char *)name, 1024, 0);
     }
-    dump("oo", (uint64_t)(uintptr_t)fil);
+
     if (fil == NULL)
     {
         log("Direct executable file creation failed");
@@ -342,8 +342,6 @@ static pcb_t *elf_load_image(
         return 0;
     }
 
-    dump("a", TEMP_MM_USER_BASE + entry_offset);
-
     proc->regs.elr_el1 = TEMP_MM_USER_BASE + entry_offset;
 
     proc->regs.sp = TEMP_MM_USER_BASE + process_size;
@@ -362,8 +360,6 @@ pcb_t *mata_exec_file(
     int8_t path[27],
     uint8_t parid)
 {
-
-    enter("mata_exec_file");
 
     fcb_t *file = fm_find(reco, path);
 
@@ -384,8 +380,6 @@ pcb_t *mata_exec_file(
 
     hdr = (fm_exec_hdr_t *)fm_data_addr(reco, file);
 
-    dump("ddd", (uint64_t)(uintptr_t)hdr);
-
     if (fm_dsk_ready() &&
         fm_read(reco, file, hdr, file->lens, 0) != file->lens)
     {
@@ -402,7 +396,6 @@ pcb_t *mata_exec_file(
 
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
-        dump("a", hdr->entry);
 
         pcb_t *proc = pm_create(obj, hdr->entry, parid);
         return proc;

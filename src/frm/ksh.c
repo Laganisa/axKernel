@@ -796,7 +796,10 @@ void kshell(void)
         kpath();
 
         // 입력 받고
-        gets(prompt, 63);
+        if (wget(prompt, sizeof(prompt)) < 0)
+        {
+            return;
+        }
 
         // 입력을 정규화 및 적용
         ksplit(prompt);
