@@ -4,7 +4,6 @@
 #include "tools/_asm.h"
 #include "manage/temp_mm.h"
 
-#define PROC_STACK_RESERVE (16 * 1024ULL)
 #define TEMP_PROC_PAGE_COUNT ((INITIAL_PROC_SIZE << 10) / TEMP_MM_PAGE_SIZE)
 #define ELF_PF_EXEC 0x1
 #define ELF_PF_WRITE 0x2
@@ -21,7 +20,9 @@ pcb_t *proc_turn(
     FMv3_record *reco,
     int8_t *name,
     void *entry_point,
-    uint8_t mod)
+    uint8_t mod,
+    uint64_t argc,
+    const char *const argv[])
 {
     /*
     dump("name", (uint64_t)name);
@@ -64,7 +65,7 @@ pcb_t *proc_turn(
 
             fm_write(reco, fil, _task_shell_start, (uint32_t)shell_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0, argc, argv);
         }
         if (entry_point == (void *)_task_bridge_start)
         {
@@ -80,7 +81,7 @@ pcb_t *proc_turn(
 
             fm_write(reco, fil, _task_bridge_start, (uint32_t)bridge_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0, argc, argv);
         }
         if (entry_point == (void *)_task_compiler_start)
         {
@@ -96,7 +97,7 @@ pcb_t *proc_turn(
 
             fm_write(reco, fil, _task_compiler_start, (uint32_t)compiler_size, sizeof(fm_exec_hdr_t));
 
-            return mata_exec_file(reco, pm_object, name, 0);
+            return mata_exec_file(reco, pm_object, name, 0, argc, argv);
         }
     }
     // 커널 실행시 내부적으로 만든 파일이 실행되는 거
@@ -124,7 +125,7 @@ pcb_t *proc_turn(
         return NULL;
     }
 
-    return mata_exec_file(reco, pm_object, name, 0);
+    return mata_exec_file(reco, pm_object, name, 0, argc, argv);
 }
 
 static uint8_t elf_valid_header(elf_ehdr_t *ehdr, uint32_t image_size)
@@ -338,13 +339,11 @@ static pcb_t *elf_load_image(
             process_size,
             page_flags))
     {
-
         return 0;
     }
 
     proc->regs.elr_el1 = TEMP_MM_USER_BASE + entry_offset;
 
-    proc->regs.sp = TEMP_MM_USER_BASE + process_size;
     proc->heap_start = TEMP_MM_USER_BASE + (heap_start - real_addr);
     proc->heap_break = proc->heap_start;
     proc->heap_limit =
@@ -358,7 +357,9 @@ pcb_t *mata_exec_file(
     FMv3_record *reco,
     PMv1_object *obj,
     int8_t path[27],
-    uint8_t parid)
+    uint8_t parid,
+    uint64_t argc,
+    const char *const argv[])
 {
 
     fcb_t *file = fm_find(reco, path);
@@ -397,14 +398,14 @@ pcb_t *mata_exec_file(
     if (hdr->mode == FM_EXEC_MODE_DIRECT)
     {
 
-        pcb_t *proc = pm_create(obj, hdr->entry, parid);
+        pcb_t *proc = pm_create(obj, hdr->entry, parid, argc, argv);
         return proc;
     }
 
     if (hdr->mode == FM_EXEC_MODE_IMAGE)
     {
 
-        pcb_t *proc = pm_create(obj, 0, parid);
+        pcb_t *proc = pm_create(obj, 0, parid, argc, argv);
 
         if (proc == 0)
         {
@@ -413,12 +414,13 @@ pcb_t *mata_exec_file(
 
         if (elf_load_image(proc, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size) == 0)
         {
-
+            log("is this?");
             return NULL;
         }
 
         return proc;
     }
+
     return NULL;
 }
 

@@ -118,7 +118,7 @@ void devo_main(void)
     puts("devo main\n");
 }
 
-#define B_MAIN_FLAG 6
+#define B_MAIN_FLAG 4
 
 uint8_t global_dsk_mut;
 
@@ -181,9 +181,9 @@ void kernel_main(void)
     {
         // 프로세스 전환 테스트 로직
 
-        pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0);
+        pcb_t *proc1 = proc_turn(fm_record, "INFA.BIN", task_inf_A, 0, 0, NULL);
 
-        pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0);
+        pcb_t *proc2 = proc_turn(fm_record, "INFB.BIN", task_inf_B, 0, 0, NULL);
         pm_awake(pm_object, 0, proc2);
 
         proc_dump("proc1", proc1);
@@ -199,12 +199,16 @@ void kernel_main(void)
     else if (B_MAIN_FLAG == 2)
     {
 
+        char *data = "int main(){ return 0 }";
+
         // 쉘 테스트 로직
         pcb_t *shell_proc = proc_turn(
             fm_record,
             "shel.bin",
             _task_shell_start,
-            1);
+            1,
+            data,
+            NULL);
 
         pm_awake(pm_object, 0, shell_proc);
 
@@ -218,7 +222,7 @@ void kernel_main(void)
     {
         // 브릿지 테스트 로직
 
-        pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1);
+        pcb_t *brdge_proc = proc_turn(fm_record, "brdge.bin", _task_bridge_start, 1, 0, NULL);
         pm_awake(pm_object, 0, brdge_proc);
 
         proc_dump("brdge proc", brdge_proc);
@@ -234,7 +238,9 @@ void kernel_main(void)
             fm_record,
             "compil.bin",
             _task_compiler_start,
-            1);
+            1,
+            0,
+            NULL);
 
         pm_awake(pm_object, 0, compil_proc);
 
@@ -251,10 +257,10 @@ void kernel_main(void)
             쉘이랑 브릿지 2개를 띄워서 테스트
         */
 
-        pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1);
+        pcb_t *shell_proc = proc_turn(fm_record, "shel.bin", _task_shell_start, 1, 0, NULL);
         pm_awake(pm_object, 0, shell_proc);
 
-        pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
+        pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1, 0, NULL);
 
         // pcb_t *bridge_proc = proc_turn(fm_record, "bridge.bin", _task_bridge_start, 1);
         // pm_awake(pm_object, 0, bridge_proc);
@@ -270,7 +276,7 @@ void kernel_main(void)
     }
     else if (B_MAIN_FLAG == 6)
     {
-        pcb_t *proc1 = proc_turn(fm_record, "kshell", kshell, 0);
+        pcb_t *proc1 = proc_turn(fm_record, "kshell", kshell, 0, 0, NULL);
 
         proc_dump("proc1", proc1);
 

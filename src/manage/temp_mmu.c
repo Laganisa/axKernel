@@ -123,6 +123,8 @@ uint8_t temp_mmu_prepare_user(
     const uint8_t *page_flags)
 {
 
+    // enter("temp_mmu_prepare_user");
+
     if (!temp_mmu_ready || proc == NULL || software_root == NULL ||
         page_flags == NULL || proc->id == 0 ||
         (phys_base & (TEMP_MM_PAGE_SIZE - 1)) != 0 ||
@@ -151,6 +153,7 @@ uint8_t temp_mmu_prepare_user(
             break;
         }
     }
+
     if (slot == TEMP_MMU_MAX_PROCESSES)
     {
         return FALSE;
@@ -233,6 +236,7 @@ uint8_t temp_mmu_prepare_user(
         l1[l1_index] = 0;
         l2[l2_index] = 0;
         temp_mm_page_reset(software_root);
+
         return FALSE;
     }
 

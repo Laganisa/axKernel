@@ -4,6 +4,8 @@
 #include "manage/_dm.h"
 #include "tools/_dstruc.h"
 
+#define PROC_STACK_RESERVE (16 * 1024ULL)
+
 typedef struct proc_regs_t
 {
     uint64_t reg_x[31]; // x0 ~ x30
@@ -101,7 +103,12 @@ typedef struct PMv1_object
 // init 만들기
 void pm_init();
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid);
-pcb_t *pm_create(PMv1_object *obj, uint64_t entry, uint8_t parid);
+pcb_t *pm_create(
+    PMv1_object *obj,
+    uint64_t entry,
+    uint8_t parid,
+    uint64_t argc,
+    const char *const argv[]);
 // uint8_t pm_low(PMv1_object *queue, uint8_t cmd, uint8_t val);
 // uint8_t pm_high(PMv1_object *queue, uint8_t cmd, uint8_t val);
 uint8_t pm_qaddr(PMv1_object *queue, uint8_t type, uint8_t cmd, uint8_t val);

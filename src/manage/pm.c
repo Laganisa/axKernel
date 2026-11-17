@@ -3,9 +3,51 @@
 #include "manage/_mm.h"
 #include "global/_debug.h"
 #include "global/_alloc.h"
+#include "manage/temp_mm.h"
 
 extern void _proc(pcb_t *); // proc와 연결
 extern dcb_t uart_device;
+
+static uint8_t pm_user_stack_size(
+    uint64_t argc,
+    const char *const argv[],
+    uint64_t *strings_size)
+{
+    if (argc > (PROC_STACK_RESERVE / sizeof(uint64_t)) - 2 ||
+        (argc != 0 && argv == NULL))
+    {
+        return FALSE;
+    }
+
+    uint64_t total = 0;
+    for (uint64_t i = 0; i < argc; i++)
+    {
+        if (argv[i] == NULL)
+        {
+            return FALSE;
+        }
+
+        uint64_t len = 0;
+        while (len < PROC_STACK_RESERVE - total && argv[i][len] != '\0')
+        {
+            len++;
+        }
+        if (len == PROC_STACK_RESERVE - total)
+        {
+            return FALSE;
+        }
+        total += len + 1;
+    }
+
+    uint64_t vector_size = (argc + 2) * sizeof(uint64_t);
+    if (vector_size + total + 15 > PROC_STACK_RESERVE)
+    {
+        return FALSE;
+    }
+
+    *strings_size = total;
+    return TRUE;
+}
 
 /*
     프로세스 생성 및 삭제와 관련한 파일
@@ -25,8 +67,19 @@ void pm_init()
 pcb_t *pm_create(
     PMv1_object *obj,
     uint64_t entry,
-    uint8_t parid)
+    uint8_t parid,
+    uint64_t argc,
+    const char *const argv[])
 {
+    uint64_t strings_size = 0;
+    if ((entry != 0 && argc != 0) ||
+        (entry == 0 &&
+         !pm_user_stack_size(argc, argv, &strings_size)))
+    {
+        log("Invalid process start arguments");
+        return NULL;
+    }
+
     int16_t id = -1;
 
     for (int i = 0; i < MAX_PCB_SIZE; i++)
@@ -112,6 +165,35 @@ pcb_t *pm_create(
     new_proc->regs.elr_el1 = entry;                            // (ELR_EL1)
     new_proc->regs.sp = real_addr + (INITIAL_PROC_SIZE << 10); // sp
 
+    if (entry == 0)
+    {
+        uint64_t process_size = (uint64_t)INITIAL_PROC_SIZE << 10;
+        uint64_t vector_size = (argc + 2) * sizeof(uint64_t);
+        uint64_t stack_offset =
+            (process_size - vector_size - strings_size) & ~15ULL;
+        uint64_t *stack = (uint64_t *)(real_addr + stack_offset);
+        uint64_t string_offset = stack_offset + vector_size;
+
+        stack[0] = argc;
+        for (uint64_t i = 0; i < argc; i++)
+        {
+            uint64_t len = 0;
+            while (argv[i][len] != '\0')
+            {
+                len++;
+            }
+
+            stack[i + 1] = TEMP_MM_USER_BASE + string_offset;
+            for (uint64_t j = 0; j <= len; j++)
+            {
+                ((char *)(real_addr + string_offset))[j] = argv[i][j];
+            }
+            string_offset += len + 1;
+        }
+        stack[argc + 1] = 0;
+        new_proc->regs.sp = TEMP_MM_USER_BASE + stack_offset;
+    }
+
     // new_proc->regs.spsr = (entry == 0) ? 0x3c0 : 0x3c5;        // 인셉션 레벨 분기
     new_proc->regs.spsr = (entry == 0) ? 0x340 : 0x3c5; // 인셉션 레벨 분기
 
@@ -125,7 +207,7 @@ pcb_t *pm_create(
 */
 pcb_t *creat_proc(PMv1_object *obj, void *task, uint8_t parid)
 {
-    return pm_create(obj, (uint64_t)task, parid);
+    return pm_create(obj, (uint64_t)task, parid, 0, NULL);
 }
 
 // 프로세스 삭제 함수

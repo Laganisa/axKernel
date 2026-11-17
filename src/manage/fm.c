@@ -61,8 +61,6 @@ fcb_t *fm_create(
         }
     }
 
-    log("this?");
-
     uint16_t file_id = reco->all_file_num;
     if (bpt_insert(reco->root, name, file_id) == 0)
     {
@@ -72,8 +70,6 @@ fcb_t *fm_create(
         }
         return NULL;
     }
-
-    log("is this?");
 
     fcb_t *new_file = &reco->FMv3_mem[file_id];
     memset(new_file, 0, sizeof(*new_file));

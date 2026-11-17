@@ -43,8 +43,20 @@ typedef struct elf_phdr
 #define ELF_DATA_LSB 1
 #define ELF_MACHINE_AARCH64 183
 
-pcb_t *proc_turn(FMv3_record *reco, int8_t *name, void *entry_point, uint8_t mod);
+pcb_t *proc_turn(
+    FMv3_record *reco,
+    int8_t *name,
+    void *entry_point,
+    uint8_t mod,
+    uint64_t argc,
+    const char *const argv[]);
 pcb_t *schedule_proc(pcb_t *proc);
-pcb_t *mata_exec_file(FMv3_record *reco, PMv1_object *obj, int8_t path[27], uint8_t parid);
+pcb_t *mata_exec_file(
+    FMv3_record *reco,
+    PMv1_object *obj,
+    int8_t path[27],
+    uint8_t parid,
+    uint64_t argc,
+    const char *const argv[]);
 
 #endif
