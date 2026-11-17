@@ -8,6 +8,8 @@
 // 기초적인 커널 내장 에디터
 void kedt(fcb_t *file)
 {
+    enter("kedt");
+
     char prompt[64];
     char file_buf[64];
 

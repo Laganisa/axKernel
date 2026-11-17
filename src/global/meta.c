@@ -168,7 +168,7 @@ static pcb_t *elf_load_image(
     dump("image_size", (uint64_t)image_size);
     */
 
-    enter("elf_load_image");
+    // enter("elf_load_image");
 
     elf_ehdr_t *ehdr = (elf_ehdr_t *)image;
 
@@ -414,7 +414,6 @@ pcb_t *mata_exec_file(
 
         if (elf_load_image(proc, ((uint8_t *)hdr) + sizeof(fm_exec_hdr_t), (uint32_t)hdr->image_size) == 0)
         {
-            log("is this?");
             return NULL;
         }
 
