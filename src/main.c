@@ -276,7 +276,12 @@ void kernel_main(void)
     }
     else if (B_MAIN_FLAG == 6)
     {
-        pcb_t *proc1 = proc_turn(fm_record, "kshell", kshell, 0, 0, NULL);
+        pcb_t *proc1 = proc_turn(
+            fm_record, "kshell",
+            kshell,
+            0,
+            0,
+            NULL);
 
         proc_dump("proc1", proc1);
 

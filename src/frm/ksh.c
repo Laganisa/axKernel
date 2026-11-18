@@ -229,9 +229,7 @@ static uint8_t sys_split(char **args)
         // 화면 지우기
 
         // 호출
-        // kedt(now_fcb);
-        pcb_t *edt = proc_turn(fm_record, "kedt", kedt, 0, 1, now_fcb);
-        _proc(edt);
+        kedt(now_fcb);
 
         break;
 
