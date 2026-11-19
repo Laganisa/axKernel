@@ -161,11 +161,10 @@ void kernel_main(void)
 
     nm_init();
 
-    /*
-        그래픽을 사용하여 부팅 로그를 만들기
-    */
-
-#if DEBUG_DISPLAY_FLAG == 1
+/*
+    그래픽을 사용하여 부팅 로그를 만들기
+*/
+#if (DEBUG_DISPLAY_FLAG == 1)
     gpu_init();
     wm_init();
 #endif

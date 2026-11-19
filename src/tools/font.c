@@ -1197,7 +1197,7 @@ uint16_t ltrs_color_clip(
             glyph = font_table[(uint8_t)string[i]];
         }
         // 스패이스
-        else if (string[i] == 32)
+        else if (string[i] == 32 || string[i] == '\0')
         {
             glyph = font_NULL;
         }

@@ -2,6 +2,7 @@
 #include "global/_debug.h"
 #include "global/_io.h"
 #include "global/_alloc.h"
+#include "manage/_wm.h"
 #include "tools/_virtio.h"
 #include "tools/_font.h"
 
@@ -340,4 +341,272 @@ void gm_line(
     {
         puts("GPU line flush failed\n");
     }
+}
+
+void deci(uint32_t x, uint32_t y, uint64_t n)
+{
+    char digits[21];
+    uint8_t length = 0;
+
+    do
+    {
+        digits[length++] = (char)('0' + n % 10);
+        n /= 10;
+    } while (n != 0);
+
+    for (uint8_t i = 0; i < length / 2; ++i)
+    {
+        char digit = digits[i];
+        digits[i] = digits[length - i - 1];
+        digits[length - i - 1] = digit;
+    }
+
+    digits[length] = '\0';
+    ltrs(x, y, digits);
+}
+
+static void gm_console_get_clip(
+    uint32_t *x,
+    uint32_t *y,
+    uint32_t *width,
+    uint32_t *height)
+{
+    for (uint8_t i = 0; i < wm_slot->cnt; ++i)
+    {
+        wcb_t *window = &wm_slot->wm_arr[i];
+        if (window->is_on && window->pcb_id == wm_slot->now_pcb_id)
+        {
+            *x = window->x;
+            *y = window->y;
+            if (*x >= gpu_display_width || *y >= gpu_display_height)
+            {
+                *width = 0;
+                *height = 0;
+            }
+            else
+            {
+                *width = window->w;
+                *height = window->h;
+                if (*width > gpu_display_width - *x)
+                {
+                    *width = gpu_display_width - *x;
+                }
+                if (*height > gpu_display_height - *y)
+                {
+                    *height = gpu_display_height - *y;
+                }
+            }
+            return;
+        }
+    }
+
+    *x = 0;
+    *y = 0;
+    *width = gpu_display_width;
+    *height = gpu_display_height;
+}
+
+static void gm_console_next_line(
+    uint32_t *cursor_x,
+    uint32_t *cursor_y,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height)
+{
+    uint32_t text_width = (clip_width / 8) * 8;
+    uint32_t text_height = (clip_height / 8) * 8;
+    if (text_width < 8 || text_height < 8)
+    {
+        return;
+    }
+
+    *cursor_x = clip_x;
+    uint32_t bottom = clip_y + text_height;
+    if (text_height > 8 && *cursor_y <= bottom - 16)
+    {
+        *cursor_y += 8;
+        return;
+    }
+
+    if (text_height > 8)
+    {
+        for (uint32_t row = 8; row < text_height; ++row)
+        {
+            for (uint32_t col = 0; col < text_width; ++col)
+            {
+                gpu_framebuffer[(clip_y + row - 8) * gpu_display_width + clip_x + col] =
+                    gpu_framebuffer[(clip_y + row) * gpu_display_width + clip_x + col];
+            }
+        }
+    }
+
+    for (uint32_t row = text_height - 8; row < text_height; ++row)
+    {
+        for (uint32_t col = 0; col < text_width; ++col)
+        {
+            gpu_framebuffer[(clip_y + row) * gpu_display_width + clip_x + col] =
+                0xFF000000;
+        }
+    }
+
+    if (gpu_resource_flush(clip_x, clip_y, text_width, text_height) < 0)
+    {
+        puts("GPU input console scroll failed\n");
+    }
+    *cursor_y = bottom - 8;
+}
+
+static void gm_console_erase_char(
+    uint32_t *cursor_x,
+    uint32_t *cursor_y,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height)
+{
+    if (*cursor_x <= clip_x)
+    {
+        if (*cursor_y <= clip_y)
+        {
+            return;
+        }
+        *cursor_y -= 8;
+        *cursor_x = clip_x + (clip_width / 8) * 8;
+    }
+
+    if (*cursor_x < clip_x + 8)
+    {
+        return;
+    }
+
+    *cursor_x -= 8;
+    gm_rect(
+        *cursor_x,
+        *cursor_y,
+        8,
+        8,
+        0xFF000000,
+        clip_x,
+        clip_y,
+        clip_width,
+        clip_height);
+}
+
+static void gm_console_echo_char(
+    char c,
+    uint32_t *cursor_x,
+    uint32_t *cursor_y,
+    uint32_t clip_x,
+    uint32_t clip_y,
+    uint32_t clip_width,
+    uint32_t clip_height)
+{
+    if (c == '\n')
+    {
+        gm_console_next_line(
+            cursor_x, cursor_y, clip_x, clip_y, clip_width, clip_height);
+        return;
+    }
+
+    if (clip_width < 8 || clip_height < 8)
+    {
+        return;
+    }
+    uint32_t text_width = (clip_width / 8) * 8;
+    if (*cursor_x + 8 > clip_x + text_width)
+    {
+        gm_console_next_line(
+            cursor_x, cursor_y, clip_x, clip_y, clip_width, clip_height);
+    }
+
+    char character[2] = {c, '\0'};
+    ltrs_color_clip(
+        *cursor_x,
+        *cursor_y,
+        character,
+        0xFFFFFFFF,
+        clip_x,
+        clip_y,
+        clip_width,
+        clip_height);
+    *cursor_x += 8;
+}
+
+int32_t gtb(uint32_t x, uint32_t y, char *s, int32_t max_len)
+{
+    if (s == NULL || max_len <= 0)
+    {
+        puts("Window input buffer is invalid\n");
+        return -1;
+    }
+
+    uint32_t clip_x;
+    uint32_t clip_y;
+    uint32_t clip_width;
+    uint32_t clip_height;
+    gm_console_get_clip(&clip_x, &clip_y, &clip_width, &clip_height);
+    if (clip_width < 8 ||
+        clip_height < 8 ||
+        x < clip_x ||
+        x - clip_x >= clip_width ||
+        y < clip_y ||
+        y - clip_y > clip_height - 8)
+    {
+        s[0] = '\0';
+        puts("Window input position is outside the active window\n");
+        return -1;
+    }
+
+    uint32_t cursor_x = x;
+    uint32_t cursor_y = y;
+    int32_t i = 0;
+    while (i < max_len - 1)
+    {
+        int8_t c;
+        int result = vhid_getchar(&c);
+
+        if (result < 0)
+        {
+            s[i] = '\0';
+            puts("Window input failed\n");
+            return -1;
+        }
+        if (result == 0)
+        {
+            uint64_t daif;
+            __asm__ volatile("mrs %0, daif" : "=r"(daif));
+            if ((daif & (1ULL << 7)) == 0)
+            {
+                __asm__ volatile("wfi");
+            }
+            continue;
+        }
+
+        if (c == '\r' || c == '\n')
+        {
+            break;
+        }
+        if (c == '\b' || c == 127)
+        {
+            if (i > 0)
+            {
+                --i;
+                gm_console_erase_char(
+                    &cursor_x, &cursor_y,
+                    clip_x, clip_y, clip_width, clip_height);
+            }
+            continue;
+        }
+        if (c >= 32 && c < 127)
+        {
+            s[i++] = (char)c;
+            gm_console_echo_char(
+                (char)c, &cursor_x, &cursor_y,
+                clip_x, clip_y, clip_width, clip_height);
+        }
+    }
+
+    s[i] = '\0';
+    return i;
 }

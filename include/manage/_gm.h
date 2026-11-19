@@ -48,4 +48,8 @@ void gm_line(
     uint32_t clip_width,
     uint32_t clip_height);
 
+void deci(uint32_t x, uint32_t y, uint64_t n);
+
+int32_t gtb(uint32_t x, uint32_t y, char *s, int32_t max_len);
+
 #endif

@@ -83,4 +83,10 @@
 
 // 네트워크 관리자 관련
 
+// 그래픽 관련
+#define FULL_WIDTH 640
+#define FULL_HIGHT 360
+
+#define FONT_SIZE 8
+
 #endif
