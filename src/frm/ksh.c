@@ -4,6 +4,7 @@
 #include "global/_io.h"
 #include "global/_meta.h"
 #include "manage/_wm.h"
+#include "manage/_gm.h"
 
 enum shell_incode
 {
@@ -227,10 +228,12 @@ static uint8_t sys_split(char **args)
         // 화면을 지우고 호출하기
 
         // 화면 지우기
-
+        gm_rect(0, 0, 640, 360, 0xFF000000, 0, 0, 640, 360);
         // 호출
         kedt(now_fcb);
 
+        // 정리하기
+        gm_rect(0, 0, 640, 360, 0xFF000000, 0, 0, 640, 360);
         break;
 
     default:

@@ -346,7 +346,7 @@ uint32_t fm_write(
         (buf == NULL && size != 0) || size == 0 ||
         size > (uint32_t)-1 - offset)
     {
-        log("err");
+        log("fm_write err");
         return 0;
     }
 

@@ -287,7 +287,7 @@ void kernel_main(void)
 
         current_proc = proc1;
 #if DEBUG_DISPLAY_FLAG == 1
-        wm_create(proc1->id, 0, 0, 200, 200, NULL);
+        wm_create(proc1->id, 0, 0, 640, 360, NULL);
 #endif
 
         _proc(proc1);
