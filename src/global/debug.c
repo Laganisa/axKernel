@@ -54,6 +54,33 @@ void for_dump(const char *name, uint64_t *val, uint8_t num)
     }
 }
 
+void for2_dump(const char *name, uint64_t *val, uint8_t num)
+{
+    if (!toggle || !val)
+    {
+        return;
+    }
+
+    puts("[Debug] ");
+    puts(name ? name : "(null)");
+    puts(" :\n");
+
+    for (uint8_t i = 0; i < num; i++)
+    {
+        put_hex2(val[i]);
+        puts(" ");
+        if ((i + 1) % 5 == 0)
+        {
+            puts("\n");
+        }
+    }
+
+    if (num % 5 != 0)
+    {
+        puts("\n");
+    }
+}
+
 // 함수 내부에서 함수 호출 인자를 보는 함수
 void xxx_dump() {}
 
