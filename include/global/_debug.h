@@ -31,6 +31,7 @@ void check_inf_loop(void);
 void flow_asm(void);
 void check_loop(void);
 void proc_dump(const char *name, pcb_t *proc);
+void page_dump(pcb_t *proc);
 void file_dump(const char *name, fcb_t *file);
 
 #endif

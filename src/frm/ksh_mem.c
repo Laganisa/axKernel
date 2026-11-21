@@ -28,5 +28,3 @@ uint8_t mem_split(char **args)
     return ret;
     */
 }
-
-// 프로세스

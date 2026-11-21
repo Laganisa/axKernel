@@ -6,7 +6,6 @@ uint8_t proc_split(char **args)
     kshputs_error("sorry yet devo\n");
     return 0;
 
-    /*
     uint8_t ret;
     uint64_t hash_check = fnv1a_hash_64(args[0]);
     uint64_t targs[6] = {0};
@@ -130,7 +129,6 @@ uint8_t proc_split(char **args)
         {
         }
 
-
         kshputs("\nproc control : ");
 
         for (int i = 0; i < MAX_CONTROL_NUM; i++)
@@ -197,6 +195,4 @@ uint8_t proc_split(char **args)
     }
 
     return ret;
-    */
 }
-

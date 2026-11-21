@@ -125,6 +125,8 @@ uint8_t temp_mmu_prepare_user(
 
     // enter("temp_mmu_prepare_user");
 
+    // dump("user_base", user_base);
+
     if (!temp_mmu_ready || proc == NULL || software_root == NULL ||
         page_flags == NULL || proc->id == 0 ||
         (phys_base & (TEMP_MM_PAGE_SIZE - 1)) != 0 ||

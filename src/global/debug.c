@@ -1,5 +1,6 @@
 #include "global/_debug.h"
 #include "global/_io.h"
+#include "manage/_mm.h"
 
 #define toggle TRUE
 
@@ -304,6 +305,59 @@ void proc_dump(const char *name, pcb_t *proc)
         put_hex(proc->regs.spsr);
         puts("\n");
     }
+}
+
+static void page_dump_hex(uint64_t value)
+{
+    const char *hex = "0123456789ABCDEF";
+
+    puts("0x");
+    for (int shift = 60; shift >= 0; shift -= 4)
+    {
+        putchar(hex[(value >> shift) & 0xF]);
+    }
+}
+
+static void page_dump_entries(page_t *page, uint64_t virtual_address, uint8_t level)
+{
+    if (page == NULL || level > 2)
+    {
+        return;
+    }
+
+    uint8_t shift = 30 - (level * 9);
+    for (uint16_t i = 0; i < 512; i++)
+    {
+        uint64_t entry_virtual_address =
+            virtual_address | ((uint64_t)i << shift);
+        if (page->is_leaf)
+        {
+            if (page->frame[i] != 0)
+            {
+                page_dump_hex(page->frame[i]);
+                puts(" : ");
+                page_dump_hex(entry_virtual_address);
+                puts("\n");
+            }
+        }
+        else if (page->pages[i] != NULL)
+        {
+            page_dump_entries(page->pages[i], entry_virtual_address, level + 1);
+        }
+    }
+}
+
+/*
+    프로세스의 물리 주소와 가상 주소 매핑을 출력
+*/
+void page_dump(pcb_t *proc)
+{
+    if (!toggle || proc == NULL || proc->page_i == NULL)
+    {
+        return;
+    }
+
+    page_dump_entries(proc->page_i, 0, 0);
 }
 
 void file_dump(const char *name, fcb_t *file)

@@ -80,45 +80,13 @@ void master(uint64_t dtb_addr)
 #endif
 }
 
-static void foo(void)
-{
-    enter("foo\n");
-
-    // gpu_init();
-    // vsnd_init();
-
-    // ltrs(16, 16, "AxKernel!");
-
-    // net_TX_main();
-
-    /*
-    gic_init();
-
-    blk_init();
-    */
-
-    /*
-    ltrs(16, 16, "AxKernel!");
-
-    gm_rect(40, 40, 120, 60, 0xFFFF0000);
-    gm_copy(40, 40, 159, 99);
-    gm_paste(180, 40);
-    gm_line(40, 120, 300, 120, 0xFFFFFFFF);
-    */
-
-    while (1)
-    {
-        ;
-    }
-}
-
 // 임시 함수로 빼기전 개발용 매인
 void devo_main(void)
 {
     puts("devo main\n");
 }
 
-#define B_MAIN_FLAG 6
+#define B_MAIN_FLAG 4
 
 uint8_t global_dsk_mut;
 
@@ -244,6 +212,8 @@ void kernel_main(void)
         pm_awake(pm_object, 0, compil_proc);
 
         proc_dump("compil proc", compil_proc);
+
+        // page_dump(compil_proc);
 
         current_proc = compil_proc;
         _proc(compil_proc);

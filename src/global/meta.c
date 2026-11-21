@@ -179,8 +179,6 @@ static pcb_t *elf_load_image(
 
     uint64_t min_vaddr = (uint64_t)-1;
     uint64_t max_vaddr = 0;
-    uint64_t max_align = 1;
-
     for (uint16_t i = 0; i < ehdr->e_phnum; i++)
     {
         elf_phdr_t *phdr = (elf_phdr_t *)(image + ehdr->e_phoff + (i * sizeof(elf_phdr_t)));
@@ -196,6 +194,10 @@ static pcb_t *elf_load_image(
         {
             return 0;
         }
+        if (phdr->p_memsz == 0)
+        {
+            continue;
+        }
         if (phdr->p_vaddr < min_vaddr)
         {
             min_vaddr = phdr->p_vaddr;
@@ -204,10 +206,6 @@ static pcb_t *elf_load_image(
         {
             max_vaddr = phdr->p_vaddr + phdr->p_memsz;
         }
-        if (phdr->p_align > max_align)
-        {
-            max_align = phdr->p_align;
-        }
     }
 
     if (min_vaddr == (uint64_t)-1)
@@ -215,21 +213,17 @@ static pcb_t *elf_load_image(
         return 0;
     }
 
-    if ((max_vaddr - min_vaddr) > (INITIAL_PROC_SIZE << 10))
+    uint64_t process_size = INITIAL_PROC_SIZE << 10;
+    if (min_vaddr < TEMP_MM_USER_BASE ||
+        max_vaddr - min_vaddr > process_size ||
+        max_vaddr - TEMP_MM_USER_BASE > process_size)
     {
         return 0;
     }
 
     uint64_t real_addr = mm_find(&mm_stack, proc->mm_addr, 0);
-
-    uint64_t load_base = real_addr;
-    if (max_align > 1)
-    {
-        uint64_t align_mask = max_align - 1;
-        load_base = (load_base + align_mask) & ~align_mask;
-    }
-
-    uint64_t process_size = INITIAL_PROC_SIZE << 10;
+    uint64_t load_base =
+        real_addr + (min_vaddr - TEMP_MM_USER_BASE);
     uint64_t heap_limit = real_addr + process_size - PROC_STACK_RESERVE;
     uint64_t image_end = load_base + (max_vaddr - min_vaddr);
     uint64_t heap_start =
@@ -257,6 +251,10 @@ static pcb_t *elf_load_image(
         {
             continue;
         }
+        if (phdr->p_memsz == 0)
+        {
+            continue;
+        }
 
         uint64_t seg_offset = phdr->p_vaddr - min_vaddr;
         uint64_t segment_start = load_base - real_addr + seg_offset;
@@ -265,11 +263,6 @@ static pcb_t *elf_load_image(
             phdr->p_memsz > segment_limit - segment_start)
         {
             return 0;
-        }
-
-        if (phdr->p_memsz == 0)
-        {
-            continue;
         }
 
         uint64_t segment_end = segment_start + phdr->p_memsz;

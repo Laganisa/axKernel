@@ -225,6 +225,13 @@ static uint8_t sys_split(char **args)
             break;
         }
 
+        if (now_fcb->lens == 0)
+        {
+            kshputs_error("file size err\n");
+            ret = UNKNOW_ERR;
+            break;
+        }
+
         // 화면을 지우고 호출하기
 
         // 화면 지우기
