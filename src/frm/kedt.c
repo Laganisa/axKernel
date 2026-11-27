@@ -3,12 +3,13 @@
 #include "manage/_gm.h"
 #include "manage/_wm.h"
 
-// ! 지우기 만들기
-
 #define EDT_CMD_YPOS 43 * 8
 #define EDT_CMD_XPOS 2 * 8
 
-// 기초적인 커널 내장 에디터
+/*
+    기초적인 커널 내장 에디터
+*/
+
 void kedt(fcb_t *file)
 {
 
@@ -391,10 +392,10 @@ void kedt(fcb_t *file)
                         ++now_line;
                     }
 
-                    gm_rect(72, 329, 56, 8, 0xFF000000,
-                            72, 329, 56, 8);
-                    gm_rect(256, 329, 56, 8, 0xFF000000,
-                            256, 329, 56, 8);
+                    gm_rect(72, 329, 56, 7, 0xFF000000,
+                            72, 329, 56, 7);
+                    gm_rect(256, 329, 56, 7, 0xFF000000,
+                            256, 329, 56, 7);
                     deci(72, 329, now_line);
                     deci(256, 329, now_page);
                 }

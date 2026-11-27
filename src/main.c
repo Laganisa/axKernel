@@ -86,7 +86,7 @@ void devo_main(void)
     puts("devo main\n");
 }
 
-#define B_MAIN_FLAG 4
+#define B_MAIN_FLAG 6
 
 uint8_t global_dsk_mut;
 
